@@ -6,7 +6,8 @@
 	"extends": [
 		"plugin:react/recommended",
 		"standard-with-typescript",
-		"plugin:prettier/recommended"
+		"plugin:prettier/recommended",
+		"plugin:@typescript-eslint/recommended"
 	],
 	"parserOptions": {
 		"ecmaVersion": "latest",
@@ -20,10 +21,14 @@
 				"semi": true,
 				"singleQuote": true,
 				"useTabs": true,
-				"endOfLine": "auto"
+				"endOfLine": "auto",
+				"trailingComma": "es5"
 			}
 		],
 		"space-before-function-paren": ["error", "never"],
-		"@typescript-eslint/explicit-function-return-type": "off"
+		"@typescript-eslint/explicit-function-return-type": "off",
+		"@typescript-eslint/no-floating-promises": "off",
+		"@typescript-eslint/strict-boolean-expressions": "off",
+		"@typescript-eslint/no-explicit-any": "off"
 	}
 }
