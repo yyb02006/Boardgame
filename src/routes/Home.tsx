@@ -2,12 +2,13 @@ import React from 'react';
 import styled from 'styled-components';
 
 const Layout = styled.section`
-	background-color: #101010;
+	background-color: crimson;
 	color: #eaeaea;
 	height: 100vh;
 	font-size: 5rem;
 	font-weight: 800;
 	display: flex;
+	position: relative;
 	justify-content: center;
 	align-items: center;
 	overflow-y: hidden;

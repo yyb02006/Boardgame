@@ -6,8 +6,8 @@ import Home from './routes/Home';
 export default function App() {
 	return (
 		<BrowserRouter>
-			<div className="App">
-				<Header />
+			<div className="App" style={{ position: 'relative' }}>
+				<Header title={'BorderGame'} />
 				<Routes>
 					<Route path="/" element={<Home />} />
 				</Routes>
