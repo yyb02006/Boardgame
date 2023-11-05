@@ -15,15 +15,6 @@ const Layout = styled.section`
 
 const HeaderNav = styled(NavLink)`
 	font-weight: 700;
-	text-decoration: none;
-	outline: none;
-	color: #eaeaea;
-	&:active,
-	&:focus {
-		text-decoration: none;
-		outline: none;
-		color: #eaeaea;
-	}
 `;
 
 interface HeaderProps {
