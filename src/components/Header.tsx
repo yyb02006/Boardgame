@@ -10,7 +10,6 @@ const Layout = styled.section`
 	display: flex;
 	align-items: center;
 	z-index: 1;
-	box-sizing: border-box;
 `;
 
 const HeaderNav = styled(NavLink)`

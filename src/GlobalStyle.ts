@@ -8,6 +8,7 @@ const GlobalStyle = createGlobalStyle`${css`
 		margin: 0 auto;
 		padding: 0;
 		color: #eaeaea;
+		box-sizing: border-box;
 	}
 	li {
 		list-style: none;
@@ -22,6 +23,10 @@ const GlobalStyle = createGlobalStyle`${css`
 			outline: none;
 			color: #eaeaea;
 		}
+	}
+	:root {
+		--bgColor-navy: #101010;
+		--bgGradient-purple-navy: linear-gradient(135deg, #6e1af5 0%, #110981 100%);
 	}
 `}
 `;
