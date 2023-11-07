@@ -1,6 +1,11 @@
 import { createGlobalStyle, css } from 'styled-components';
 
 const GlobalStyle = createGlobalStyle`${css`
+	*,
+	*::before,
+	*::after {
+		box-sizing: border-box;
+	}
 	body {
 		font-weight: 400;
 		-webkit-font-smoothing: antialiased;
@@ -8,7 +13,7 @@ const GlobalStyle = createGlobalStyle`${css`
 		margin: 0 auto;
 		padding: 0;
 		color: #eaeaea;
-		box-sizing: border-box;
+		background-color: rebeccapurple;
 	}
 	li {
 		list-style: none;
@@ -25,8 +30,9 @@ const GlobalStyle = createGlobalStyle`${css`
 		}
 	}
 	:root {
-		--bgColor-navy: #101010;
+		--bgColor-dark: #101010;
 		--bgGradient-purple-navy: linear-gradient(135deg, #6e1af5 0%, #110981 100%);
+		--globalNavSize: 80px;
 	}
 `}
 `;

@@ -6,6 +6,8 @@ const Layout = styled.section`
 	height: 80px;
 	width: 100%;
 	position: absolute;
+	top: 0;
+	left: 0;
 	padding: 0 48px 10px 48px;
 	display: flex;
 	align-items: center;

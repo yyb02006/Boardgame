@@ -2,47 +2,57 @@ import React from 'react';
 import styled from 'styled-components';
 
 const Layout = styled.section`
-	background-color: var(--bgColor-navy);
+	background-color: var(--bgColor-dark);
 	color: #eaeaea;
 	height: 100vh;
+	width: 100%;
 	font-size: 5rem;
 	font-weight: 800;
 	position: relative;
-	overflow-y: hidden;
-	padding: 80px 120px 0 120px;
+	padding: 80px 120px 40px 120px;
+	display: flex;
+	flex-direction: column;
 `;
 
-const BoardStyle = styled.div`
+const BoardLayout = styled.div`
+	position: relative;
 	background-color: #1244db;
-	width: 100%;
-	aspect-ratio: 1/1;
+	display: flex;
+	justify-content: center;
+	height: 100%;
+`;
+
+const BoardItemsContainer = styled.div`
+	grid-template-columns: repeat(5, 1fr);
+	background-color: pink;
+	display: grid;
+	height: 100%;
+	aspect-ratio: 1;
 `;
 
 const BoardItems = styled.div`
 	border: 1px solid white;
 	background-color: red;
-	width: 100px;
-	aspect-ratio: 1/1;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	&:hover {
+		background-color: #ffa600;
+	}
 `;
-
-/* interface BoardProps {
-	children: ComponentChildren;
-} */
 
 const Board = () => {
 	const test = Array(25)
 		.fill(undefined)
 		.map((arr, i) => i + 1);
-
 	return (
-		<BoardStyle>
-			<div
-				style={{ backgroundColor: 'red', width: '100px', height: '100px' }}
-			></div>
-			{test.map((arr, id) => (
-				<BoardItems key={id}>dd</BoardItems>
-			))}
-		</BoardStyle>
+		<BoardLayout>
+			<BoardItemsContainer>
+				{test.map((arr, id) => (
+					<BoardItems key={id}></BoardItems>
+				))}
+			</BoardItemsContainer>
+		</BoardLayout>
 	);
 };
 
