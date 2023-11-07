@@ -18,19 +18,39 @@ const BoardStyle = styled.div`
 	aspect-ratio: 1/1;
 `;
 
+const BoardItems = styled.div`
+	border: 1px solid white;
+	background-color: red;
+	width: 100px;
+	aspect-ratio: 1/1;
+`;
+
 /* interface BoardProps {
 	children: ComponentChildren;
 } */
 
 const Board = () => {
-	return <BoardStyle></BoardStyle>;
+	const test = Array(25)
+		.fill(undefined)
+		.map((arr, i) => i + 1);
+
+	return (
+		<BoardStyle>
+			<div
+				style={{ backgroundColor: 'red', width: '100px', height: '100px' }}
+			></div>
+			{test.map((arr, id) => (
+				<BoardItems key={id}>dd</BoardItems>
+			))}
+		</BoardStyle>
+	);
 };
 
 const Home = () => {
 	return (
 		<Layout>
 			The BorderGame
-			<Board></Board>
+			<Board />
 		</Layout>
 	);
 };
