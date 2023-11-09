@@ -23,6 +23,7 @@ const BoardLayout = styled.div`
 `;
 
 const BoardItemsContainer = styled.div`
+	position: relative;
 	grid-template-columns: repeat(5, 1fr);
 	background-color: pink;
 	display: grid;
@@ -30,8 +31,8 @@ const BoardItemsContainer = styled.div`
 	aspect-ratio: 1;
 `;
 
-const BoardItems = styled.div`
-	border: 1px solid white;
+const BoardBoxes = styled.div`
+	position: relative;
 	background-color: red;
 	display: flex;
 	justify-content: center;
@@ -41,16 +42,50 @@ const BoardItems = styled.div`
 	}
 `;
 
+const BoardBordersContainer = styled.div`
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+`;
+
+const VerticalBorders = styled.div`
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 4px;
+	background-color: #eaeaea;
+	cursor: pointer;
+`;
+
+/* const HorizentalBorders = styled.div`
+	top: 0;
+	left: 0;
+	width: 1px;
+`; */
+
 const Board = () => {
-	const test = Array(25)
-		.fill(undefined)
-		.map((arr, i) => i + 1);
 	return (
 		<BoardLayout>
 			<BoardItemsContainer>
-				{test.map((arr, id) => (
-					<BoardItems key={id}></BoardItems>
-				))}
+				{Array(25)
+					.fill(undefined)
+					.map((_, id) =>
+						id < 5 || id > 20 || id % 5 === 0 || id % 5 === 4 ? (
+							<BoardBoxes key={id}>1</BoardBoxes>
+						) : (
+							<BoardBoxes key={id}>2</BoardBoxes>
+						)
+					)}
+				<BoardBordersContainer>
+					{Array(6)
+						.fill(undefined)
+						.map((_, id) => (
+							<VerticalBorders key={id}></VerticalBorders>
+						))}
+				</BoardBordersContainer>
 			</BoardItemsContainer>
 		</BoardLayout>
 	);
