@@ -42,29 +42,26 @@ const BoardBoxes = styled.div`
 	}
 `;
 
-const BoardBordersContainer = styled.div`
+const BoardBordersContainer = styled.div<{ borderDirection: string }>`
 	position: absolute;
 	width: 100%;
 	height: 100%;
 	display: flex;
-	flex-direction: column;
+	flex-direction: ${(props) => props.borderDirection};
 	justify-content: space-between;
 `;
 
-const VerticalBorders = styled.div`
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 4px;
+const Borders = styled.div<{
+	borderDirection: 'horizental' | 'vertical';
+}>`
+	position: relative;
+	width: ${(props) =>
+		props.borderDirection === 'horizental' ? '100%' : '4px'};
+	height: ${(props) =>
+		props.borderDirection === 'horizental' ? '4px' : '100%'};
 	background-color: #eaeaea;
 	cursor: pointer;
 `;
-
-/* const HorizentalBorders = styled.div`
-	top: 0;
-	left: 0;
-	width: 1px;
-`; */
 
 const Board = () => {
 	return (
@@ -79,11 +76,18 @@ const Board = () => {
 							<BoardBoxes key={id}>2</BoardBoxes>
 						)
 					)}
-				<BoardBordersContainer>
+				<BoardBordersContainer borderDirection="column">
+					<BoardBordersContainer borderDirection="row">
+						{Array(6)
+							.fill(undefined)
+							.map((_, id) => (
+								<Borders key={id} borderDirection="vertical"></Borders>
+							))}
+					</BoardBordersContainer>
 					{Array(6)
 						.fill(undefined)
 						.map((_, id) => (
-							<VerticalBorders key={id}></VerticalBorders>
+							<Borders key={id} borderDirection="horizental"></Borders>
 						))}
 				</BoardBordersContainer>
 			</BoardItemsContainer>
