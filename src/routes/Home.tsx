@@ -25,7 +25,6 @@ const BoardLayout = styled.div`
 const BoardItemsContainer = styled.div`
 	position: relative;
 	grid-template-columns: repeat(5, 1fr);
-	background-color: pink;
 	display: grid;
 	height: 100%;
 	aspect-ratio: 1;
@@ -33,13 +32,9 @@ const BoardItemsContainer = styled.div`
 
 const Boxes = styled.div`
 	position: relative;
-	background-color: red;
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	&:hover {
-		background-color: #ffa600;
-	}
 `;
 
 const BoardBordersContainer = styled.div<{ borderDirection: string }>`
@@ -51,15 +46,69 @@ const BoardBordersContainer = styled.div<{ borderDirection: string }>`
 	justify-content: space-between;
 `;
 
-const Borders = styled.div<{
-	borderShape: 'horizental' | 'vertical';
+const BorderWrapper = styled.div<{ direction: direction }>`
+	font-size: 1rem;
+	color: #101010;
+	width: ${(props) => (props.direction === 'vertical' ? '100%' : '20%')};
+	height: ${(props) => (props.direction === 'vertical' ? '20%' : '100%')};
+	position: relative;
+`;
+
+const Border = styled.div<{ direction: direction; isLast: boolean }>`
+	height: calc(100% + 4px);
+	width: calc(100% + 4px);
+	position: absolute;
+	top: -2px;
+	left: -2px;
+	text-align: ${(props) => (props.direction === 'vertical' ? 'start' : 'end')};
+	border-color: red;
+	border-style: solid;
+	border-width: ${(props) =>
+		props.direction === 'vertical'
+			? props.isLast
+				? '0 4px 0 4px'
+				: '0 0 0 4px'
+			: props.isLast
+			? '4px 0 4px 0'
+			: '4px 0 0 0'};
+`;
+
+const BorderStyle = styled.div<{
+	direction: direction;
 }>`
 	position: relative;
-	width: ${(props) => (props.borderShape === 'horizental' ? '100%' : '4px')};
-	height: ${(props) => (props.borderShape === 'horizental' ? '4px' : '100%')};
-	background-color: #eaeaea;
+	width: ${(props) => (props.direction === 'horizental' ? '100%' : '20%')};
+	height: ${(props) => (props.direction === 'horizental' ? '20%' : '100%')};
+	display: flex;
+	flex-direction: ${(props) =>
+		props.direction === 'horizental' ? 'row' : 'column'};
 	cursor: pointer;
 `;
+
+type direction = 'horizental' | 'vertical';
+
+const BorderBox = ({ direction }: { direction: direction }) => {
+	return (
+		<>
+			{Array(5)
+				.fill(undefined)
+				.map((_, borderId) => (
+					<BorderStyle key={borderId} direction={direction}>
+						{Array(5)
+							.fill(undefined)
+							.map((_, sideId) => (
+								<BorderWrapper key={sideId} direction={direction}>
+									<Border
+										direction={direction}
+										isLast={borderId === 4}
+									>{`${borderId}-${sideId}`}</Border>
+								</BorderWrapper>
+							))}
+					</BorderStyle>
+				))}
+		</>
+	);
+};
 
 const Board = () => {
 	return (
@@ -76,47 +125,9 @@ const Board = () => {
 					)}
 				<BoardBordersContainer borderDirection="column">
 					<BoardBordersContainer borderDirection="row">
-						{Array(6)
-							.fill(undefined)
-							.map((_, borderId) => (
-								<Borders key={borderId} borderShape="vertical">
-									{Array(5)
-										.fill(undefined)
-										.map((_, sideId) => (
-											<div
-												key={sideId}
-												style={{
-													fontSize: '1rem',
-													color: '#101010',
-													backgroundColor: 'skyblue',
-													width: '100%',
-													height: '20%',
-												}}
-											>{`${borderId}-${sideId}`}</div>
-										))}
-								</Borders>
-							))}
+						<BorderBox direction="vertical" />
 					</BoardBordersContainer>
-					{Array(6)
-						.fill(undefined)
-						.map((_, borderId) => (
-							<Borders key={borderId} borderShape="horizental">
-								{Array(5)
-									.fill(undefined)
-									.map((_, sideId) => (
-										<div
-											key={sideId}
-											style={{
-												fontSize: '1rem',
-												color: '#101010',
-												backgroundColor: 'yellow',
-												width: '100%',
-												height: '20%',
-											}}
-										>{`${borderId}-${sideId}`}</div>
-									))}
-							</Borders>
-						))}
+					<BorderBox direction="horizental" />
 				</BoardBordersContainer>
 			</BoardItemsContainer>
 		</BoardLayout>
