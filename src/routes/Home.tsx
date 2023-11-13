@@ -31,7 +31,7 @@ const BoardItemsContainer = styled.div`
 	aspect-ratio: 1;
 `;
 
-const BoardBoxes = styled.div`
+const Boxes = styled.div`
 	position: relative;
 	background-color: red;
 	display: flex;
@@ -52,13 +52,11 @@ const BoardBordersContainer = styled.div<{ borderDirection: string }>`
 `;
 
 const Borders = styled.div<{
-	borderDirection: 'horizental' | 'vertical';
+	borderShape: 'horizental' | 'vertical';
 }>`
 	position: relative;
-	width: ${(props) =>
-		props.borderDirection === 'horizental' ? '100%' : '4px'};
-	height: ${(props) =>
-		props.borderDirection === 'horizental' ? '4px' : '100%'};
+	width: ${(props) => (props.borderShape === 'horizental' ? '100%' : '4px')};
+	height: ${(props) => (props.borderShape === 'horizental' ? '4px' : '100%')};
 	background-color: #eaeaea;
 	cursor: pointer;
 `;
@@ -71,23 +69,53 @@ const Board = () => {
 					.fill(undefined)
 					.map((_, id) =>
 						id < 5 || id > 20 || id % 5 === 0 || id % 5 === 4 ? (
-							<BoardBoxes key={id}>1</BoardBoxes>
+							<Boxes key={id}>1</Boxes>
 						) : (
-							<BoardBoxes key={id}>2</BoardBoxes>
+							<Boxes key={id}>2</Boxes>
 						)
 					)}
 				<BoardBordersContainer borderDirection="column">
 					<BoardBordersContainer borderDirection="row">
 						{Array(6)
 							.fill(undefined)
-							.map((_, id) => (
-								<Borders key={id} borderDirection="vertical"></Borders>
+							.map((_, borderId) => (
+								<Borders key={borderId} borderShape="vertical">
+									{Array(5)
+										.fill(undefined)
+										.map((_, sideId) => (
+											<div
+												key={sideId}
+												style={{
+													fontSize: '1rem',
+													color: '#101010',
+													backgroundColor: 'skyblue',
+													width: '100%',
+													height: '20%',
+												}}
+											>{`${borderId}-${sideId}`}</div>
+										))}
+								</Borders>
 							))}
 					</BoardBordersContainer>
 					{Array(6)
 						.fill(undefined)
-						.map((_, id) => (
-							<Borders key={id} borderDirection="horizental"></Borders>
+						.map((_, borderId) => (
+							<Borders key={borderId} borderShape="horizental">
+								{Array(5)
+									.fill(undefined)
+									.map((_, sideId) => (
+										<div
+											key={sideId}
+											style={{
+												fontSize: '1rem',
+												color: '#101010',
+												backgroundColor: 'yellow',
+												width: '100%',
+												height: '20%',
+											}}
+										>{`${borderId}-${sideId}`}</div>
+									))}
+							</Borders>
 						))}
 				</BoardBordersContainer>
 			</BoardItemsContainer>
