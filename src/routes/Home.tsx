@@ -1,5 +1,12 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from 'react';
 import styled from 'styled-components';
+
+interface directionInterface {
+	direction: direction;
+}
+
+type direction = 'horizental' | 'vertical';
 
 const Layout = styled.section`
 	background-color: var(--bgColor-dark);
@@ -46,65 +53,107 @@ const BoardBordersContainer = styled.div<{ borderDirection: string }>`
 	justify-content: space-between;
 `;
 
-const BorderWrapper = styled.div<{ direction: direction }>`
-	font-size: 1rem;
-	color: #101010;
-	width: ${(props) => (props.direction === 'vertical' ? '100%' : '20%')};
-	height: ${(props) => (props.direction === 'vertical' ? '20%' : '100%')};
-	position: relative;
-`;
-
-const Border = styled.div<{ direction: direction; isLast: boolean }>`
-	height: calc(100% + 4px);
-	width: calc(100% + 4px);
-	position: absolute;
-	top: -2px;
-	left: -2px;
-	text-align: ${(props) => (props.direction === 'vertical' ? 'start' : 'end')};
-	border-color: red;
-	border-style: solid;
-	border-width: ${(props) =>
-		props.direction === 'vertical'
-			? props.isLast
-				? '0 4px 0 4px'
-				: '0 0 0 4px'
-			: props.isLast
-			? '4px 0 4px 0'
-			: '4px 0 0 0'};
-`;
-
-const BorderStyle = styled.div<{
-	direction: direction;
-}>`
+const BoxStyle = styled.div<directionInterface>`
 	position: relative;
 	width: ${(props) => (props.direction === 'horizental' ? '100%' : '20%')};
 	height: ${(props) => (props.direction === 'horizental' ? '20%' : '100%')};
-	display: flex;
 	flex-direction: ${(props) =>
 		props.direction === 'horizental' ? 'row' : 'column'};
-	cursor: pointer;
+	display: flex;
+	flex-wrap: wrap;
 `;
 
-type direction = 'horizental' | 'vertical';
+const BoxWrapper = styled.div<directionInterface & { isLast: boolean }>`
+	font-size: 1rem;
+	color: #101010;
+	width: ${(props) => (props.direction === 'horizental' ? '20%' : 0)};
+	height: ${(props) => (props.direction === 'horizental' ? 0 : '20%')};
+	background-color: yellow;
+	position: relative;
+	align-self: ${(props) => (props.isLast ? 'flex-end' : 'flex-start')};
+`;
 
-const BorderBox = ({ direction }: { direction: direction }) => {
+const FakeHover = styled.div``;
+
+const BoxSide = styled.div``;
+
+const BoxHover = styled.div<directionInterface>`
+	width: ${(props) =>
+		props.direction === 'horizental' ? 'calc(100% - 40px)' : '40px'};
+	height: ${(props) =>
+		props.direction === 'horizental' ? '40px' : 'calc(100% - 40px)'};
+	position: absolute;
+	transform: ${(props) =>
+		props.direction === 'horizental' ? 'translateY(-50%)' : 'translateX(-50%)'};
+	top: ${(props) => (props.direction === 'horizental' ? 0 : '20px')};
+	left: ${(props) => (props.direction === 'horizental' ? '20px' : 0)};
+	z-index: 1;
+	display: flex;
+	align-items: ${(props) =>
+		props.direction === 'horizental' ? 'center' : 'center'};
+	justify-content: ${(props) =>
+		props.direction === 'horizental' ? 'center' : 'center'};
+	border-color: red;
+	&:hover {
+		background-color: antiquewhite;
+		border-color: green;
+		z-index: 2;
+	}
+	${FakeHover} {
+		position: absolute;
+		width: ${(props) =>
+			props.direction === 'horizental' ? 'calc(100% + 44px)' : '100%'};
+		height: ${(props) =>
+			props.direction === 'horizental' ? '100%' : 'calc(100% + 44px)'};
+		background-color: inherit;
+		pointer-events: none;
+	}
+	${BoxSide} {
+		width: ${(props) =>
+			props.direction === 'horizental' ? 'calc(100% + 44px)' : 'auto'};
+		height: ${(props) =>
+			props.direction === 'horizental' ? 'auto' : 'calc(100% + 44px)'};
+		border-width: 2px;
+		border-style: solid;
+		border-color: inherit;
+		position: absolute;
+		left: ${(props) => (props.direction === 'horizental' ? '-22px' : 'auto')};
+		top: ${(props) => (props.direction === 'horizental' ? 'auto' : '-22px')};
+	}
+`;
+
+const BoxCollection = ({
+	direction,
+	isLast = false,
+}: directionInterface & { isLast?: boolean }) => {
+	return (
+		<>
+			{Array(5)
+				.fill(undefined)
+				.map((_, sideId) => (
+					<BoxWrapper key={sideId} direction={direction} isLast={isLast}>
+						<BoxHover direction={direction}>
+							<FakeHover></FakeHover>
+							<BoxSide></BoxSide>
+						</BoxHover>
+					</BoxWrapper>
+				))}
+		</>
+	);
+};
+
+const BorderBox = ({ direction }: directionInterface) => {
 	return (
 		<>
 			{Array(5)
 				.fill(undefined)
 				.map((_, borderId) => (
-					<BorderStyle key={borderId} direction={direction}>
-						{Array(5)
-							.fill(undefined)
-							.map((_, sideId) => (
-								<BorderWrapper key={sideId} direction={direction}>
-									<Border
-										direction={direction}
-										isLast={borderId === 4}
-									>{`${borderId}-${sideId}`}</Border>
-								</BorderWrapper>
-							))}
-					</BorderStyle>
+					<BoxStyle key={borderId} direction={direction}>
+						<BoxCollection direction={direction} />
+						{borderId === 4 ? (
+							<BoxCollection direction={direction} isLast={borderId === 4} />
+						) : null}
+					</BoxStyle>
 				))}
 		</>
 	);
