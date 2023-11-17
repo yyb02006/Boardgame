@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 
 interface directionInterface {
@@ -44,16 +44,16 @@ const Boxes = styled.div`
 	align-items: center;
 `;
 
-const BoardBordersContainer = styled.div<{ borderDirection: string }>`
+const BoardBordersContainer = styled.div<{ direction: string }>`
 	position: absolute;
 	width: 100%;
 	height: 100%;
 	display: flex;
-	flex-direction: ${(props) => props.borderDirection};
+	flex-direction: ${(props) => props.direction};
 	justify-content: space-between;
 `;
 
-const BoxStyle = styled.div<directionInterface>`
+const BoxStyle = styled.div<directionInterface & { selected: boolean }>`
 	position: relative;
 	width: ${(props) => (props.direction === 'horizental' ? '100%' : '20%')};
 	height: ${(props) => (props.direction === 'horizental' ? '20%' : '100%')};
@@ -61,6 +61,7 @@ const BoxStyle = styled.div<directionInterface>`
 		props.direction === 'horizental' ? 'row' : 'column'};
 	display: flex;
 	flex-wrap: wrap;
+	background-color: ${(props) => (props.selected ? 'yellow' : 'transparent')};
 `;
 
 const BoxWrapper = styled.div<directionInterface & { isLast: boolean }>`
@@ -119,22 +120,33 @@ const BoxHover = styled.div<directionInterface>`
 		position: absolute;
 		left: ${(props) => (props.direction === 'horizental' ? '-22px' : 'auto')};
 		top: ${(props) => (props.direction === 'horizental' ? 'auto' : '-22px')};
+		pointer-events: none;
 	}
 `;
 
 const BoxCollection = ({
 	direction,
+	borderId,
 	isLast = false,
-}: directionInterface & { isLast?: boolean }) => {
+}: directionInterface & { borderId: number; isLast?: boolean }) => {
+	const [selected, setSelected] = useState();
+	const onBoxClick = (isLast: boolean) => {
+		console.log(direction, borderId, isLast);
+	};
 	return (
 		<>
 			{Array(5)
 				.fill(undefined)
 				.map((_, sideId) => (
 					<BoxWrapper key={sideId} direction={direction} isLast={isLast}>
-						<BoxHover direction={direction}>
-							<FakeHover></FakeHover>
-							<BoxSide></BoxSide>
+						<BoxHover
+							onClick={() => {
+								onBoxClick(isLast);
+							}}
+							direction={direction}
+						>
+							<FakeHover />
+							<BoxSide />
 						</BoxHover>
 					</BoxWrapper>
 				))}
@@ -148,10 +160,14 @@ const BorderBox = ({ direction }: directionInterface) => {
 			{Array(5)
 				.fill(undefined)
 				.map((_, borderId) => (
-					<BoxStyle key={borderId} direction={direction}>
-						<BoxCollection direction={direction} />
+					<BoxStyle key={borderId} direction={direction} selected={false}>
+						<BoxCollection direction={direction} borderId={borderId} />
 						{borderId === 4 ? (
-							<BoxCollection direction={direction} isLast={borderId === 4} />
+							<BoxCollection
+								direction={direction}
+								isLast={borderId === 4}
+								borderId={borderId}
+							/>
 						) : null}
 					</BoxStyle>
 				))}
@@ -172,8 +188,8 @@ const Board = () => {
 							<Boxes key={id}>2</Boxes>
 						)
 					)}
-				<BoardBordersContainer borderDirection="column">
-					<BoardBordersContainer borderDirection="row">
+				<BoardBordersContainer direction="column">
+					<BoardBordersContainer direction="row">
 						<BorderBox direction="vertical" />
 					</BoardBordersContainer>
 					<BorderBox direction="horizental" />
