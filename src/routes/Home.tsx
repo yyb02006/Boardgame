@@ -8,6 +8,8 @@ interface directionInterface {
 
 type direction = 'horizental' | 'vertical';
 
+type setSelected = React.Dispatch<React.SetStateAction<selected>>;
+
 const Layout = styled.section`
 	background-color: var(--bgColor-dark);
 	color: #eaeaea;
@@ -44,16 +46,16 @@ const Boxes = styled.div`
 	align-items: center;
 `;
 
-const BoardBordersContainer = styled.div<{ direction: string }>`
+const BoardBordersContainer = styled.div<{ $borderDirection: string }>`
 	position: absolute;
 	width: 100%;
 	height: 100%;
 	display: flex;
-	flex-direction: ${(props) => props.direction};
+	flex-direction: ${(props) => props.$borderDirection};
 	justify-content: space-between;
 `;
 
-const BoxStyle = styled.div<directionInterface & { selected: boolean }>`
+const BoxStyle = styled.div<directionInterface & { $isSelected: boolean }>`
 	position: relative;
 	width: ${(props) => (props.direction === 'horizental' ? '100%' : '20%')};
 	height: ${(props) => (props.direction === 'horizental' ? '20%' : '100%')};
@@ -61,17 +63,17 @@ const BoxStyle = styled.div<directionInterface & { selected: boolean }>`
 		props.direction === 'horizental' ? 'row' : 'column'};
 	display: flex;
 	flex-wrap: wrap;
-	background-color: ${(props) => (props.selected ? 'yellow' : 'transparent')};
+	background-color: ${(props) =>
+		props.$isSelected ? 'yellow' : 'transparent'};
 `;
 
-const BoxWrapper = styled.div<directionInterface & { isLast: boolean }>`
+const BoxWrapper = styled.div<directionInterface & { $isLast: boolean }>`
 	font-size: 1rem;
 	color: #101010;
 	width: ${(props) => (props.direction === 'horizental' ? '20%' : 0)};
 	height: ${(props) => (props.direction === 'horizental' ? 0 : '20%')};
-	background-color: yellow;
 	position: relative;
-	align-self: ${(props) => (props.isLast ? 'flex-end' : 'flex-start')};
+	align-self: ${(props) => (props.$isLast ? 'flex-end' : 'flex-start')};
 `;
 
 const FakeHover = styled.div``;
@@ -124,24 +126,34 @@ const BoxHover = styled.div<directionInterface>`
 	}
 `;
 
+interface boxCollectionProps extends directionInterface {
+	setSelected: setSelected;
+	borderId: number;
+	isLast?: boolean;
+}
+
 const BoxCollection = ({
 	direction,
 	borderId,
 	isLast = false,
-}: directionInterface & { borderId: number; isLast?: boolean }) => {
-	const [selected, setSelected] = useState();
-	const onBoxClick = (isLast: boolean) => {
-		console.log(direction, borderId, isLast);
+	setSelected,
+}: boxCollectionProps) => {
+	const onBoxClick = (sideId: number) => {
+		if (direction === 'horizental') {
+			setSelected((p) => ({ ...p, horizental: [...p.horizental, sideId] }));
+		} else {
+			setSelected((p) => ({ ...p, vertical: [...p.vertical, sideId] }));
+		}
 	};
 	return (
 		<>
 			{Array(5)
 				.fill(undefined)
 				.map((_, sideId) => (
-					<BoxWrapper key={sideId} direction={direction} isLast={isLast}>
+					<BoxWrapper key={sideId} direction={direction} $isLast={isLast}>
 						<BoxHover
 							onClick={() => {
-								onBoxClick(isLast);
+								onBoxClick(sideId);
 							}}
 							direction={direction}
 						>
@@ -154,19 +166,28 @@ const BoxCollection = ({
 	);
 };
 
-const BorderBox = ({ direction }: directionInterface) => {
+interface borderBoxProps extends directionInterface {
+	setSelected: setSelected;
+}
+
+const BorderBox = ({ direction, setSelected }: borderBoxProps) => {
 	return (
 		<>
 			{Array(5)
 				.fill(undefined)
 				.map((_, borderId) => (
-					<BoxStyle key={borderId} direction={direction} selected={false}>
-						<BoxCollection direction={direction} borderId={borderId} />
+					<BoxStyle key={borderId} direction={direction} $isSelected={false}>
+						<BoxCollection
+							direction={direction}
+							borderId={borderId}
+							setSelected={setSelected}
+						/>
 						{borderId === 4 ? (
 							<BoxCollection
 								direction={direction}
 								isLast={borderId === 4}
 								borderId={borderId}
+								setSelected={setSelected}
 							/>
 						) : null}
 					</BoxStyle>
@@ -175,7 +196,17 @@ const BorderBox = ({ direction }: directionInterface) => {
 	);
 };
 
+interface selected {
+	vertical: number[];
+	horizental: number[];
+}
+
 const Board = () => {
+	const [selected, setSelected] = useState<selected>({
+		vertical: [],
+		horizental: [],
+	});
+	console.log(selected);
 	return (
 		<BoardLayout>
 			<BoardItemsContainer>
@@ -188,11 +219,11 @@ const Board = () => {
 							<Boxes key={id}>2</Boxes>
 						)
 					)}
-				<BoardBordersContainer direction="column">
-					<BoardBordersContainer direction="row">
-						<BorderBox direction="vertical" />
+				<BoardBordersContainer $borderDirection="column">
+					<BoardBordersContainer $borderDirection="row">
+						<BorderBox direction="vertical" setSelected={setSelected} />
 					</BoardBordersContainer>
-					<BorderBox direction="horizental" />
+					<BorderBox direction="horizental" setSelected={setSelected} />
 				</BoardBordersContainer>
 			</BoardItemsContainer>
 		</BoardLayout>
