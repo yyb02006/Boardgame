@@ -140,9 +140,15 @@ const BoxCollection = ({
 }: boxCollectionProps) => {
 	const onBoxClick = (sideId: number) => {
 		if (direction === 'horizental') {
-			setSelected((p) => ({ ...p, horizental: [...p.horizental, sideId] }));
+			setSelected((p) => ({
+				...p,
+				horizental: [...p.horizental, { border: borderId, side: sideId }],
+			}));
 		} else {
-			setSelected((p) => ({ ...p, vertical: [...p.vertical, sideId] }));
+			setSelected((p) => ({
+				...p,
+				vertical: [...p.vertical, { border: borderId, side: sideId }],
+			}));
 		}
 	};
 	return (
@@ -197,8 +203,8 @@ const BorderBox = ({ direction, setSelected }: borderBoxProps) => {
 };
 
 interface selected {
-	vertical: number[];
-	horizental: number[];
+	vertical: Array<{ border: number; side: number }>;
+	horizental: Array<{ border: number; side: number }>;
 }
 
 const Board = () => {
