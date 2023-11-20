@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 interface directionInterface {
@@ -39,11 +39,13 @@ const BoardItemsContainer = styled.div`
 	aspect-ratio: 1;
 `;
 
-const Boxes = styled.div`
+const Boxes = styled.div<{ $isSurrounded: boolean }>`
 	position: relative;
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	background-color: ${(props) =>
+		props.$isSurrounded ? 'yellow' : 'transperant'};
 `;
 
 const BoardBordersContainer = styled.div<{ $borderDirection: string }>`
@@ -80,7 +82,7 @@ const FakeHover = styled.div``;
 
 const BoxSide = styled.div``;
 
-const BoxHover = styled.div<directionInterface>`
+const BoxHover = styled.div<directionInterface & { $isSelected: boolean }>`
 	width: ${(props) =>
 		props.direction === 'horizental' ? 'calc(100% - 40px)' : '40px'};
 	height: ${(props) =>
@@ -96,7 +98,7 @@ const BoxHover = styled.div<directionInterface>`
 		props.direction === 'horizental' ? 'center' : 'center'};
 	justify-content: ${(props) =>
 		props.direction === 'horizental' ? 'center' : 'center'};
-	border-color: red;
+	border-color: ${(props) => (props.$isSelected ? 'red' : 'yellow')};
 	&:hover {
 		background-color: antiquewhite;
 		border-color: green;
@@ -130,24 +132,32 @@ interface boxCollectionProps extends directionInterface {
 	setSelected: setSelected;
 	borderId: number;
 	isLast?: boolean;
+	selected: selected;
 }
 
 const BoxCollection = ({
 	direction,
 	borderId,
 	isLast = false,
+	selected,
 	setSelected,
 }: boxCollectionProps) => {
 	const onBoxClick = (sideId: number) => {
 		if (direction === 'horizental') {
 			setSelected((p) => ({
 				...p,
-				horizental: [...p.horizental, { border: borderId, side: sideId }],
+				horizental: [
+					...p.horizental,
+					{ border: borderId, side: sideId, isSelected: true },
+				],
 			}));
 		} else {
 			setSelected((p) => ({
 				...p,
-				vertical: [...p.vertical, { border: borderId, side: sideId }],
+				vertical: [
+					...p.vertical,
+					{ border: borderId, side: sideId, isSelected: true },
+				],
 			}));
 		}
 	};
@@ -162,6 +172,11 @@ const BoxCollection = ({
 								onBoxClick(sideId);
 							}}
 							direction={direction}
+							$isSelected={
+								!!selected[direction].filter(
+									(item) => item.border === borderId && item.side === sideId
+								)[0]?.isSelected
+							}
 						>
 							<FakeHover />
 							<BoxSide />
@@ -174,9 +189,10 @@ const BoxCollection = ({
 
 interface borderBoxProps extends directionInterface {
 	setSelected: setSelected;
+	selected: selected;
 }
 
-const BorderBox = ({ direction, setSelected }: borderBoxProps) => {
+const BorderBox = ({ direction, selected, setSelected }: borderBoxProps) => {
 	return (
 		<>
 			{Array(5)
@@ -186,6 +202,7 @@ const BorderBox = ({ direction, setSelected }: borderBoxProps) => {
 						<BoxCollection
 							direction={direction}
 							borderId={borderId}
+							selected={selected}
 							setSelected={setSelected}
 						/>
 						{borderId === 4 ? (
@@ -193,6 +210,7 @@ const BorderBox = ({ direction, setSelected }: borderBoxProps) => {
 								direction={direction}
 								isLast={borderId === 4}
 								borderId={borderId}
+								selected={selected}
 								setSelected={setSelected}
 							/>
 						) : null}
@@ -202,9 +220,15 @@ const BorderBox = ({ direction, setSelected }: borderBoxProps) => {
 	);
 };
 
+interface borderState {
+	border: number;
+	side: number;
+	isSelected: boolean;
+}
+
 interface selected {
-	vertical: Array<{ border: number; side: number }>;
-	horizental: Array<{ border: number; side: number }>;
+	vertical: borderState[];
+	horizental: borderState[];
 }
 
 const Board = () => {
@@ -212,24 +236,47 @@ const Board = () => {
 		vertical: [],
 		horizental: [],
 	});
+	const [boxes, setBoxes] = useState<
+		Array<{ id: number; isPartialEnclosure: boolean; isSurrounded: boolean }>
+	>(
+		Array(25)
+			.fill({
+				id: 0,
+				isPartialEnclosure: false,
+				isSurrounded: false,
+			})
+			.map((box, id) => ({ ...box, id }))
+	);
+	/* useEffect(()=>{selected},[selected]) */
 	console.log(selected);
+
 	return (
 		<BoardLayout>
 			<BoardItemsContainer>
-				{Array(25)
-					.fill(undefined)
-					.map((_, id) =>
-						id < 5 || id > 20 || id % 5 === 0 || id % 5 === 4 ? (
-							<Boxes key={id}>1</Boxes>
-						) : (
-							<Boxes key={id}>2</Boxes>
-						)
-					)}
+				{boxes.map((box, id) =>
+					id < 5 || id > 20 || id % 5 === 0 || id % 5 === 4 ? (
+						<Boxes key={box.id} $isSurrounded={box.isSurrounded}>
+							{box.id}
+						</Boxes>
+					) : (
+						<Boxes key={box.id} $isSurrounded={box.isSurrounded}>
+							{box.id}
+						</Boxes>
+					)
+				)}
 				<BoardBordersContainer $borderDirection="column">
 					<BoardBordersContainer $borderDirection="row">
-						<BorderBox direction="vertical" setSelected={setSelected} />
+						<BorderBox
+							direction="vertical"
+							setSelected={setSelected}
+							selected={selected}
+						/>
 					</BoardBordersContainer>
-					<BorderBox direction="horizental" setSelected={setSelected} />
+					<BorderBox
+						direction="horizental"
+						setSelected={setSelected}
+						selected={selected}
+					/>
 				</BoardBordersContainer>
 			</BoardItemsContainer>
 		</BoardLayout>
