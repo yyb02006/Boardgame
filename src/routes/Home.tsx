@@ -99,8 +99,9 @@ const BoxHover = styled.div<directionInterface & { $isSelected: boolean }>`
 	justify-content: ${(props) =>
 		props.direction === 'horizental' ? 'center' : 'center'};
 	border-color: ${(props) => (props.$isSelected ? 'red' : 'yellow')};
+	z-index: ${(props) => (props.$isSelected ? 2 : 1)};
 	&:hover {
-		background-color: antiquewhite;
+		background-color: blueviolet;
 		border-color: green;
 		z-index: 2;
 	}
@@ -143,22 +144,22 @@ const BoxCollection = ({
 	setSelected,
 }: boxCollectionProps) => {
 	const onBoxClick = (sideId: number) => {
+		const handleSelectedBox = (kind: direction) => {
+			selected[kind].filter(
+				(item) => item.border === borderId && item.side === sideId
+			).length > 0 ||
+				setSelected((p) => ({
+					...p,
+					[kind]: [
+						...p[kind],
+						{ border: borderId, side: sideId, isSelected: true },
+					],
+				}));
+		};
 		if (direction === 'horizental') {
-			setSelected((p) => ({
-				...p,
-				horizental: [
-					...p.horizental,
-					{ border: borderId, side: sideId, isSelected: true },
-				],
-			}));
+			handleSelectedBox(direction);
 		} else {
-			setSelected((p) => ({
-				...p,
-				vertical: [
-					...p.vertical,
-					{ border: borderId, side: sideId, isSelected: true },
-				],
-			}));
+			handleSelectedBox(direction);
 		}
 	};
 	return (
@@ -209,7 +210,7 @@ const BorderBox = ({ direction, selected, setSelected }: borderBoxProps) => {
 							<BoxCollection
 								direction={direction}
 								isLast={borderId === 4}
-								borderId={borderId}
+								borderId={borderId + 1}
 								selected={selected}
 								setSelected={setSelected}
 							/>
