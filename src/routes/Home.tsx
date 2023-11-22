@@ -144,7 +144,9 @@ const BoxCollection = ({
 	setSelected,
 }: boxCollectionProps) => {
 	const onBoxClick = (sideId: number) => {
-		const handleSelectedBox = (kind: direction) => {
+		console.log(borderId, sideId);
+
+		const handleSelected = (kind: direction) => {
 			selected[kind].filter(
 				(item) => item.border === borderId && item.side === sideId
 			).length > 0 ||
@@ -156,29 +158,29 @@ const BoxCollection = ({
 					],
 				}));
 		};
-		if (direction === 'horizental') {
-			handleSelectedBox(direction);
-			console.log(
-				!selected.horizental
+		const handleBox = (kind: direction) => {
+			const processSide = () =>
+				selected[kind === 'horizental' ? 'vertical' : 'horizental']
+					.filter(
+						(item) =>
+							(item.border === sideId + 1 || item.border === sideId) &&
+							item.side === borderId - 1
+					)
+					.map((arr) => arr.isSelected);
+			return (
+				selected[kind === 'horizental' ? 'horizental' : 'vertical']
 					.filter(
 						(item) => item.border === borderId - 1 && item.side === sideId
 					)
 					.map((arr) => arr.isSelected)
-					.find((el) => !el) &&
-					!selected.vertical
-						.filter(
-							(item) =>
-								(item.border === sideId + 1 || item.border === sideId) &&
-								item.side === borderId - 1
-						)
-						.map((arr) => arr.isSelected)
-						.find((el) => !el)
-					? 'is Surrounded'
-					: 'is not Surrounded'
+					.every((el) => el) &&
+				processSide().every((el) => el) &&
+				processSide().length === 2
 			);
-		} else {
-			handleSelectedBox(direction);
-		}
+		};
+
+		handleSelected(direction);
+		console.log(handleBox(direction));
 	};
 	return (
 		<>
