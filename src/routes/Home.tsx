@@ -158,6 +158,24 @@ const BoxCollection = ({
 		};
 		if (direction === 'horizental') {
 			handleSelectedBox(direction);
+			console.log(
+				!selected.horizental
+					.filter(
+						(item) => item.border === borderId - 1 && item.side === sideId
+					)
+					.map((arr) => arr.isSelected)
+					.find((el) => !el) &&
+					!selected.vertical
+						.filter(
+							(item) =>
+								(item.border === sideId + 1 || item.border === sideId) &&
+								item.side === borderId - 1
+						)
+						.map((arr) => arr.isSelected)
+						.find((el) => !el)
+					? 'is Surrounded'
+					: 'is not Surrounded'
+			);
 		} else {
 			handleSelectedBox(direction);
 		}
