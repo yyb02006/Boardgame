@@ -10,6 +10,16 @@ type direction = 'horizental' | 'vertical';
 
 type setSelected = React.Dispatch<React.SetStateAction<selected>>;
 
+type setBoxes = React.Dispatch<
+	React.SetStateAction<
+		Array<{
+			id: number;
+			isPartialSurrounded: boolean;
+			isSurrounded: boolean;
+		}>
+	>
+>;
+
 const Layout = styled.section`
 	background-color: var(--bgColor-dark);
 	color: #eaeaea;
@@ -134,6 +144,7 @@ interface boxCollectionProps extends directionInterface {
 	borderId: number;
 	isLast?: boolean;
 	selected: selected;
+	setBoxes: setBoxes;
 }
 
 const BoxCollection = ({
@@ -142,6 +153,7 @@ const BoxCollection = ({
 	isLast = false,
 	selected,
 	setSelected,
+	setBoxes,
 }: boxCollectionProps) => {
 	const onBoxClick = (sideId: number) => {
 		console.log(borderId, sideId);
@@ -168,19 +180,29 @@ const BoxCollection = ({
 					)
 					.map((arr) => arr.isSelected);
 			return (
-				selected[kind === 'horizental' ? 'horizental' : 'vertical']
+				selected[kind]
 					.filter(
 						(item) => item.border === borderId - 1 && item.side === sideId
 					)
-					.map((arr) => arr.isSelected)
-					.every((el) => el) &&
+					.map((arr) => arr.isSelected).length > 0 &&
 				processSide().every((el) => el) &&
 				processSide().length === 2
 			);
 		};
-
 		handleSelected(direction);
 		console.log(handleBox(direction));
+		console.log((borderId - 1) * 5 + sideId);
+		if (handleBox(direction)) {
+			setBoxes((p) => {
+				const newBoxes = [...p];
+				newBoxes[
+					direction === 'horizental'
+						? (borderId - 1) * 5 + sideId
+						: borderId - 1 + sideId * 5
+				].isSurrounded = true;
+				return newBoxes;
+			});
+		}
 	};
 	return (
 		<>
@@ -211,9 +233,15 @@ const BoxCollection = ({
 interface borderBoxProps extends directionInterface {
 	setSelected: setSelected;
 	selected: selected;
+	setBoxes: setBoxes;
 }
 
-const BorderBox = ({ direction, selected, setSelected }: borderBoxProps) => {
+const BorderBox = ({
+	direction,
+	selected,
+	setSelected,
+	setBoxes,
+}: borderBoxProps) => {
 	return (
 		<>
 			{Array(5)
@@ -225,6 +253,7 @@ const BorderBox = ({ direction, selected, setSelected }: borderBoxProps) => {
 							borderId={borderId}
 							selected={selected}
 							setSelected={setSelected}
+							setBoxes={setBoxes}
 						/>
 						{borderId === 4 ? (
 							<BoxCollection
@@ -233,6 +262,7 @@ const BorderBox = ({ direction, selected, setSelected }: borderBoxProps) => {
 								borderId={borderId + 1}
 								selected={selected}
 								setSelected={setSelected}
+								setBoxes={setBoxes}
 							/>
 						) : null}
 					</BoxStyle>
@@ -258,15 +288,13 @@ const Board = () => {
 		horizental: [],
 	});
 	const [boxes, setBoxes] = useState<
-		Array<{ id: number; isPartialEnclosure: boolean; isSurrounded: boolean }>
+		Array<{ id: number; isPartialSurrounded: boolean; isSurrounded: boolean }>
 	>(
-		Array(25)
-			.fill({
-				id: 0,
-				isPartialEnclosure: false,
-				isSurrounded: false,
-			})
-			.map((box, id) => ({ ...box, id }))
+		Array.from({ length: 25 }, (_, id) => ({
+			id,
+			isPartialSurrounded: false,
+			isSurrounded: false,
+		}))
 	);
 	/* useEffect(()=>{selected},[selected]) */
 	console.log(selected);
@@ -291,12 +319,14 @@ const Board = () => {
 							direction="vertical"
 							setSelected={setSelected}
 							selected={selected}
+							setBoxes={setBoxes}
 						/>
 					</BoardBordersContainer>
 					<BorderBox
 						direction="horizental"
 						setSelected={setSelected}
 						selected={selected}
+						setBoxes={setBoxes}
 					/>
 				</BoardBordersContainer>
 			</BoardItemsContainer>
