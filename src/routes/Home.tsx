@@ -55,7 +55,7 @@ const Boxes = styled.div<{ $isSurrounded: boolean }>`
 	justify-content: center;
 	align-items: center;
 	background-color: ${(props) =>
-		props.$isSurrounded ? 'yellow' : 'transperant'};
+		props.$isSurrounded ? '#1696eb' : 'transperant'};
 `;
 
 const BoardBordersContainer = styled.div<{ $borderDirection: string }>`
@@ -67,7 +67,7 @@ const BoardBordersContainer = styled.div<{ $borderDirection: string }>`
 	justify-content: space-between;
 `;
 
-const BoxStyle = styled.div<directionInterface & { $isSelected: boolean }>`
+const BoxStyle = styled.div<directionInterface>`
 	position: relative;
 	width: ${(props) => (props.direction === 'horizental' ? '100%' : '20%')};
 	height: ${(props) => (props.direction === 'horizental' ? '20%' : '100%')};
@@ -75,8 +75,6 @@ const BoxStyle = styled.div<directionInterface & { $isSelected: boolean }>`
 		props.direction === 'horizental' ? 'row' : 'column'};
 	display: flex;
 	flex-wrap: wrap;
-	background-color: ${(props) =>
-		props.$isSelected ? 'yellow' : 'transparent'};
 `;
 
 const BoxWrapper = styled.div<directionInterface & { $isLast: boolean }>`
@@ -156,7 +154,7 @@ const BoxCollection = ({
 	setBoxes,
 }: boxCollectionProps) => {
 	const onBoxClick = (sideId: number) => {
-		console.log(borderId, sideId);
+		console.log('border = ' + borderId, 'side = ' + sideId);
 
 		const handleSelected = (kind: direction) => {
 			selected[kind].filter(
@@ -170,38 +168,46 @@ const BoxCollection = ({
 					],
 				}));
 		};
-		const handleBox = (kind: direction) => {
-			const processSide = () =>
+		const handleBox = (kind: direction, isUpPos: boolean = true) => {
+			const processHorizental = () =>
 				selected[kind === 'horizental' ? 'vertical' : 'horizental']
 					.filter(
 						(item) =>
-							(item.border === sideId + 1 || item.border === sideId) &&
-							item.side === borderId - 1
+							(item.border === sideId || item.border === sideId + 1) &&
+							item.side === (isUpPos ? borderId - 1 : borderId)
+					)
+					.map((arr) => arr.isSelected);
+			const processVertical = () =>
+				selected[kind]
+					.filter(
+						(item) =>
+							item.border === (isUpPos ? borderId - 1 : borderId + 1) &&
+							item.side === sideId
 					)
 					.map((arr) => arr.isSelected);
 			return (
-				selected[kind]
-					.filter(
-						(item) => item.border === borderId - 1 && item.side === sideId
-					)
-					.map((arr) => arr.isSelected).length > 0 &&
-				processSide().every((el) => el) &&
-				processSide().length === 2
+				processVertical().length > 0 &&
+				processHorizental().every((el) => el) &&
+				processHorizental().length === 2
 			);
 		};
 		handleSelected(direction);
-		console.log(handleBox(direction));
+		console.log(handleBox(direction, false));
 		console.log((borderId - 1) * 5 + sideId);
-		if (handleBox(direction)) {
+		const updateBoxState = (truePart: number, falsePart: number) => {
 			setBoxes((p) => {
 				const newBoxes = [...p];
 				newBoxes[
-					direction === 'horizental'
-						? (borderId - 1) * 5 + sideId
-						: borderId - 1 + sideId * 5
+					direction === 'horizental' ? truePart : falsePart
 				].isSurrounded = true;
 				return newBoxes;
 			});
+		};
+		if (handleBox(direction)) {
+			updateBoxState((borderId - 1) * 5 + sideId, borderId - 1 + sideId * 5);
+		}
+		if (handleBox(direction, false)) {
+			updateBoxState(borderId * 5 + sideId, borderId + sideId * 5);
 		}
 	};
 	return (
@@ -247,7 +253,7 @@ const BorderBox = ({
 			{Array(5)
 				.fill(undefined)
 				.map((_, borderId) => (
-					<BoxStyle key={borderId} direction={direction} $isSelected={false}>
+					<BoxStyle key={borderId} direction={direction}>
 						<BoxCollection
 							direction={direction}
 							borderId={borderId}
