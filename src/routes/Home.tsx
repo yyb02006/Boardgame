@@ -142,6 +142,7 @@ interface boxCollectionProps extends directionInterface {
 	borderId: number;
 	isLast?: boolean;
 	selected: selected;
+	boxes: boxes;
 	setBoxes: setBoxes;
 }
 
@@ -150,12 +151,19 @@ const BoxCollection = ({
 	borderId,
 	isLast = false,
 	selected,
+	boxes,
 	setSelected,
 	setBoxes,
 }: boxCollectionProps) => {
 	const onBoxClick = (sideId: number) => {
 		console.log('border = ' + borderId, 'side = ' + sideId);
-
+		const boxLocationAtUpPos = (
+			direction: direction,
+			isUpPos: boolean = true
+		) =>
+			direction === 'horizental'
+				? (borderId - (isUpPos ? 1 : 0)) * 5 + sideId
+				: sideId * 5 + borderId - (isUpPos ? 1 : 0);
 		const handleSelected = (kind: direction) => {
 			selected[kind].filter(
 				(item) => item.border === borderId && item.side === sideId
@@ -185,15 +193,19 @@ const BoxCollection = ({
 							item.side === sideId
 					)
 					.map((arr) => arr.isSelected);
-			return (
+
+			if (processVertical().length > 0 && processHorizental().length === 2) {
+				return true;
+			} else if (
 				processVertical().length > 0 &&
-				processHorizental().every((el) => el) &&
-				processHorizental().length === 2
-			);
+				processHorizental().length === 1
+			) {
+				return boxLocationAtUpPos(direction, isUpPos);
+			} else {
+				return false;
+			}
 		};
 		handleSelected(direction);
-		console.log(handleBox(direction, false));
-		console.log((borderId - 1) * 5 + sideId);
 		const updateBoxState = (truePart: number, falsePart: number) => {
 			setBoxes((p) => {
 				const newBoxes = [...p];
@@ -203,11 +215,16 @@ const BoxCollection = ({
 				return newBoxes;
 			});
 		};
-		if (handleBox(direction)) {
+		if (handleBox(direction) === true) {
 			updateBoxState((borderId - 1) * 5 + sideId, borderId - 1 + sideId * 5);
+			console.log((borderId - 1) * 5 + sideId);
 		}
-		if (handleBox(direction, false)) {
+		if (handleBox(direction, false) === true) {
 			updateBoxState(borderId * 5 + sideId, borderId + sideId * 5);
+			console.log((sideId - 1) * 5 + borderId);
+		}
+		if (typeof handleBox(direction) === 'number') {
+			console.log(handleBox(direction), handleBox(direction, false));
 		}
 	};
 	return (
@@ -240,11 +257,13 @@ interface borderBoxProps extends directionInterface {
 	setSelected: setSelected;
 	selected: selected;
 	setBoxes: setBoxes;
+	boxes: boxes;
 }
 
 const BorderBox = ({
 	direction,
 	selected,
+	boxes,
 	setSelected,
 	setBoxes,
 }: borderBoxProps) => {
@@ -258,6 +277,7 @@ const BorderBox = ({
 							direction={direction}
 							borderId={borderId}
 							selected={selected}
+							boxes={boxes}
 							setSelected={setSelected}
 							setBoxes={setBoxes}
 						/>
@@ -267,6 +287,7 @@ const BorderBox = ({
 								isLast={borderId === 4}
 								borderId={borderId + 1}
 								selected={selected}
+								boxes={boxes}
 								setSelected={setSelected}
 								setBoxes={setBoxes}
 							/>
@@ -288,6 +309,12 @@ interface selected {
 	horizental: borderState[];
 }
 
+type boxes = Array<{
+	id: number;
+	isPartialSurrounded: boolean;
+	isSurrounded: boolean;
+}>;
+
 const Board = () => {
 	const [selected, setSelected] = useState<selected>({
 		vertical: [],
@@ -302,8 +329,9 @@ const Board = () => {
 			isSurrounded: false,
 		}))
 	);
-	/* useEffect(()=>{selected},[selected]) */
-	console.log(selected);
+	useEffect(() => {
+		/* for (let i = 0; i++; i < selected.horizental.length) {} */
+	}, [selected]);
 
 	return (
 		<BoardLayout>
@@ -326,6 +354,7 @@ const Board = () => {
 							setSelected={setSelected}
 							selected={selected}
 							setBoxes={setBoxes}
+							boxes={boxes}
 						/>
 					</BoardBordersContainer>
 					<BorderBox
@@ -333,6 +362,7 @@ const Board = () => {
 						setSelected={setSelected}
 						selected={selected}
 						setBoxes={setBoxes}
+						boxes={boxes}
 					/>
 				</BoardBordersContainer>
 			</BoardItemsContainer>
