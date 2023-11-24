@@ -156,14 +156,13 @@ const BoxCollection = ({
 	setBoxes,
 }: boxCollectionProps) => {
 	const onBoxClick = (sideId: number) => {
-		console.log('border = ' + borderId, 'side = ' + sideId);
-		const boxLocationAtUpPos = (
-			direction: direction,
-			isUpPos: boolean = true
-		) =>
+		console.log('border = ' + borderId, 'side = ' + sideId, boxes);
+
+		const boxLocation = (direction: direction, isUpPos: boolean = true) =>
 			direction === 'horizental'
 				? (borderId - (isUpPos ? 1 : 0)) * 5 + sideId
 				: sideId * 5 + borderId - (isUpPos ? 1 : 0);
+
 		const handleSelected = (kind: direction) => {
 			selected[kind].filter(
 				(item) => item.border === borderId && item.side === sideId
@@ -176,6 +175,7 @@ const BoxCollection = ({
 					],
 				}));
 		};
+
 		const handleBox = (kind: direction, isUpPos: boolean = true) => {
 			const processHorizental = () =>
 				selected[kind === 'horizental' ? 'vertical' : 'horizental']
@@ -193,40 +193,61 @@ const BoxCollection = ({
 							item.side === sideId
 					)
 					.map((arr) => arr.isSelected);
-
 			if (processVertical().length > 0 && processHorizental().length === 2) {
 				return true;
 			} else if (
 				processVertical().length > 0 &&
 				processHorizental().length === 1
 			) {
-				return boxLocationAtUpPos(direction, isUpPos);
+				return boxLocation(direction, isUpPos);
 			} else {
 				return false;
 			}
 		};
-		handleSelected(direction);
-		const updateBoxState = (truePart: number, falsePart: number) => {
+
+		const updateBoxState = (
+			index: number,
+			state: 'isSurrounded' | 'isPartialSurrounded'
+		) => {
 			setBoxes((p) => {
 				const newBoxes = [...p];
-				newBoxes[
-					direction === 'horizental' ? truePart : falsePart
-				].isSurrounded = true;
+				newBoxes[index][state] = true;
 				return newBoxes;
 			});
 		};
+
+		handleSelected(direction);
+
+		/* When Upside Border Clicked */
 		if (handleBox(direction) === true) {
-			updateBoxState((borderId - 1) * 5 + sideId, borderId - 1 + sideId * 5);
-			console.log((borderId - 1) * 5 + sideId);
+			updateBoxState(
+				direction === 'horizental'
+					? boxLocation('horizental')
+					: boxLocation('vertical'),
+				'isSurrounded'
+			);
+		} else if (typeof handleBox(direction) === 'number') {
+			updateBoxState(handleBox(direction) as number, 'isPartialSurrounded');
+			console.log(handleBox(direction));
 		}
+
+		/* When Downside Border Clicked */
 		if (handleBox(direction, false) === true) {
-			updateBoxState(borderId * 5 + sideId, borderId + sideId * 5);
-			console.log((sideId - 1) * 5 + borderId);
-		}
-		if (typeof handleBox(direction) === 'number') {
-			console.log(handleBox(direction), handleBox(direction, false));
+			updateBoxState(
+				direction === 'horizental'
+					? boxLocation('horizental', false)
+					: boxLocation('vertical', false),
+				'isSurrounded'
+			);
+		} else if (typeof handleBox(direction, false) === 'number') {
+			updateBoxState(
+				handleBox(direction, false) as number,
+				'isPartialSurrounded'
+			);
+			console.log(handleBox(direction, false));
 		}
 	};
+
 	return (
 		<>
 			{Array(5)
