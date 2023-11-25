@@ -158,10 +158,14 @@ const BoxCollection = ({
 	const onBoxClick = (sideId: number) => {
 		console.log('border = ' + borderId, 'side = ' + sideId, boxes);
 
-		const boxLocation = (direction: direction, isUpPos: boolean = true) =>
+		const boxLocation = (
+			direction: direction,
+			isUpPos: boolean = true,
+			option: number = 0
+		) =>
 			direction === 'horizental'
-				? (borderId - (isUpPos ? 1 : 0)) * 5 + sideId
-				: sideId * 5 + borderId - (isUpPos ? 1 : 0);
+				? (borderId - (isUpPos ? 1 : 0)) * 5 + sideId + option
+				: sideId * 5 + borderId - (isUpPos ? 1 : 0) + option;
 
 		const handleSelected = (kind: direction) => {
 			selected[kind].filter(
@@ -193,11 +197,44 @@ const BoxCollection = ({
 							item.side === sideId
 					)
 					.map((arr) => arr.isSelected);
-			if (processVertical().length > 0 && processHorizental().length === 2) {
+			const processHasPartialSurrounded = () =>
+				boxes.filter(
+					(item) =>
+						(item.id ===
+							boxLocation(kind, isUpPos, kind === 'horizental' ? 1 : -5) ||
+							item.id ===
+								boxLocation(kind, isUpPos, kind === 'horizental' ? -1 : 5) ||
+							item.id === boxLocation(kind, isUpPos, isUpPos ? -5 : 5)) &&
+						item.isPartialSurrounded
+				);
+
+			console.log(
+				3 - (processVertical().length + processHorizental().length) ===
+					processHasPartialSurrounded().length
+			);
+
+			if (processVertical().length === 1 && processHorizental().length === 2) {
+				/* When the Box is Surrounded */
+				console.log('its Surrounded with Just Border');
+
 				return true;
 			} else if (
-				processVertical().length > 0 &&
-				processHorizental().length === 1
+				3 - (processVertical().length + processHorizental().length) ===
+				processHasPartialSurrounded().length
+			) {
+				/** when the box is Surrounded with other Surrounded Box
+				 *
+				 *  How to Check each borders and surrounded boxes are not same direction?
+				 *
+				 *  There can be more than 2 box surrounded. not just one 1.
+				 * */
+				console.log('its Surrounded with Surrounded Box!');
+
+				return true;
+			} else if (
+				/** When the Box is PartialSurrounded */
+				(processVertical().length === 1 && processHorizental().length === 1) ||
+				(processVertical().length === 0 && processHorizental().length === 2)
 			) {
 				return boxLocation(direction, isUpPos);
 			} else {
