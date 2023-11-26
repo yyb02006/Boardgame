@@ -161,11 +161,13 @@ const BoxCollection = ({
 		const boxLocation = (
 			direction: direction,
 			isUpPos: boolean = true,
-			option: number = 0
+			option: number = 0,
+			border: number = borderId,
+			side: number = sideId
 		) =>
 			direction === 'horizental'
-				? (borderId - (isUpPos ? 1 : 0)) * 5 + sideId + option
-				: sideId * 5 + borderId - (isUpPos ? 1 : 0) + option;
+				? (border - (isUpPos ? 1 : 0)) * 5 + side + option
+				: side * 5 + border - (isUpPos ? 1 : 0) + option;
 
 		const handleSelected = (kind: direction) => {
 			selected[kind].filter(
@@ -182,21 +184,17 @@ const BoxCollection = ({
 
 		const handleBox = (kind: direction, isUpPos: boolean = true) => {
 			const processHorizental = () =>
-				selected[kind === 'horizental' ? 'vertical' : 'horizental']
-					.filter(
-						(item) =>
-							(item.border === sideId || item.border === sideId + 1) &&
-							item.side === (isUpPos ? borderId - 1 : borderId)
-					)
-					.map((arr) => arr.isSelected);
+				selected[kind === 'horizental' ? 'vertical' : 'horizental'].filter(
+					(item) =>
+						(item.border === sideId || item.border === sideId + 1) &&
+						item.side === (isUpPos ? borderId - 1 : borderId)
+				);
 			const processVertical = () =>
-				selected[kind]
-					.filter(
-						(item) =>
-							item.border === (isUpPos ? borderId - 1 : borderId + 1) &&
-							item.side === sideId
-					)
-					.map((arr) => arr.isSelected);
+				selected[kind].filter(
+					(item) =>
+						item.border === (isUpPos ? borderId - 1 : borderId + 1) &&
+						item.side === sideId
+				);
 			const processHasPartialSurrounded = () =>
 				boxes.filter(
 					(item) =>
@@ -208,9 +206,36 @@ const BoxCollection = ({
 						item.isPartialSurrounded
 				);
 
+			/* Almost solved */
 			console.log(
-				3 - (processVertical().length + processHorizental().length) ===
-					processHasPartialSurrounded().length
+				processVertical()[0]
+					? boxLocation(
+							direction,
+							isUpPos,
+							0,
+							processVertical()[0]?.border,
+							processVertical()[0]?.side
+					  )
+					: 'not',
+				processHorizental()[0]
+					? boxLocation(
+							direction === 'horizental' ? 'vertical' : 'horizental',
+							true,
+							0,
+							processHorizental()[0]?.border,
+							processHorizental()[0]?.side
+					  )
+					: 'not',
+				processHorizental()[0]
+					? boxLocation(
+							direction === 'horizental' ? 'vertical' : 'horizental',
+							false,
+							0,
+							processHorizental()[1]?.border,
+							processHorizental()[1]?.side
+					  )
+					: 'not',
+				processHasPartialSurrounded()
 			);
 
 			if (processVertical().length === 1 && processHorizental().length === 2) {
@@ -218,6 +243,12 @@ const BoxCollection = ({
 				console.log('its Surrounded with Just Border');
 
 				return true;
+			} else if (
+				/** When the Box is PartialSurrounded */
+				(processVertical().length === 1 && processHorizental().length === 1) ||
+				(processVertical().length === 0 && processHorizental().length === 2)
+			) {
+				return boxLocation(direction, isUpPos);
 			} else if (
 				3 - (processVertical().length + processHorizental().length) ===
 				processHasPartialSurrounded().length
@@ -231,12 +262,6 @@ const BoxCollection = ({
 				console.log('its Surrounded with Surrounded Box!');
 
 				return true;
-			} else if (
-				/** When the Box is PartialSurrounded */
-				(processVertical().length === 1 && processHorizental().length === 1) ||
-				(processVertical().length === 0 && processHorizental().length === 2)
-			) {
-				return boxLocation(direction, isUpPos);
 			} else {
 				return false;
 			}
