@@ -164,10 +164,17 @@ const BoxCollection = ({
 			option: number = 0,
 			border: number = borderId,
 			side: number = sideId
-		) =>
-			direction === 'horizental'
-				? (border - (isUpPos ? 1 : 0)) * 5 + side + option
-				: side * 5 + border - (isUpPos ? 1 : 0) + option;
+		) => {
+			if ((border === 0 && isUpPos) || (border === 5 && !isUpPos)) {
+				return 'notExist';
+			} else if (direction === 'horizental') {
+				return (border - (isUpPos ? 1 : 0)) * 5 + side + option;
+			} else if (direction === 'vertical') {
+				return side * 5 + border - (isUpPos ? 1 : 0) + option;
+			} else {
+				return 'notExist';
+			}
+		};
 
 		const handleSelected = (kind: direction) => {
 			selected[kind].filter(
@@ -206,40 +213,71 @@ const BoxCollection = ({
 						item.isPartialSurrounded
 				);
 
+			const test = boxLocation(direction, isUpPos);
 			/* Almost solved */
-			console.log(
-				processVertical()[0]
-					? boxLocation(
-							direction,
-							isUpPos,
-							0,
-							processVertical()[0]?.border,
-							processVertical()[0]?.side
-					  )
-					: 'not',
-				processHorizental()[0]
-					? boxLocation(
-							direction === 'horizental' ? 'vertical' : 'horizental',
-							true,
-							0,
-							processHorizental()[0]?.border,
-							processHorizental()[0]?.side
-					  )
-					: 'not',
-				processHorizental()[0]
-					? boxLocation(
-							direction === 'horizental' ? 'vertical' : 'horizental',
-							false,
-							0,
-							processHorizental()[1]?.border,
-							processHorizental()[1]?.side
-					  )
-					: 'not',
-				processHasPartialSurrounded()
-			);
+			console.log(test);
 
-			if (processVertical().length === 1 && processHorizental().length === 2) {
+			/* if (direction === 'horizental') {
+				console.log(
+					test,
+					'horizental',
+					test > 4 && test < 20 && test % 5 !== 4 && test % 5 !== 0,
+					test % 5 !== 0
+						? boxes.filter(
+								(item) => item.id === boxLocation(direction, isUpPos, -1)
+						  )
+						: 'is LeftSide',
+					test % 5 !== 4
+						? boxes.filter(
+								(item) => item.id === boxLocation(direction, isUpPos, 1)
+						  )
+						: 'is RightSide',
+					test > 4
+						? boxes.filter(
+								(item) => item.id === boxLocation(direction, isUpPos, -5)
+						  )
+						: 'is UpSide',
+					test < 20
+						? boxes.filter(
+								(item) => item.id === boxLocation(direction, isUpPos, 5)
+						  )
+						: 'is DownSide',
+					processHasPartialSurrounded()
+				);
+			} else if (direction === 'vertical') {
+				console.log(
+					test,
+					'vertical',
+					test > 4 && test < 20 && test % 5 !== 4 && test % 5 !== 0,
+					test % 5 !== 0
+						? boxes.filter(
+								(item) => item.id === boxLocation(direction, isUpPos, -1)
+						  )
+						: 'is LeftSide',
+					test % 5 !== 4
+						? boxes.filter(
+								(item) => item.id === boxLocation(direction, isUpPos, 1)
+						  )
+						: 'is RightSide',
+					test > 4
+						? boxes.filter(
+								(item) => item.id === boxLocation(direction, isUpPos, -5)
+						  )
+						: 'is UpSide',
+					test < 20
+						? boxes.filter(
+								(item) => item.id === boxLocation(direction, isUpPos, 5)
+						  )
+						: 'is DownSide',
+					processHasPartialSurrounded()
+				);
+			} */
+
+			if (
 				/* When the Box is Surrounded */
+				processVertical().length === 1 &&
+				processHorizental().length === 2
+			) {
 				console.log('its Surrounded with Just Border');
 
 				return true;
@@ -250,15 +288,15 @@ const BoxCollection = ({
 			) {
 				return boxLocation(direction, isUpPos);
 			} else if (
-				3 - (processVertical().length + processHorizental().length) ===
-				processHasPartialSurrounded().length
-			) {
 				/** when the box is Surrounded with other Surrounded Box
 				 *
 				 *  How to Check each borders and surrounded boxes are not same direction?
 				 *
-				 *  There can be more than 2 box surrounded. not just one 1.
+				 *  There can be more than 2 box surrounded. not just one
 				 * */
+				3 - (processVertical().length + processHorizental().length) ===
+				processHasPartialSurrounded().length
+			) {
 				console.log('its Surrounded with Surrounded Box!');
 
 				return true;
@@ -268,14 +306,15 @@ const BoxCollection = ({
 		};
 
 		const updateBoxState = (
-			index: number,
+			index: number | 'notExist',
 			state: 'isSurrounded' | 'isPartialSurrounded'
 		) => {
-			setBoxes((p) => {
-				const newBoxes = [...p];
-				newBoxes[index][state] = true;
-				return newBoxes;
-			});
+			index === 'notExist' ||
+				setBoxes((p) => {
+					const newBoxes = [...p];
+					newBoxes[index][state] = true;
+					return newBoxes;
+				});
 		};
 
 		handleSelected(direction);
