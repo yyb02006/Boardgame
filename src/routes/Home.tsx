@@ -160,7 +160,7 @@ const BoxCollection = ({
 
 		const boxLocation = (
 			direction: direction,
-			isUpPos: boolean = true,
+			isUpPos: boolean,
 			option: number = 0,
 			border: number = borderId,
 			side: number = sideId
@@ -189,7 +189,13 @@ const BoxCollection = ({
 				}));
 		};
 
-		const handleBox = (kind: direction, isUpPos: boolean = true) => {
+		const handleBox: (
+			kind: direction,
+			isUpPos: boolean
+		) => {
+			boxIndex: number | undefined | 'notExist';
+			state: 'isSurrounded' | 'isPartialSurrounded' | 'notSurrounded';
+		} = (kind, isUpPos = true) => {
 			const processHorizental = () => ({
 				left: selected[
 					kind === 'horizental' ? 'vertical' : 'horizental'
@@ -210,100 +216,123 @@ const BoxCollection = ({
 						item.side === (isUpPos ? borderId - 1 : borderId)
 				)[0],
 			});
-
 			const processVertical = () =>
 				selected[kind].filter(
 					(item) =>
 						item.border === (isUpPos ? borderId - 1 : borderId + 1) &&
 						item.side === sideId
 				)[0];
-
-			const processHasPartialSurrounded = () =>
-				boxes.filter(
-					(item) =>
-						(item.id ===
-							boxLocation(kind, isUpPos, kind === 'horizental' ? 1 : -5) ||
-							item.id ===
-								boxLocation(kind, isUpPos, kind === 'horizental' ? -1 : 5) ||
-							item.id === boxLocation(kind, isUpPos, isUpPos ? -5 : 5)) &&
-						item.isPartialSurrounded
-				);
-
-			const test = boxLocation(direction, isUpPos);
-			/* have to solve */
-
-			/* if (test !== 'notExist') {
-				console.log(
-					direction === 'horizental'
-						? 'Horizental Left Side'
-						: 'Vertical Up Side',
+			/* solved */
+			const isBoxContacting = (
+				borderCondition: borderState,
+				truePart: number,
+				falsePart: number
+			) => {
+				return (
+					borderCondition ||
 					boxes.filter(
-						(item) => item.id === boxLocation(direction, isUpPos, -1)
-					),
-					direction === 'horizental' ? 'Horizental Right Side' : 'not Need',
-					boxes.filter((item) => item.id === boxLocation(direction, isUpPos, 1))
+						(item) =>
+							item.id ===
+							boxLocation(
+								direction,
+								isUpPos,
+								direction === 'horizental' ? truePart : falsePart
+							)
+					)[0]?.isPartialSurrounded
 				);
-			} */
+			};
 
-			console.log(processHorizental(), processVertical());
-
-			/* if (test !== 'notExist') {
-				console.log(
-					test % 5 !== 0 && isUpPos
-						? boxes.filter(
-								(item) => item.id === boxLocation(direction, isUpPos, -1)
-						  )
-						: 'Not Exist',
-					test % 5 !== 4 && !isUpPos
-						? boxes.filter(
-								(item) => item.id === boxLocation(direction, isUpPos, 1)
-						  )
-						: 'Not Exist',
-					test > 4
-						? boxes.filter(
-								(item) => item.id === boxLocation(direction, isUpPos, -5)
-						  )
-						: 'is UpSide',
-					test < 20
-						? boxes.filter(
-								(item) => item.id === boxLocation(direction, isUpPos, 5)
-						  )
-						: 'is DownSide'
+			/* const isLeftHorizentalSurrounded = () => {
+				return (
+					processHorizental().left ||
+					boxes.filter(
+						(item) =>
+							item.id ===
+							boxLocation(
+								direction,
+								isUpPos,
+								direction === 'horizental' ? -1 : 5
+							)
+					)[0]?.isPartialSurrounded
 				);
-			} */
+			};
+
+			const isRightHorizentalSurrounded = () => {
+				return (
+					processHorizental().right ||
+					boxes.filter(
+						(item) =>
+							item.id ===
+							boxLocation(
+								direction,
+								isUpPos,
+								direction === 'horizental' ? 1 : -5
+							)
+					)[0]?.isPartialSurrounded
+				);
+			};
+
+			const isVerticalSurrounded = () => {
+				return (
+					processVertical() ||
+					boxes.filter(
+						(item) =>
+							item.id ===
+							boxLocation(
+								direction,
+								isUpPos,
+								direction === 'horizental'
+									? (isUpPos
+										? -5
+										: 5)
+									: (isUpPos
+									? -1
+									: 1)
+							)
+					)[0].isPartialSurrounded
+				);
+			}; */
+
+			/* console.log(processHorizental(), processVertical()); */
+
+			const contactingResult = {
+				vertical: isBoxContacting(
+					processVertical(),
+					isUpPos ? -5 : 5,
+					isUpPos ? -1 : 1
+				),
+				left: isBoxContacting(processHorizental().left, -1, 5),
+				right: isBoxContacting(processHorizental().right, 1, -5),
+			};
 
 			if (
 				/* When the Box is Surrounded */
-				processVertical() &&
-				processHorizental().left &&
-				processHorizental().right
+				contactingResult.vertical &&
+				contactingResult.left &&
+				contactingResult.right
 			) {
-				console.log('its Surrounded with Just Border');
-
-				return true;
+				console.log('its Surrounded');
+				return {
+					state: 'isSurrounded',
+					boxIndex: boxLocation(direction, isUpPos),
+				};
 			} else if (
 				/** When the Box is PartialSurrounded */
-				processVertical() &&
-				processHorizental().left &&
-				processHorizental().right
+				Object.values(contactingResult).reduce(
+					(count, el) => count + (el ? 1 : 0),
+					0
+				) === 2
 			) {
-				return boxLocation(direction, isUpPos);
-			} else if (
-				/** when the box is Surrounded with other Surrounded Box
-				 *
-				 *  How to Check each borders and surrounded boxes are not same direction?
-				 *
-				 *  There can be more than 2 box surrounded. not just one
-				 * */
-				processVertical() &&
-				processHorizental().left &&
-				processHorizental().right
-			) {
-				console.log('its Surrounded with Surrounded Box!');
-
-				return true;
+				console.log('its PartialSurrounded');
+				return {
+					state: 'isPartialSurrounded',
+					boxIndex: boxLocation(direction, isUpPos),
+				};
 			} else {
-				return false;
+				return {
+					state: 'notSurrounded',
+					boxIndex: undefined,
+				};
 			}
 		};
 
@@ -321,33 +350,26 @@ const BoxCollection = ({
 
 		handleSelected(direction);
 
+		/* why doesn't TypeGuard work when using a func return instead a variable? */
+		const handleBoxState = {
+			up: handleBox(direction, true).state,
+			down: handleBox(direction, false).state,
+		};
+
 		/* When Upside Border Clicked */
-		if (handleBox(direction) === true) {
+		if (handleBoxState.up !== 'notSurrounded') {
 			updateBoxState(
-				direction === 'horizental'
-					? boxLocation('horizental')
-					: boxLocation('vertical'),
-				'isSurrounded'
+				handleBox(direction, true).boxIndex as number,
+				handleBoxState.up
 			);
-		} else if (typeof handleBox(direction) === 'number') {
-			updateBoxState(handleBox(direction) as number, 'isPartialSurrounded');
-			console.log(handleBox(direction));
 		}
 
 		/* When Downside Border Clicked */
-		if (handleBox(direction, false) === true) {
+		if (handleBoxState.down !== 'notSurrounded') {
 			updateBoxState(
-				direction === 'horizental'
-					? boxLocation('horizental', false)
-					: boxLocation('vertical', false),
-				'isSurrounded'
+				handleBox(direction, false).boxIndex as number,
+				handleBoxState.down
 			);
-		} else if (typeof handleBox(direction, false) === 'number') {
-			updateBoxState(
-				handleBox(direction, false) as number,
-				'isPartialSurrounded'
-			);
-			console.log(handleBox(direction, false));
 		}
 	};
 
