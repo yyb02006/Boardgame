@@ -190,18 +190,34 @@ const BoxCollection = ({
 		};
 
 		const handleBox = (kind: direction, isUpPos: boolean = true) => {
-			const processHorizental = () =>
-				selected[kind === 'horizental' ? 'vertical' : 'horizental'].filter(
+			const processHorizental = () => ({
+				left: selected[
+					kind === 'horizental' ? 'vertical' : 'horizental'
+				].filter(
 					(item) =>
-						(item.border === sideId || item.border === sideId + 1) &&
+						(kind === 'horizental'
+							? item.border === sideId
+							: item.border === sideId + 1) &&
 						item.side === (isUpPos ? borderId - 1 : borderId)
-				);
+				)[0],
+				right: selected[
+					kind === 'horizental' ? 'vertical' : 'horizental'
+				].filter(
+					(item) =>
+						(kind === 'horizental'
+							? item.border === sideId + 1
+							: item.border === sideId) &&
+						item.side === (isUpPos ? borderId - 1 : borderId)
+				)[0],
+			});
+
 			const processVertical = () =>
 				selected[kind].filter(
 					(item) =>
 						item.border === (isUpPos ? borderId - 1 : borderId + 1) &&
 						item.side === sideId
-				);
+				)[0];
+
 			const processHasPartialSurrounded = () =>
 				boxes.filter(
 					(item) =>
@@ -214,51 +230,35 @@ const BoxCollection = ({
 				);
 
 			const test = boxLocation(direction, isUpPos);
-			/* Almost solved */
-			console.log(test);
+			/* have to solve */
 
-			/* if (direction === 'horizental') {
+			/* if (test !== 'notExist') {
 				console.log(
-					test,
-					'horizental',
-					test > 4 && test < 20 && test % 5 !== 4 && test % 5 !== 0,
-					test % 5 !== 0
-						? boxes.filter(
-								(item) => item.id === boxLocation(direction, isUpPos, -1)
-						  )
-						: 'is LeftSide',
-					test % 5 !== 4
-						? boxes.filter(
-								(item) => item.id === boxLocation(direction, isUpPos, 1)
-						  )
-						: 'is RightSide',
-					test > 4
-						? boxes.filter(
-								(item) => item.id === boxLocation(direction, isUpPos, -5)
-						  )
-						: 'is UpSide',
-					test < 20
-						? boxes.filter(
-								(item) => item.id === boxLocation(direction, isUpPos, 5)
-						  )
-						: 'is DownSide',
-					processHasPartialSurrounded()
+					direction === 'horizental'
+						? 'Horizental Left Side'
+						: 'Vertical Up Side',
+					boxes.filter(
+						(item) => item.id === boxLocation(direction, isUpPos, -1)
+					),
+					direction === 'horizental' ? 'Horizental Right Side' : 'not Need',
+					boxes.filter((item) => item.id === boxLocation(direction, isUpPos, 1))
 				);
-			} else if (direction === 'vertical') {
+			} */
+
+			console.log(processHorizental(), processVertical());
+
+			/* if (test !== 'notExist') {
 				console.log(
-					test,
-					'vertical',
-					test > 4 && test < 20 && test % 5 !== 4 && test % 5 !== 0,
-					test % 5 !== 0
+					test % 5 !== 0 && isUpPos
 						? boxes.filter(
 								(item) => item.id === boxLocation(direction, isUpPos, -1)
 						  )
-						: 'is LeftSide',
-					test % 5 !== 4
+						: 'Not Exist',
+					test % 5 !== 4 && !isUpPos
 						? boxes.filter(
 								(item) => item.id === boxLocation(direction, isUpPos, 1)
 						  )
-						: 'is RightSide',
+						: 'Not Exist',
 					test > 4
 						? boxes.filter(
 								(item) => item.id === boxLocation(direction, isUpPos, -5)
@@ -268,23 +268,24 @@ const BoxCollection = ({
 						? boxes.filter(
 								(item) => item.id === boxLocation(direction, isUpPos, 5)
 						  )
-						: 'is DownSide',
-					processHasPartialSurrounded()
+						: 'is DownSide'
 				);
 			} */
 
 			if (
 				/* When the Box is Surrounded */
-				processVertical().length === 1 &&
-				processHorizental().length === 2
+				processVertical() &&
+				processHorizental().left &&
+				processHorizental().right
 			) {
 				console.log('its Surrounded with Just Border');
 
 				return true;
 			} else if (
 				/** When the Box is PartialSurrounded */
-				(processVertical().length === 1 && processHorizental().length === 1) ||
-				(processVertical().length === 0 && processHorizental().length === 2)
+				processVertical() &&
+				processHorizental().left &&
+				processHorizental().right
 			) {
 				return boxLocation(direction, isUpPos);
 			} else if (
@@ -294,8 +295,9 @@ const BoxCollection = ({
 				 *
 				 *  There can be more than 2 box surrounded. not just one
 				 * */
-				3 - (processVertical().length + processHorizental().length) ===
-				processHasPartialSurrounded().length
+				processVertical() &&
+				processHorizental().left &&
+				processHorizental().right
 			) {
 				console.log('its Surrounded with Surrounded Box!');
 
