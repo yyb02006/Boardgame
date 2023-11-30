@@ -373,6 +373,22 @@ const BoxCollection = ({
 		}
 	};
 
+	const boxMerge = () => {
+		for (let i = 0; i <= boxes.length; i++) {
+			console.log(i);
+			if (boxes[i]?.isSurrounded && boxes[i + 1]?.isSurrounded) {
+				console.log('horizental merge');
+			} else {
+				console.log('not merge');
+			}
+			if (boxes[i]?.isSurrounded && boxes[i + 5]?.isSurrounded) {
+				console.log('vertical merge');
+			} else {
+				console.log('not merge');
+			}
+		}
+	};
+
 	return (
 		<>
 			{Array(5)
@@ -382,6 +398,7 @@ const BoxCollection = ({
 						<BoxHover
 							onClick={() => {
 								onBoxClick(sideId);
+								boxMerge();
 							}}
 							direction={direction}
 							$isSelected={
@@ -475,9 +492,6 @@ const Board = () => {
 			isSurrounded: false,
 		}))
 	);
-	useEffect(() => {
-		/* for (let i = 0; i++; i < selected.horizental.length) {} */
-	}, [selected]);
 
 	return (
 		<BoardLayout>
