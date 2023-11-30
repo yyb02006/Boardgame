@@ -373,21 +373,38 @@ const BoxCollection = ({
 		}
 	};
 
+	console.log('sideId = ' + (0 % 5), 'borderId = ' + (0 + 1));
+
+	/* execution sequence of boxMerge function is lagging behind */
+
 	const boxMerge = () => {
-		for (let i = 0; i <= boxes.length; i++) {
-			console.log(i);
+		for (let i = 0; i < boxes.length - 1; i++) {
 			if (boxes[i]?.isSurrounded && boxes[i + 1]?.isSurrounded) {
-				console.log('horizental merge');
-			} else {
-				console.log('not merge');
+				setSelected((p) => {
+					const newSelected = { ...p };
+					newSelected.vertical.map((item) =>
+						item.border === (i % 5) + 1 && item.side === Math.floor(i / 5)
+							? (item.isSelected = false)
+							: item
+					);
+					return newSelected;
+				});
 			}
 			if (boxes[i]?.isSurrounded && boxes[i + 5]?.isSurrounded) {
-				console.log('vertical merge');
-			} else {
-				console.log('not merge');
+				setSelected((p) => {
+					const newSelected = { ...p };
+					newSelected.horizental.map((item) =>
+						item.side === i % 5 && item.border === Math.floor(i / 5) + 1
+							? (item.isSelected = false)
+							: item
+					);
+					return newSelected;
+				});
 			}
 		}
 	};
+
+	/* 큰 사각형 모양으로 포위되었을 때 로직 처리 */
 
 	return (
 		<>
