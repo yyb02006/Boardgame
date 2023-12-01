@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 
 interface directionInterface {
@@ -146,6 +146,25 @@ interface boxCollectionProps extends directionInterface {
 	setBoxes: setBoxes;
 }
 
+function usePrevious<T>(value: T, init: T) {
+	/**
+	 * 컴포넌트의 렌더링 시 내부 함수들이 모두 실행된 뒤 useEffect가 실행됨을 헷갈리지 말자.
+	 *
+	 * 컴포넌트 내부 어떤 곳에서 Logging을 하더라도 useEffect로 변한 값은 찍히지 않는다.
+	 *
+	 * state변경으로 인한 리렌더링 시 current에는 이전 useEffect실행에서 전달받은 값이 있을 것이고
+	 *
+	 * count에는 이번 state가 있을 것이다. 아직 이번 state의 변경으로 인한 useEffect는 실행되지 않았기 때문에.
+	 * */
+	const ref = useRef<T>(init);
+
+	useEffect(() => {
+		ref.current = value;
+	}, [value]);
+
+	return ref.current;
+}
+
 const BoxCollection = ({
 	direction,
 	borderId,
@@ -155,6 +174,11 @@ const BoxCollection = ({
 	setSelected,
 	setBoxes,
 }: boxCollectionProps) => {
+	const prevState = usePrevious<selected>(selected, {
+		horizental: [],
+		vertical: [],
+	});
+
 	const onBoxClick = (sideId: number) => {
 		console.log('border = ' + borderId, 'side = ' + sideId, boxes);
 
@@ -305,6 +329,8 @@ const BoxCollection = ({
 				right: isBoxContacting(processHorizental().right, 1, -5),
 			};
 
+			// console.log(selected, prevBorder.current.horizental);
+
 			if (
 				/* When the Box is Surrounded */
 				contactingResult.vertical &&
@@ -335,6 +361,23 @@ const BoxCollection = ({
 				};
 			}
 		};
+
+		const getFilterdSelected = (direction: 'left' | 'right') => [
+			...selected.vertical.filter(
+				(item) =>
+					item.border === sideId + (direction === 'left' ? 0 : 1) &&
+					(item.side === borderId - 1 || item.side === borderId)
+			),
+			...selected.horizental.filter(
+				(item) =>
+					item.border === borderId &&
+					item.side === sideId + (direction === 'left' ? -1 : +1)
+			),
+		];
+
+		/* if(getFilterdSelected('left').length > 0 &&
+			getFilterdSelected('right').length > 0){console.log(selected.);
+			} */
 
 		const updateBoxState = (
 			index: number | 'notExist',
@@ -403,6 +446,9 @@ const BoxCollection = ({
 			}
 		}
 	};
+
+	console.log(prevState);
+	console.log(selected);
 
 	/* 큰 사각형 모양으로 포위되었을 때 로직 처리 */
 
