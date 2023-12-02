@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
+import usePrevious from '../hooks/usePrevious';
 
 interface directionInterface {
 	direction: direction;
@@ -146,25 +147,6 @@ interface boxCollectionProps extends directionInterface {
 	setBoxes: setBoxes;
 }
 
-function usePrevious<T>(value: T, init: T) {
-	/**
-	 * 컴포넌트의 렌더링 시 내부 함수들이 모두 실행된 뒤 useEffect가 실행됨을 헷갈리지 말자.
-	 *
-	 * 컴포넌트 내부 어떤 곳에서 Logging을 하더라도 useEffect로 변한 값은 찍히지 않는다.
-	 *
-	 * state변경으로 인한 리렌더링 시 current에는 이전 useEffect실행에서 전달받은 값이 있을 것이고
-	 *
-	 * count에는 이번 state가 있을 것이다. 아직 이번 state의 변경으로 인한 useEffect는 실행되지 않았기 때문에.
-	 * */
-	const ref = useRef<T>(init);
-
-	useEffect(() => {
-		ref.current = value;
-	}, [value]);
-
-	return ref.current;
-}
-
 const BoxCollection = ({
 	direction,
 	borderId,
@@ -174,13 +156,59 @@ const BoxCollection = ({
 	setSelected,
 	setBoxes,
 }: boxCollectionProps) => {
-	const prevState = usePrevious<selected>(selected, {
-		horizental: [],
-		vertical: [],
-	});
-
+	const prevTest = useRef<{
+		borderId: number;
+		sideId: number;
+		direction: direction;
+	}>();
+	const prevState = usePrevious<
+		{
+			borderId: number;
+			sideId: number;
+			direction: 'horizental' | 'vertical';
+		},
+		selected
+	>(
+		{
+			borderId: selected[direction][selected[direction]?.length - 1]?.border,
+			sideId: selected[direction][selected[direction]?.length - 1]?.side,
+			direction,
+		},
+		{ borderId: 0, sideId: 0, direction: 'horizental' },
+		selected
+	);
+	/* if (prevState.horizental.length !== selected.horizental.length) {
+		console.log(prevState.horizental[prevState.horizental.length - 1]);
+	} else if (prevState.vertical.length !== selected.vertical.length) {
+		console.log(prevState.vertical[prevState.vertical.length - 1]);
+	} */
 	const onBoxClick = (sideId: number) => {
 		console.log('border = ' + borderId, 'side = ' + sideId, boxes);
+
+		const selectedItem = () => {
+			if (selected[direction][selected[direction].length - 1]) {
+				console.log('have');
+			} else if (
+				selected[direction === 'horizental' ? 'vertical' : 'horizental'][
+					selected[direction === 'horizental' ? 'vertical' : 'horizental']
+						.length - 1
+				]
+			) {
+				console.log('doesnt have');
+			} else {
+				console.log('not');
+			}
+		};
+
+		selectedItem();
+
+		/* prevTest.current = {
+			borderId: selectedItem ? selectedItem.border,
+			sideId: side,
+			direction,
+		}; */
+
+		console.log(prevTest.current);
 
 		const boxLocation = (
 			direction: direction,
@@ -416,11 +444,11 @@ const BoxCollection = ({
 		}
 	};
 
-	console.log('sideId = ' + (0 % 5), 'borderId = ' + (0 + 1));
+	/* console.log('sideId = ' + (0 % 5), 'borderId = ' + (0 + 1)); */
 
 	/* execution sequence of boxMerge function is lagging behind */
 
-	const boxMerge = () => {
+	/* const boxMerge = () => {
 		for (let i = 0; i < boxes.length - 1; i++) {
 			if (boxes[i]?.isSurrounded && boxes[i + 1]?.isSurrounded) {
 				setSelected((p) => {
@@ -445,10 +473,7 @@ const BoxCollection = ({
 				});
 			}
 		}
-	};
-
-	console.log(prevState);
-	console.log(selected);
+	}; */
 
 	/* 큰 사각형 모양으로 포위되었을 때 로직 처리 */
 
@@ -461,7 +486,6 @@ const BoxCollection = ({
 						<BoxHover
 							onClick={() => {
 								onBoxClick(sideId);
-								boxMerge();
 							}}
 							direction={direction}
 							$isSelected={
@@ -555,7 +579,6 @@ const Board = () => {
 			isSurrounded: false,
 		}))
 	);
-
 	return (
 		<BoardLayout>
 			<BoardItemsContainer>
