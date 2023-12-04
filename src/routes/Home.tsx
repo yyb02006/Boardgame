@@ -435,6 +435,8 @@ const BoxCollection = ({
 					  )
 					: undefined;
 			})
+				.flat()
+				.filter((item) => !!item)
 		);
 
 		console.log(
@@ -453,7 +455,79 @@ const BoxCollection = ({
 					  )
 					: undefined;
 			})
+				.flat()
+				.filter((item) => !!item)
 		);
+
+		/**
+		 * 서로 다른 두 개의 중첩된 배열에서 요소간에 연결되며 겹치는 배열을 구하는 함수 초안
+		 *
+		 * ex) arr1 = [[1], [2, 3], [4]] , arr2 = [[1, 2], [3], [4, 5]]일 때,
+		 *
+		 * fn([1],arr2)를 실행하면 lists = [1], [2, 3] 이 나오고 lists2 = [1, 2], [3] 이 나올 수 있도록.
+		 *
+		 * ps. 시발거
+		 *  */
+
+		const haveCommonElements = (firstArr: number[], secondArr: number[]) => {
+			for (const first of firstArr) {
+				for (const second of secondArr) {
+					if (first === second) {
+						return true;
+					}
+				}
+			}
+			return false;
+		};
+
+		const test1: { arr: number[][]; label: 'test1' | 'test2' } = {
+			arr: [[7], [12], [8, 19], [13, 18]],
+			label: 'test1',
+		};
+		const test2: { arr: number[][]; label: 'test1' | 'test2' } = {
+			arr: [[5, 6], [1, 7], [8], [11], [12, 13], [18, 19]],
+			label: 'test2',
+		};
+
+		const isIncludedArray = (
+			compareArray: number[],
+			commonArray: number[][]
+		) => {
+			let contemporary: number[][] = [];
+			for (const arr of commonArray) {
+				if (haveCommonElements(arr, compareArray)) {
+					contemporary = [...contemporary, arr];
+				}
+			}
+			return contemporary;
+		};
+
+		let lists: number[][] = [];
+		let lists2: number[][] = [];
+
+		const isIncludedArray2 = (
+			arr1: number[],
+			arr2: { arr: number[][]; label: 'test1' | 'test2' }
+		) => {
+			const resultIsIncluded = isIncludedArray(arr1, arr2.arr);
+			if (resultIsIncluded.length > 0) {
+				resultIsIncluded.forEach((el) => {
+					if (
+						arr2.label === 'test1' ? !lists.includes(el) : !lists2.includes(el)
+					) {
+						arr2.label === 'test1'
+							? (lists = [...lists, el])
+							: (lists2 = [...lists2, el]);
+						isIncludedArray2(el, arr2.label === 'test1' ? test2 : test1);
+					}
+				});
+			} else {
+				return false;
+			}
+		};
+
+		console.log(isIncludedArray2(test1.arr[1], test2));
+		console.log(lists, lists2);
 
 		/* if (
 			getFilterdSelected('left').length > 0 &&
