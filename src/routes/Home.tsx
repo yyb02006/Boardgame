@@ -403,9 +403,64 @@ const BoxCollection = ({
 			),
 		];
 
-		/* if(getFilterdSelected('left').length > 0 &&
-			getFilterdSelected('right').length > 0){console.log(selected.);
-			} */
+		const isBoxesSurrounded = () => {
+			console.log(
+				Array(6)
+					.map((_, id) =>
+						selected.horizental.filter((item) => item.border === id)
+					)
+					.map((el, id) =>
+						el.length > 1
+							? Array(el.length - 1).map(
+									(_, id) => el[id + 1].border - el[id].border
+							  )
+							: undefined
+					)
+			);
+		};
+
+		console.log(
+			Array.from({ length: 5 }, (_, id) => {
+				const borders = selected.horizental
+					.filter((item) => item.side === id)
+					.sort((a, b) => a.border - b.border);
+				return borders.length > 1
+					? Array.from({ length: borders.length - 1 }, (_, idx) =>
+							Array.from(
+								{ length: borders[idx + 1].border - borders[idx].border },
+								(_, index) => {
+									return (borders[idx].border + index) * 5 + borders[idx].side;
+								}
+							)
+					  )
+					: undefined;
+			})
+		);
+
+		console.log(
+			Array.from({ length: 5 }, (_, id) => {
+				const borders = selected.vertical
+					.filter((item) => item.side === id)
+					.sort((a, b) => a.border - b.border);
+				return borders.length > 1
+					? Array.from({ length: borders.length - 1 }, (_, idx) =>
+							Array.from(
+								{ length: borders[idx + 1].border - borders[idx].border },
+								(_, index) => {
+									return borders[idx].border + index + borders[idx].side * 5;
+								}
+							)
+					  )
+					: undefined;
+			})
+		);
+
+		/* if (
+			getFilterdSelected('left').length > 0 &&
+			getFilterdSelected('right').length > 0
+		) {
+			return;
+		} */
 
 		const updateBoxState = (
 			index: number | 'notExist',
