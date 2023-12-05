@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import usePrevious from '../hooks/usePrevious';
+import { isElementInNestedArray, sortByOrder } from '../libs/utils';
 
 interface directionInterface {
 	direction: direction;
@@ -419,9 +419,10 @@ const BoxCollection = ({
 			);
 		};
 
-		console.log(
-			Array.from({ length: 5 }, (_, id) => {
-				const borders = selected.horizental
+		const findClosedBoxByDirection = (direction: direction) => {
+			const isHorizental = direction === 'horizental';
+			return Array.from({ length: 5 }, (_, id) => {
+				const borders = selected[isHorizental ? 'horizental' : 'vertical']
 					.filter((item) => item.side === id)
 					.sort((a, b) => a.border - b.border);
 				return borders.length > 1
@@ -429,35 +430,22 @@ const BoxCollection = ({
 							Array.from(
 								{ length: borders[idx + 1].border - borders[idx].border },
 								(_, index) => {
-									return (borders[idx].border + index) * 5 + borders[idx].side;
+									return (
+										(borders[idx].border + index) * (isHorizental ? 5 : 1) +
+										borders[idx].side * (isHorizental ? 1 : 5)
+									);
 								}
 							)
 					  )
-					: undefined;
+					: [];
 			})
 				.flat()
-				.filter((item) => !!item)
-		);
+				.filter((item) => !!item);
+		};
 
-		console.log(
-			Array.from({ length: 5 }, (_, id) => {
-				const borders = selected.vertical
-					.filter((item) => item.side === id)
-					.sort((a, b) => a.border - b.border);
-				return borders.length > 1
-					? Array.from({ length: borders.length - 1 }, (_, idx) =>
-							Array.from(
-								{ length: borders[idx + 1].border - borders[idx].border },
-								(_, index) => {
-									return borders[idx].border + index + borders[idx].side * 5;
-								}
-							)
-					  )
-					: undefined;
-			})
-				.flat()
-				.filter((item) => !!item)
-		);
+		console.log(findClosedBoxByDirection('horizental'));
+
+		console.log(findClosedBoxByDirection('vertical'));
 
 		/**
 		 * 서로 다른 두 개의 중첩된 배열에서 요소간에 연결되며 겹치는 배열을 구하는 함수 초안
@@ -469,65 +457,82 @@ const BoxCollection = ({
 		 * ps. 시발거
 		 *  */
 
-		const haveCommonElements = (firstArr: number[], secondArr: number[]) => {
-			for (const first of firstArr) {
-				for (const second of secondArr) {
-					if (first === second) {
-						return true;
-					}
+		const getEnclosedBox = (closedBox: number[], initDirection: direction) => {
+			/* 파라미터로 전달하든 함수를 만들든 아래 코드 수정해서 순수함수로 바꾸기 */
+			const test1: { arr: number[][]; label: 'test1' | 'test2' } = {
+				arr: findClosedBoxByDirection('horizental'),
+				label: 'test1',
+			};
+			const test2: { arr: number[][]; label: 'test1' | 'test2' } = {
+				arr: findClosedBoxByDirection('vertical'),
+				label: 'test2',
+			};
+
+			let lists: number[][] = [];
+			let lists2: number[][] = [];
+
+			const addEnclosedBoxesRecursive = (
+				closedBox: number[],
+				boxesObject: { arr: number[][]; label: 'test1' | 'test2' }
+			) => {
+				const resultIsIncluded = isElementInNestedArray(
+					closedBox,
+					boxesObject.arr
+				);
+				if (resultIsIncluded.length > 0) {
+					resultIsIncluded.forEach((el) => {
+						if (
+							boxesObject.label === 'test1'
+								? !lists.includes(el)
+								: !lists2.includes(el)
+						) {
+							boxesObject.label === 'test1'
+								? (lists = [...lists, el])
+								: (lists2 = [...lists2, el]);
+							addEnclosedBoxesRecursive(
+								el,
+								boxesObject.label === 'test1' ? test2 : test1
+							);
+						}
+					});
+				} else {
+					return false;
 				}
-			}
-			return false;
+			};
+
+			addEnclosedBoxesRecursive(
+				closedBox,
+				initDirection === 'horizental' ? test1 : test2
+			);
+
+			return { lists, lists2 };
 		};
 
-		const test1: { arr: number[][]; label: 'test1' | 'test2' } = {
-			arr: [[7], [12], [8, 19], [13, 18]],
-			label: 'test1',
-		};
-		const test2: { arr: number[][]; label: 'test1' | 'test2' } = {
-			arr: [[5, 6], [1, 7], [8], [11], [12, 13], [18, 19]],
-			label: 'test2',
-		};
+		const arr1 = JSON.stringify(
+			sortByOrder(findClosedBoxByDirection('horizental').flat(), 'ascending')
+		);
+		const arr2 = JSON.stringify(
+			sortByOrder(findClosedBoxByDirection('vertical').flat(), 'ascending')
+		);
 
-		const isIncludedArray = (
-			compareArray: number[],
-			commonArray: number[][]
-		) => {
-			let contemporary: number[][] = [];
-			for (const arr of commonArray) {
-				if (haveCommonElements(arr, compareArray)) {
-					contemporary = [...contemporary, arr];
-				}
-			}
-			return contemporary;
-		};
+		console.log(
+			getEnclosedBox(
+				[11, 16],
+				direction === 'horizental' ? 'vertical' : 'horizental'
+			)
+		);
 
-		let lists: number[][] = [];
-		let lists2: number[][] = [];
-
-		const isIncludedArray2 = (
-			arr1: number[],
-			arr2: { arr: number[][]; label: 'test1' | 'test2' }
-		) => {
-			const resultIsIncluded = isIncludedArray(arr1, arr2.arr);
-			if (resultIsIncluded.length > 0) {
-				resultIsIncluded.forEach((el) => {
-					if (
-						arr2.label === 'test1' ? !lists.includes(el) : !lists2.includes(el)
-					) {
-						arr2.label === 'test1'
-							? (lists = [...lists, el])
-							: (lists2 = [...lists2, el]);
-						isIncludedArray2(el, arr2.label === 'test1' ? test2 : test1);
-					}
-				});
-			} else {
-				return false;
-			}
-		};
-
-		console.log(isIncludedArray2(test1.arr[1], test2));
-		console.log(lists, lists2);
+		/* console.log(
+			{
+				arr: findClosedBoxByDirection('horizental'),
+				label: 'test1',
+			}.arr.map((item) =>
+				getEnclosedBox(item, {
+					arr: findClosedBoxByDirection('vertical'),
+					label: 'test2',
+				})
+			)
+		); */
 
 		/* if (
 			getFilterdSelected('left').length > 0 &&
