@@ -7,7 +7,7 @@ interface directionInterface {
 	direction: direction;
 }
 
-type direction = 'horizental' | 'vertical';
+type direction = 'horizontal' | 'vertical';
 
 type setSelected = React.Dispatch<React.SetStateAction<selected>>;
 
@@ -70,10 +70,10 @@ const BoardBordersContainer = styled.div<{ $borderDirection: string }>`
 
 const BoxStyle = styled.div<directionInterface>`
 	position: relative;
-	width: ${(props) => (props.direction === 'horizental' ? '100%' : '20%')};
-	height: ${(props) => (props.direction === 'horizental' ? '20%' : '100%')};
+	width: ${(props) => (props.direction === 'horizontal' ? '100%' : '20%')};
+	height: ${(props) => (props.direction === 'horizontal' ? '20%' : '100%')};
 	flex-direction: ${(props) =>
-		props.direction === 'horizental' ? 'row' : 'column'};
+		props.direction === 'horizontal' ? 'row' : 'column'};
 	display: flex;
 	flex-wrap: wrap;
 `;
@@ -81,8 +81,8 @@ const BoxStyle = styled.div<directionInterface>`
 const BoxWrapper = styled.div<directionInterface & { $isLast: boolean }>`
 	font-size: 1rem;
 	color: #101010;
-	width: ${(props) => (props.direction === 'horizental' ? '20%' : 0)};
-	height: ${(props) => (props.direction === 'horizental' ? 0 : '20%')};
+	width: ${(props) => (props.direction === 'horizontal' ? '20%' : 0)};
+	height: ${(props) => (props.direction === 'horizontal' ? 0 : '20%')};
 	position: relative;
 	align-self: ${(props) => (props.$isLast ? 'flex-end' : 'flex-start')};
 `;
@@ -93,20 +93,20 @@ const BoxSide = styled.div``;
 
 const BoxHover = styled.div<directionInterface & { $isSelected: boolean }>`
 	width: ${(props) =>
-		props.direction === 'horizental' ? 'calc(100% - 40px)' : '40px'};
+		props.direction === 'horizontal' ? 'calc(100% - 40px)' : '40px'};
 	height: ${(props) =>
-		props.direction === 'horizental' ? '40px' : 'calc(100% - 40px)'};
+		props.direction === 'horizontal' ? '40px' : 'calc(100% - 40px)'};
 	position: absolute;
 	transform: ${(props) =>
-		props.direction === 'horizental' ? 'translateY(-50%)' : 'translateX(-50%)'};
-	top: ${(props) => (props.direction === 'horizental' ? 0 : '20px')};
-	left: ${(props) => (props.direction === 'horizental' ? '20px' : 0)};
+		props.direction === 'horizontal' ? 'translateY(-50%)' : 'translateX(-50%)'};
+	top: ${(props) => (props.direction === 'horizontal' ? 0 : '20px')};
+	left: ${(props) => (props.direction === 'horizontal' ? '20px' : 0)};
 	z-index: 1;
 	display: flex;
 	align-items: ${(props) =>
-		props.direction === 'horizental' ? 'center' : 'center'};
+		props.direction === 'horizontal' ? 'center' : 'center'};
 	justify-content: ${(props) =>
-		props.direction === 'horizental' ? 'center' : 'center'};
+		props.direction === 'horizontal' ? 'center' : 'center'};
 	border-color: ${(props) => (props.$isSelected ? 'red' : 'yellow')};
 	z-index: ${(props) => (props.$isSelected ? 2 : 1)};
 	&:hover {
@@ -117,23 +117,23 @@ const BoxHover = styled.div<directionInterface & { $isSelected: boolean }>`
 	${FakeHover} {
 		position: absolute;
 		width: ${(props) =>
-			props.direction === 'horizental' ? 'calc(100% + 44px)' : '100%'};
+			props.direction === 'horizontal' ? 'calc(100% + 44px)' : '100%'};
 		height: ${(props) =>
-			props.direction === 'horizental' ? '100%' : 'calc(100% + 44px)'};
+			props.direction === 'horizontal' ? '100%' : 'calc(100% + 44px)'};
 		background-color: inherit;
 		pointer-events: none;
 	}
 	${BoxSide} {
 		width: ${(props) =>
-			props.direction === 'horizental' ? 'calc(100% + 44px)' : 'auto'};
+			props.direction === 'horizontal' ? 'calc(100% + 44px)' : 'auto'};
 		height: ${(props) =>
-			props.direction === 'horizental' ? 'auto' : 'calc(100% + 44px)'};
+			props.direction === 'horizontal' ? 'auto' : 'calc(100% + 44px)'};
 		border-width: 2px;
 		border-style: solid;
 		border-color: inherit;
 		position: absolute;
-		left: ${(props) => (props.direction === 'horizental' ? '-22px' : 'auto')};
-		top: ${(props) => (props.direction === 'horizental' ? 'auto' : '-22px')};
+		left: ${(props) => (props.direction === 'horizontal' ? '-22px' : 'auto')};
+		top: ${(props) => (props.direction === 'horizontal' ? 'auto' : '-22px')};
 		pointer-events: none;
 	}
 `;
@@ -165,7 +165,7 @@ const BoxCollection = ({
 		{
 			borderId: number;
 			sideId: number;
-			direction: 'horizental' | 'vertical';
+			direction: 'horizontal' | 'vertical';
 		},
 		selected
 	>(
@@ -174,11 +174,11 @@ const BoxCollection = ({
 			sideId: selected[direction][selected[direction]?.length - 1]?.side,
 			direction,
 		},
-		{ borderId: 0, sideId: 0, direction: 'horizental' },
+		{ borderId: 0, sideId: 0, direction: 'horizontal' },
 		selected
 	);
-	/* if (prevState.horizental.length !== selected.horizental.length) {
-		console.log(prevState.horizental[prevState.horizental.length - 1]);
+	/* if (prevState.horizontal.length !== selected.horizontal.length) {
+		console.log(prevState.horizontal[prevState.horizontal.length - 1]);
 	} else if (prevState.vertical.length !== selected.vertical.length) {
 		console.log(prevState.vertical[prevState.vertical.length - 1]);
 	} */
@@ -189,8 +189,8 @@ const BoxCollection = ({
 			if (selected[direction][selected[direction].length - 1]) {
 				console.log('have');
 			} else if (
-				selected[direction === 'horizental' ? 'vertical' : 'horizental'][
-					selected[direction === 'horizental' ? 'vertical' : 'horizental']
+				selected[direction === 'horizontal' ? 'vertical' : 'horizontal'][
+					selected[direction === 'horizontal' ? 'vertical' : 'horizontal']
 						.length - 1
 				]
 			) {
@@ -219,7 +219,7 @@ const BoxCollection = ({
 		) => {
 			if ((border === 0 && isUpPos) || (border === 5 && !isUpPos)) {
 				return 'notExist';
-			} else if (direction === 'horizental') {
+			} else if (direction === 'horizontal') {
 				return (border - (isUpPos ? 1 : 0)) * 5 + side + option;
 			} else if (direction === 'vertical') {
 				return side * 5 + border - (isUpPos ? 1 : 0) + option;
@@ -248,21 +248,21 @@ const BoxCollection = ({
 			boxIndex: number | undefined | 'notExist';
 			state: 'isSurrounded' | 'isPartialSurrounded' | 'notSurrounded';
 		} = (kind, isUpPos = true) => {
-			const processHorizental = () => ({
+			const processHorizontal = () => ({
 				left: selected[
-					kind === 'horizental' ? 'vertical' : 'horizental'
+					kind === 'horizontal' ? 'vertical' : 'horizontal'
 				].filter(
 					(item) =>
-						(kind === 'horizental'
+						(kind === 'horizontal'
 							? item.border === sideId
 							: item.border === sideId + 1) &&
 						item.side === (isUpPos ? borderId - 1 : borderId)
 				)[0],
 				right: selected[
-					kind === 'horizental' ? 'vertical' : 'horizental'
+					kind === 'horizontal' ? 'vertical' : 'horizontal'
 				].filter(
 					(item) =>
-						(kind === 'horizental'
+						(kind === 'horizontal'
 							? item.border === sideId + 1
 							: item.border === sideId) &&
 						item.side === (isUpPos ? borderId - 1 : borderId)
@@ -288,37 +288,37 @@ const BoxCollection = ({
 							boxLocation(
 								direction,
 								isUpPos,
-								direction === 'horizental' ? truePart : falsePart
+								direction === 'horizontal' ? truePart : falsePart
 							)
 					)[0]?.isPartialSurrounded
 				);
 			};
 
-			/* const isLeftHorizentalSurrounded = () => {
+			/* const isLeftHorizontalSurrounded = () => {
 				return (
-					processHorizental().left ||
+					processHorizontal().left ||
 					boxes.filter(
 						(item) =>
 							item.id ===
 							boxLocation(
 								direction,
 								isUpPos,
-								direction === 'horizental' ? -1 : 5
+								direction === 'horizontal' ? -1 : 5
 							)
 					)[0]?.isPartialSurrounded
 				);
 			};
 
-			const isRightHorizentalSurrounded = () => {
+			const isRightHorizontalSurrounded = () => {
 				return (
-					processHorizental().right ||
+					processHorizontal().right ||
 					boxes.filter(
 						(item) =>
 							item.id ===
 							boxLocation(
 								direction,
 								isUpPos,
-								direction === 'horizental' ? 1 : -5
+								direction === 'horizontal' ? 1 : -5
 							)
 					)[0]?.isPartialSurrounded
 				);
@@ -333,7 +333,7 @@ const BoxCollection = ({
 							boxLocation(
 								direction,
 								isUpPos,
-								direction === 'horizental'
+								direction === 'horizontal'
 									? (isUpPos
 										? -5
 										: 5)
@@ -345,7 +345,7 @@ const BoxCollection = ({
 				);
 			}; */
 
-			/* console.log(processHorizental(), processVertical()); */
+			/* console.log(processHorizontal(), processVertical()); */
 
 			const contactingResult = {
 				vertical: isBoxContacting(
@@ -353,11 +353,11 @@ const BoxCollection = ({
 					isUpPos ? -5 : 5,
 					isUpPos ? -1 : 1
 				),
-				left: isBoxContacting(processHorizental().left, -1, 5),
-				right: isBoxContacting(processHorizental().right, 1, -5),
+				left: isBoxContacting(processHorizontal().left, -1, 5),
+				right: isBoxContacting(processHorizontal().right, 1, -5),
 			};
 
-			// console.log(selected, prevBorder.current.horizental);
+			// console.log(selected, prevBorder.current.horizontal);
 
 			if (
 				/* When the Box is Surrounded */
@@ -396,7 +396,7 @@ const BoxCollection = ({
 					item.border === sideId + (direction === 'left' ? 0 : 1) &&
 					(item.side === borderId - 1 || item.side === borderId)
 			),
-			...selected.horizental.filter(
+			...selected.horizontal.filter(
 				(item) =>
 					item.border === borderId &&
 					item.side === sideId + (direction === 'left' ? -1 : +1)
@@ -407,7 +407,7 @@ const BoxCollection = ({
 			console.log(
 				Array(6)
 					.map((_, id) =>
-						selected.horizental.filter((item) => item.border === id)
+						selected.horizontal.filter((item) => item.border === id)
 					)
 					.map((el, id) =>
 						el.length > 1
@@ -420,9 +420,9 @@ const BoxCollection = ({
 		};
 
 		const findClosedBoxByDirection = (direction: direction) => {
-			const isHorizental = direction === 'horizental';
+			const isHorizontal = direction === 'horizontal';
 			return Array.from({ length: 5 }, (_, id) => {
-				const borders = selected[isHorizental ? 'horizental' : 'vertical']
+				const borders = selected[isHorizontal ? 'horizontal' : 'vertical']
 					.filter((item) => item.side === id)
 					.sort((a, b) => a.border - b.border);
 				return borders.length > 1
@@ -431,8 +431,8 @@ const BoxCollection = ({
 								{ length: borders[idx + 1].border - borders[idx].border },
 								(_, index) => {
 									return (
-										(borders[idx].border + index) * (isHorizental ? 5 : 1) +
-										borders[idx].side * (isHorizental ? 1 : 5)
+										(borders[idx].border + index) * (isHorizontal ? 5 : 1) +
+										borders[idx].side * (isHorizontal ? 1 : 5)
 									);
 								}
 							)
@@ -443,7 +443,7 @@ const BoxCollection = ({
 				.filter((item) => !!item);
 		};
 
-		console.log(findClosedBoxByDirection('horizental'));
+		console.log(findClosedBoxByDirection('horizontal'));
 
 		console.log(findClosedBoxByDirection('vertical'));
 
@@ -459,21 +459,32 @@ const BoxCollection = ({
 
 		const getEnclosedBox = (closedBox: number[], initDirection: direction) => {
 			/* 파라미터로 전달하든 함수를 만들든 아래 코드 수정해서 순수함수로 바꾸기 */
-			const test1: { arr: number[][]; label: 'test1' | 'test2' } = {
-				arr: findClosedBoxByDirection('horizental'),
-				label: 'test1',
+			const horizontalClosedBoxes: {
+				arr: number[][];
+				label: 'horizontal' | 'vertical';
+			} = {
+				arr: findClosedBoxByDirection('horizontal'),
+				label: 'horizontal',
 			};
-			const test2: { arr: number[][]; label: 'test1' | 'test2' } = {
+			const verticalClosedBoxes: {
+				arr: number[][];
+				label: 'horizontal' | 'vertical';
+			} = {
 				arr: findClosedBoxByDirection('vertical'),
-				label: 'test2',
+				label: 'vertical',
 			};
 
-			let lists: number[][] = [];
-			let lists2: number[][] = [];
+			const result: { horizontal: number[][]; vertical: number[][] } = {
+				horizontal: [],
+				vertical: [],
+			};
 
 			const addEnclosedBoxesRecursive = (
 				closedBox: number[],
-				boxesObject: { arr: number[][]; label: 'test1' | 'test2' }
+				boxesObject: {
+					arr: number[][];
+					label: 'horizontal' | 'vertical';
+				}
 			) => {
 				const resultIsIncluded = isElementInNestedArray(
 					closedBox,
@@ -481,17 +492,13 @@ const BoxCollection = ({
 				);
 				if (resultIsIncluded.length > 0) {
 					resultIsIncluded.forEach((el) => {
-						if (
-							boxesObject.label === 'test1'
-								? !lists.includes(el)
-								: !lists2.includes(el)
-						) {
-							boxesObject.label === 'test1'
-								? (lists = [...lists, el])
-								: (lists2 = [...lists2, el]);
+						if (!result[boxesObject.label].includes(el)) {
+							result[boxesObject.label] = [...result[boxesObject.label], el];
 							addEnclosedBoxesRecursive(
 								el,
-								boxesObject.label === 'test1' ? test2 : test1
+								boxesObject.label === 'horizontal'
+									? verticalClosedBoxes
+									: horizontalClosedBoxes
 							);
 						}
 					});
@@ -502,44 +509,46 @@ const BoxCollection = ({
 
 			addEnclosedBoxesRecursive(
 				closedBox,
-				initDirection === 'horizental' ? test1 : test2
+				initDirection === 'horizontal'
+					? horizontalClosedBoxes
+					: verticalClosedBoxes
 			);
 
-			return { lists, lists2 };
+			return {
+				horizontal: sortByOrder(result.horizontal.flat(), 'ascending'),
+				vertical: sortByOrder(result.vertical.flat(), 'ascending'),
+			};
 		};
 
-		const arr1 = JSON.stringify(
-			sortByOrder(findClosedBoxByDirection('horizental').flat(), 'ascending')
-		);
-		const arr2 = JSON.stringify(
-			sortByOrder(findClosedBoxByDirection('vertical').flat(), 'ascending')
-		);
-
-		console.log(
-			getEnclosedBox(
-				[11, 16],
-				direction === 'horizental' ? 'vertical' : 'horizental'
-			)
-		);
-
-		/* console.log(
-			{
-				arr: findClosedBoxByDirection('horizental'),
-				label: 'test1',
-			}.arr.map((item) =>
-				getEnclosedBox(item, {
-					arr: findClosedBoxByDirection('vertical'),
-					label: 'test2',
-				})
-			)
-		); */
-
-		/* if (
+		if (
 			getFilterdSelected('left').length > 0 &&
 			getFilterdSelected('right').length > 0
 		) {
-			return;
-		} */
+			const enclosedBoxes = findClosedBoxByDirection('horizontal').map((item) =>
+				getEnclosedBox(
+					item,
+					direction === 'horizontal' ? 'vertical' : 'horizontal'
+				)
+			);
+			for (const box of enclosedBoxes) {
+				const surroundedBoxCount = box.horizontal.reduce(
+					(count, id) => (boxes[id].isSurrounded ? count + 1 : count),
+					0
+				);
+				if (
+					JSON.stringify(box.horizontal) === JSON.stringify(box.vertical) &&
+					surroundedBoxCount < box.horizontal.length
+				) {
+					setBoxes((p) => {
+						const newBoxes = [...p];
+						box.horizontal.forEach((item) => {
+							newBoxes[item].isSurrounded = true;
+						});
+						return newBoxes;
+					});
+				}
+			}
+		}
 
 		const updateBoxState = (
 			index: number | 'notExist',
@@ -598,7 +607,7 @@ const BoxCollection = ({
 			if (boxes[i]?.isSurrounded && boxes[i + 5]?.isSurrounded) {
 				setSelected((p) => {
 					const newSelected = { ...p };
-					newSelected.horizental.map((item) =>
+					newSelected.horizontal.map((item) =>
 						item.side === i % 5 && item.border === Math.floor(i / 5) + 1
 							? (item.isSelected = false)
 							: item
@@ -690,7 +699,7 @@ interface borderState {
 
 interface selected {
 	vertical: borderState[];
-	horizental: borderState[];
+	horizontal: borderState[];
 }
 
 type boxes = Array<{
@@ -702,7 +711,7 @@ type boxes = Array<{
 const Board = () => {
 	const [selected, setSelected] = useState<selected>({
 		vertical: [],
-		horizental: [],
+		horizontal: [],
 	});
 	const [boxes, setBoxes] = useState<
 		Array<{ id: number; isPartialSurrounded: boolean; isSurrounded: boolean }>
@@ -738,7 +747,7 @@ const Board = () => {
 						/>
 					</BoardBordersContainer>
 					<BorderBox
-						direction="horizental"
+						direction="horizontal"
 						setSelected={setSelected}
 						selected={selected}
 						setBoxes={setBoxes}
