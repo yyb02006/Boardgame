@@ -176,26 +176,26 @@ const BoxCollection = ({
 			}
 		};
 
-		const handleSelected = (kind: direction) => {
-			selected[kind].filter(
+		const formattedSelected: selected =
+			selected[direction].filter(
 				(item) => item.border === borderId && item.side === sideId
-			).length > 0 ||
-				setSelected((p) => ({
-					...p,
-					[kind]: [
-						...p[kind],
-						{ border: borderId, side: sideId, isSelected: true },
-					],
-				}));
-		};
+			).length === 0
+				? {
+						...selected,
+						[direction]: [
+							...selected[direction],
+							{ border: borderId, side: sideId, isSelected: true },
+						],
+				  }
+				: selected;
 
 		const getFilterdSelected = (direction: 'left' | 'right') => [
-			...selected.vertical.filter(
+			...formattedSelected.vertical.filter(
 				(item) =>
 					item.border === sideId + (direction === 'left' ? 0 : 1) &&
 					(item.side === borderId - 1 || item.side === borderId)
 			),
-			...selected.horizontal.filter(
+			...formattedSelected.horizontal.filter(
 				(item) =>
 					item.border === borderId &&
 					item.side === sideId + (direction === 'left' ? -1 : +1)
@@ -205,7 +205,9 @@ const BoxCollection = ({
 		const findClosedBoxByDirection = (direction: direction) => {
 			const isHorizontal = direction === 'horizontal';
 			return Array.from({ length: 5 }, (_, id) => {
-				const borders = selected[isHorizontal ? 'horizontal' : 'vertical']
+				const borders = formattedSelected[
+					isHorizontal ? 'horizontal' : 'vertical'
+				]
 					.filter((item) => item.side === id)
 					.sort((a, b) => a.border - b.border);
 				return borders.length > 1
@@ -329,7 +331,7 @@ const BoxCollection = ({
 			}
 		}
 
-		handleSelected(direction);
+		setSelected(formattedSelected);
 
 		/* why doesn't TypeGuard work when using a func return instead a variable? */
 	};
