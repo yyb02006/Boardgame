@@ -161,18 +161,18 @@ const BoxCollection = ({
 		const boxLocation = (
 			direction: direction,
 			isUpPos: boolean,
-			option: number = 0,
 			border: number = borderId,
-			side: number = sideId
+			side: number = sideId,
+			option: number = 0
 		) => {
 			if ((border === 0 && isUpPos) || (border === 5 && !isUpPos)) {
-				return 'notExist';
+				return false;
 			} else if (direction === 'horizontal') {
 				return (border - (isUpPos ? 1 : 0)) * 5 + side + option;
 			} else if (direction === 'vertical') {
 				return side * 5 + border - (isUpPos ? 1 : 0) + option;
 			} else {
-				return 'notExist';
+				return false;
 			}
 		};
 
@@ -301,7 +301,39 @@ const BoxCollection = ({
 			};
 		};
 
-		if (
+		const enclosedBoxes = findClosedBoxByDirection('horizontal').map((item) =>
+			getEnclosedBox(
+				item,
+				direction === 'horizontal' ? 'vertical' : 'horizontal'
+			)
+		);
+
+		/* 객체를 포함한 배열을 이런 방식으로 복사할 경우 데이터가 복사되는 '깊은 복사'가 되는 것이 아니라
+		같은 객체 데이터를 참조하는 배열을 하나 더 만드는 '얕은 복사'가 되기 때문에,
+		복사한 값을 담을 변수를 이용해 값을 변경해도 원본이 같이 변경될 수 있다. */
+
+		/* const newBoxes = [...boxes]; */
+
+		const deepNewBoxes = JSON.parse(JSON.stringify(boxes));
+
+		for (const box of enclosedBoxes) {
+			const surroundedBoxCount = box.horizontal.reduce(
+				(count, id) => (boxes[id].isSurrounded ? count + 1 : count),
+				0
+			);
+			if (
+				JSON.stringify(box.horizontal) === JSON.stringify(box.vertical) &&
+				surroundedBoxCount < box.horizontal.length
+			) {
+				box.horizontal.forEach((item) => {
+					deepNewBoxes[item].isSurrounded = true;
+				});
+			}
+		}
+
+		console.log(deepNewBoxes);
+
+		/* if (
 			getFilterdSelected('left').length > 0 &&
 			getFilterdSelected('right').length > 0
 		) {
@@ -329,9 +361,30 @@ const BoxCollection = ({
 					});
 				}
 			}
-		}
+		} */
 
-		setSelected(formattedSelected);
+		const filteredSelected = (direction: direction) =>
+			formattedSelected[direction].filter((item) => {
+				const upBox = boxLocation(direction, true, item.border, item.side);
+				const downBox = boxLocation(direction, false, item.border, item.side);
+				if (
+					upBox &&
+					downBox &&
+					deepNewBoxes[upBox].isSurrounded &&
+					deepNewBoxes[downBox].isSurrounded
+				) {
+					return false;
+				}
+				return true;
+			});
+
+		const resultSelected = {
+			horizontal: filteredSelected('horizontal'),
+			vertical: filteredSelected('vertical'),
+		};
+
+		setSelected(resultSelected);
+		setBoxes(deepNewBoxes);
 
 		/* why doesn't TypeGuard work when using a func return instead a variable? */
 	};
