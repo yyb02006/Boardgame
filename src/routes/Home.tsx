@@ -156,60 +156,8 @@ const BoxCollection = ({
 	setSelected,
 	setBoxes,
 }: boxCollectionProps) => {
-	const prevTest = useRef<{
-		borderId: number;
-		sideId: number;
-		direction: direction;
-	}>();
-	const prevState = usePrevious<
-		{
-			borderId: number;
-			sideId: number;
-			direction: 'horizontal' | 'vertical';
-		},
-		selected
-	>(
-		{
-			borderId: selected[direction][selected[direction]?.length - 1]?.border,
-			sideId: selected[direction][selected[direction]?.length - 1]?.side,
-			direction,
-		},
-		{ borderId: 0, sideId: 0, direction: 'horizontal' },
-		selected
-	);
-	/* if (prevState.horizontal.length !== selected.horizontal.length) {
-		console.log(prevState.horizontal[prevState.horizontal.length - 1]);
-	} else if (prevState.vertical.length !== selected.vertical.length) {
-		console.log(prevState.vertical[prevState.vertical.length - 1]);
-	} */
 	const onBoxClick = (sideId: number) => {
 		console.log('border = ' + borderId, 'side = ' + sideId, boxes);
-
-		const selectedItem = () => {
-			if (selected[direction][selected[direction].length - 1]) {
-				console.log('have');
-			} else if (
-				selected[direction === 'horizontal' ? 'vertical' : 'horizontal'][
-					selected[direction === 'horizontal' ? 'vertical' : 'horizontal']
-						.length - 1
-				]
-			) {
-				console.log('doesnt have');
-			} else {
-				console.log('not');
-			}
-		};
-
-		selectedItem();
-
-		/* prevTest.current = {
-			borderId: selectedItem ? selectedItem.border,
-			sideId: side,
-			direction,
-		}; */
-
-		console.log(prevTest.current);
-
 		const boxLocation = (
 			direction: direction,
 			isUpPos: boolean,
@@ -241,155 +189,6 @@ const BoxCollection = ({
 				}));
 		};
 
-		const handleBox: (
-			kind: direction,
-			isUpPos: boolean
-		) => {
-			boxIndex: number | undefined | 'notExist';
-			state: 'isSurrounded' | 'isPartialSurrounded' | 'notSurrounded';
-		} = (kind, isUpPos = true) => {
-			const processHorizontal = () => ({
-				left: selected[
-					kind === 'horizontal' ? 'vertical' : 'horizontal'
-				].filter(
-					(item) =>
-						(kind === 'horizontal'
-							? item.border === sideId
-							: item.border === sideId + 1) &&
-						item.side === (isUpPos ? borderId - 1 : borderId)
-				)[0],
-				right: selected[
-					kind === 'horizontal' ? 'vertical' : 'horizontal'
-				].filter(
-					(item) =>
-						(kind === 'horizontal'
-							? item.border === sideId + 1
-							: item.border === sideId) &&
-						item.side === (isUpPos ? borderId - 1 : borderId)
-				)[0],
-			});
-			const processVertical = () =>
-				selected[kind].filter(
-					(item) =>
-						item.border === (isUpPos ? borderId - 1 : borderId + 1) &&
-						item.side === sideId
-				)[0];
-			/* solved */
-			const isBoxContacting = (
-				borderCondition: borderState,
-				truePart: number,
-				falsePart: number
-			) => {
-				return (
-					borderCondition ||
-					boxes.filter(
-						(item) =>
-							item.id ===
-							boxLocation(
-								direction,
-								isUpPos,
-								direction === 'horizontal' ? truePart : falsePart
-							)
-					)[0]?.isPartialSurrounded
-				);
-			};
-
-			/* const isLeftHorizontalSurrounded = () => {
-				return (
-					processHorizontal().left ||
-					boxes.filter(
-						(item) =>
-							item.id ===
-							boxLocation(
-								direction,
-								isUpPos,
-								direction === 'horizontal' ? -1 : 5
-							)
-					)[0]?.isPartialSurrounded
-				);
-			};
-
-			const isRightHorizontalSurrounded = () => {
-				return (
-					processHorizontal().right ||
-					boxes.filter(
-						(item) =>
-							item.id ===
-							boxLocation(
-								direction,
-								isUpPos,
-								direction === 'horizontal' ? 1 : -5
-							)
-					)[0]?.isPartialSurrounded
-				);
-			};
-
-			const isVerticalSurrounded = () => {
-				return (
-					processVertical() ||
-					boxes.filter(
-						(item) =>
-							item.id ===
-							boxLocation(
-								direction,
-								isUpPos,
-								direction === 'horizontal'
-									? (isUpPos
-										? -5
-										: 5)
-									: (isUpPos
-									? -1
-									: 1)
-							)
-					)[0].isPartialSurrounded
-				);
-			}; */
-
-			/* console.log(processHorizontal(), processVertical()); */
-
-			const contactingResult = {
-				vertical: isBoxContacting(
-					processVertical(),
-					isUpPos ? -5 : 5,
-					isUpPos ? -1 : 1
-				),
-				left: isBoxContacting(processHorizontal().left, -1, 5),
-				right: isBoxContacting(processHorizontal().right, 1, -5),
-			};
-
-			// console.log(selected, prevBorder.current.horizontal);
-
-			if (
-				/* When the Box is Surrounded */
-				contactingResult.vertical &&
-				contactingResult.left &&
-				contactingResult.right
-			) {
-				console.log('its Surrounded');
-				return {
-					state: 'isSurrounded',
-					boxIndex: boxLocation(direction, isUpPos),
-				};
-			} else if (
-				/** When the Box is PartialSurrounded */
-				Object.values(contactingResult).reduce(
-					(count, el) => count + (el ? 1 : 0),
-					0
-				) === 2
-			) {
-				console.log('its PartialSurrounded');
-				return {
-					state: 'isPartialSurrounded',
-					boxIndex: boxLocation(direction, isUpPos),
-				};
-			} else {
-				return {
-					state: 'notSurrounded',
-					boxIndex: undefined,
-				};
-			}
-		};
-
 		const getFilterdSelected = (direction: 'left' | 'right') => [
 			...selected.vertical.filter(
 				(item) =>
@@ -402,22 +201,6 @@ const BoxCollection = ({
 					item.side === sideId + (direction === 'left' ? -1 : +1)
 			),
 		];
-
-		const isBoxesSurrounded = () => {
-			console.log(
-				Array(6)
-					.map((_, id) =>
-						selected.horizontal.filter((item) => item.border === id)
-					)
-					.map((el, id) =>
-						el.length > 1
-							? Array(el.length - 1).map(
-									(_, id) => el[id + 1].border - el[id].border
-							  )
-							: undefined
-					)
-			);
-		};
 
 		const findClosedBoxByDirection = (direction: direction) => {
 			const isHorizontal = direction === 'horizontal';
@@ -442,10 +225,6 @@ const BoxCollection = ({
 				.flat()
 				.filter((item) => !!item);
 		};
-
-		console.log(findClosedBoxByDirection('horizontal'));
-
-		console.log(findClosedBoxByDirection('vertical'));
 
 		/**
 		 * 서로 다른 두 개의 중첩된 배열에서 요소간에 연결되며 겹치는 배열을 구하는 함수 초안
@@ -550,75 +329,10 @@ const BoxCollection = ({
 			}
 		}
 
-		const updateBoxState = (
-			index: number | 'notExist',
-			state: 'isSurrounded' | 'isPartialSurrounded'
-		) => {
-			index === 'notExist' ||
-				setBoxes((p) => {
-					const newBoxes = [...p];
-					newBoxes[index][state] = true;
-					return newBoxes;
-				});
-		};
-
 		handleSelected(direction);
 
 		/* why doesn't TypeGuard work when using a func return instead a variable? */
-		const handleBoxState = {
-			up: handleBox(direction, true).state,
-			down: handleBox(direction, false).state,
-		};
-
-		/* When Upside Border Clicked */
-		if (handleBoxState.up !== 'notSurrounded') {
-			updateBoxState(
-				handleBox(direction, true).boxIndex as number,
-				handleBoxState.up
-			);
-		}
-
-		/* When Downside Border Clicked */
-		if (handleBoxState.down !== 'notSurrounded') {
-			updateBoxState(
-				handleBox(direction, false).boxIndex as number,
-				handleBoxState.down
-			);
-		}
 	};
-
-	/* console.log('sideId = ' + (0 % 5), 'borderId = ' + (0 + 1)); */
-
-	/* execution sequence of boxMerge function is lagging behind */
-
-	/* const boxMerge = () => {
-		for (let i = 0; i < boxes.length - 1; i++) {
-			if (boxes[i]?.isSurrounded && boxes[i + 1]?.isSurrounded) {
-				setSelected((p) => {
-					const newSelected = { ...p };
-					newSelected.vertical.map((item) =>
-						item.border === (i % 5) + 1 && item.side === Math.floor(i / 5)
-							? (item.isSelected = false)
-							: item
-					);
-					return newSelected;
-				});
-			}
-			if (boxes[i]?.isSurrounded && boxes[i + 5]?.isSurrounded) {
-				setSelected((p) => {
-					const newSelected = { ...p };
-					newSelected.horizontal.map((item) =>
-						item.side === i % 5 && item.border === Math.floor(i / 5) + 1
-							? (item.isSelected = false)
-							: item
-					);
-					return newSelected;
-				});
-			}
-		}
-	}; */
-
-	/* 큰 사각형 모양으로 포위되었을 때 로직 처리 */
 
 	return (
 		<>
