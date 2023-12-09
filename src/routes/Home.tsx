@@ -38,7 +38,7 @@ const BoardLayout = styled.div`
 	position: relative;
 	background-color: #1244db;
 	display: flex;
-	justify-content: center;
+	justify-content: space-between;
 	height: 100%;
 `;
 
@@ -331,9 +331,7 @@ const BoxCollection = ({
 			}
 		}
 
-		console.log(deepNewBoxes);
-
-		/* if (
+		if (
 			getFilterdSelected('left').length > 0 &&
 			getFilterdSelected('right').length > 0
 		) {
@@ -352,16 +350,10 @@ const BoxCollection = ({
 					JSON.stringify(box.horizontal) === JSON.stringify(box.vertical) &&
 					surroundedBoxCount < box.horizontal.length
 				) {
-					setBoxes((p) => {
-						const newBoxes = [...p];
-						box.horizontal.forEach((item) => {
-							newBoxes[item].isSurrounded = true;
-						});
-						return newBoxes;
-					});
+					setBoxes(deepNewBoxes);
 				}
 			}
-		} */
+		}
 
 		const filteredSelected = (direction: direction) =>
 			formattedSelected[direction].filter((item) => {
@@ -493,6 +485,7 @@ const Board = () => {
 	);
 	return (
 		<BoardLayout>
+			<div>rate : {boxes.filter((box) => box.isSurrounded).length}</div>
 			<BoardItemsContainer>
 				{boxes.map((box, id) =>
 					id < 5 || id > 20 || id % 5 === 0 || id % 5 === 4 ? (
@@ -524,6 +517,7 @@ const Board = () => {
 					/>
 				</BoardBordersContainer>
 			</BoardItemsContainer>
+			<div>rate : {boxes.filter((box) => box.isSurrounded).length}</div>
 		</BoardLayout>
 	);
 };
