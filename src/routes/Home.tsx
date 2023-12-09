@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import usePrevious from '../hooks/usePrevious';
 import { isElementInNestedArray, sortByOrder } from '../libs/utils';
+import { AppProvider, useAppContext } from '../AppContext';
 
 interface directionInterface {
 	direction: direction;
@@ -144,6 +145,7 @@ interface boxCollectionProps extends directionInterface {
 	isLast?: boolean;
 	selected: selected;
 	boxes: boxes;
+	currentPlayer: player;
 	setBoxes: setBoxes;
 }
 
@@ -153,6 +155,7 @@ const BoxCollection = ({
 	isLast = false,
 	selected,
 	boxes,
+	currentPlayer,
 	setSelected,
 	setBoxes,
 }: boxCollectionProps) => {
@@ -412,12 +415,14 @@ interface borderBoxProps extends directionInterface {
 	selected: selected;
 	setBoxes: setBoxes;
 	boxes: boxes;
+	currentPlayer: player;
 }
 
 const BorderBox = ({
 	direction,
 	selected,
 	boxes,
+	currentPlayer,
 	setSelected,
 	setBoxes,
 }: borderBoxProps) => {
@@ -432,6 +437,7 @@ const BorderBox = ({
 							borderId={borderId}
 							selected={selected}
 							boxes={boxes}
+							currentPlayer={currentPlayer}
 							setSelected={setSelected}
 							setBoxes={setBoxes}
 						/>
@@ -442,6 +448,7 @@ const BorderBox = ({
 								borderId={borderId + 1}
 								selected={selected}
 								boxes={boxes}
+								currentPlayer={currentPlayer}
 								setSelected={setSelected}
 								setBoxes={setBoxes}
 							/>
@@ -463,26 +470,15 @@ interface selected {
 	horizontal: borderState[];
 }
 
-type boxes = Array<{
-	id: number;
-	isPartialSurrounded: boolean;
-	isSurrounded: boolean;
-}>;
-
 const Board = () => {
-	const [selected, setSelected] = useState<selected>({
-		vertical: [],
-		horizontal: [],
-	});
-	const [boxes, setBoxes] = useState<
-		Array<{ id: number; isPartialSurrounded: boolean; isSurrounded: boolean }>
-	>(
-		Array.from({ length: 25 }, (_, id) => ({
-			id,
-			isPartialSurrounded: false,
-			isSurrounded: false,
-		}))
-	);
+	const {
+		currentPlayer,
+		setCurrentPlayer,
+		selected,
+		setSelected,
+		boxes,
+		setBoxes,
+	} = useAppContext();
 	return (
 		<BoardLayout>
 			<div>rate : {boxes.filter((box) => box.isSurrounded).length}</div>
@@ -506,6 +502,7 @@ const Board = () => {
 							selected={selected}
 							setBoxes={setBoxes}
 							boxes={boxes}
+							currentPlayer={currentPlayer}
 						/>
 					</BoardBordersContainer>
 					<BorderBox
@@ -514,6 +511,7 @@ const Board = () => {
 						selected={selected}
 						setBoxes={setBoxes}
 						boxes={boxes}
+						currentPlayer={currentPlayer}
 					/>
 				</BoardBordersContainer>
 			</BoardItemsContainer>
@@ -525,8 +523,10 @@ const Board = () => {
 const Home = () => {
 	return (
 		<Layout>
-			The BorderGame
-			<Board />
+			<AppProvider>
+				The BorderGame
+				<Board />
+			</AppProvider>
 		</Layout>
 	);
 };
