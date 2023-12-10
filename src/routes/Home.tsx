@@ -1,8 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
-import usePrevious from '../hooks/usePrevious';
 import { isElementInNestedArray, sortByOrder } from '../libs/utils';
-import { AppProvider, useAppContext } from '../AppContext';
+import { AppProvider, useAppContext } from './HomeContext';
 
 interface directionInterface {
 	direction: direction;
