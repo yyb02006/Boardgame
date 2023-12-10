@@ -1,26 +1,31 @@
 import React, { createContext, useContext, useState } from 'react';
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
+const AppContext = createContext<HomeContextType | undefined>(undefined);
 
-function AppProvider({ children }: { children: React.ReactNode }) {
-	const [currentPlayer, setCurrentPlayer] = useState<player>('player1');
+function HomeProvider({ children }: { children: React.ReactNode }) {
+	const [currentPlayer, setCurrentPlayer] = useState<currentPlayer>('player1');
+	const [players, setPlayers] = useState<players>({
+		player1: { boxCount: 0, name: 'player1' },
+		player2: { boxCount: 0, name: 'player2' },
+	});
 	const [selected, setSelected] = useState<selected>({
 		vertical: [],
 		horizontal: [],
 	});
-	const [boxes, setBoxes] = useState<
-		Array<{ id: number; isPartialSurrounded: boolean; isSurrounded: boolean }>
-	>(
+	const [boxes, setBoxes] = useState<boxes>(
 		Array.from({ length: 25 }, (_, id) => ({
 			id,
 			isPartialSurrounded: false,
 			isSurrounded: false,
+			owner: undefined,
 		}))
 	);
 
-	const contextValue: AppContextType = {
+	const contextValue: HomeContextType = {
 		currentPlayer,
 		setCurrentPlayer,
+		players,
+		setPlayers,
 		selected,
 		setSelected,
 		boxes,
@@ -32,7 +37,7 @@ function AppProvider({ children }: { children: React.ReactNode }) {
 	);
 }
 
-function useAppContext() {
+function useHomeContext() {
 	const contextValue = useContext(AppContext);
 	/** undefined예외처리 */
 	if (contextValue === undefined) {
@@ -41,4 +46,4 @@ function useAppContext() {
 	return contextValue;
 }
 
-export { AppProvider, useAppContext };
+export { HomeProvider, useHomeContext };

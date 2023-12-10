@@ -1,25 +1,21 @@
 import React from 'react';
 import styled from 'styled-components';
 import { isElementInNestedArray, sortByOrder } from '../libs/utils';
-import { AppProvider, useAppContext } from './HomeContext';
+import { HomeProvider, useHomeContext } from './HomeContext';
 
-interface directionInterface {
-	direction: direction;
-}
-
-type direction = 'horizontal' | 'vertical';
-
-type setSelected = React.Dispatch<React.SetStateAction<selected>>;
-
-type setBoxes = React.Dispatch<
-	React.SetStateAction<
-		Array<{
-			id: number;
-			isPartialSurrounded: boolean;
-			isSurrounded: boolean;
-		}>
-	>
->;
+const colors = {
+	player1: {
+		noneActiveBorder: '#1696eb',
+		noneActiveBox: '#1244db',
+		activeBox: '#1696eb',
+	},
+	player2: {
+		noneActiveBorder: '#73dd85',
+		noneActiveBox: '#1bc237',
+		activeBox: '#73dd85',
+	},
+	common: { noneActiveBox: '#1696eb' },
+};
 
 const Layout = styled.section`
 	background-color: var(--bgColor-dark);
@@ -34,9 +30,9 @@ const Layout = styled.section`
 	flex-direction: column;
 `;
 
-const BoardLayout = styled.div`
+const BoardLayout = styled.div<BoardLayoutProps>`
 	position: relative;
-	background-color: #1244db;
+	background-color: ${(props) => colors[props.$currentPlayer].noneActiveBox};
 	display: flex;
 	justify-content: space-between;
 	height: 100%;
@@ -50,16 +46,21 @@ const BoardItemsContainer = styled.div`
 	aspect-ratio: 1;
 `;
 
-const Boxes = styled.div<{ $isSurrounded: boolean }>`
+const Boxes = styled.div<BoxesProps>`
 	position: relative;
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	background-color: ${(props) =>
-		props.$isSurrounded ? '#1696eb' : 'transperant'};
+	background-color: ${(props) => {
+		if (props.$isSurrounded) {
+			return colors[props.$currentPlayer].activeBox;
+		} else {
+			return 'transparent';
+		}
+	}};
 `;
 
-const BoardBordersContainer = styled.div<{ $borderDirection: string }>`
+const BoardBordersContainer = styled.div<BoardBordersContainerProps>`
 	position: absolute;
 	width: 100%;
 	height: 100%;
@@ -78,7 +79,7 @@ const BoxStyle = styled.div<directionInterface>`
 	flex-wrap: wrap;
 `;
 
-const BoxWrapper = styled.div<directionInterface & { $isLast: boolean }>`
+const BoxWrapper = styled.div<BoxWrapperProps>`
 	font-size: 1rem;
 	color: #101010;
 	width: ${(props) => (props.direction === 'horizontal' ? '20%' : 0)};
@@ -87,11 +88,21 @@ const BoxWrapper = styled.div<directionInterface & { $isLast: boolean }>`
 	align-self: ${(props) => (props.$isLast ? 'flex-end' : 'flex-start')};
 `;
 
-const FakeHover = styled.div``;
+const FakeHover = styled.div`
+	position: absolute;
+	background-color: inherit;
+	pointer-events: none;
+`;
 
-const BoxSide = styled.div``;
+const BoxSide = styled.div`
+	border-width: 2px;
+	border-style: solid;
+	border-color: inherit;
+	position: absolute;
+	pointer-events: none;
+`;
 
-const BoxHover = styled.div<directionInterface & { $isSelected: boolean }>`
+const BoxHover = styled.div<BoxHoverProps>`
 	width: ${(props) =>
 		props.direction === 'horizontal' ? 'calc(100% - 40px)' : '40px'};
 	height: ${(props) =>
@@ -107,57 +118,51 @@ const BoxHover = styled.div<directionInterface & { $isSelected: boolean }>`
 		props.direction === 'horizontal' ? 'center' : 'center'};
 	justify-content: ${(props) =>
 		props.direction === 'horizontal' ? 'center' : 'center'};
-	border-color: ${(props) => (props.$isSelected ? 'red' : 'yellow')};
+	border-color: ${(props) => {
+		if (props.$isSelected) {
+			return '#f36614';
+		} else {
+			return colors[props.$currentPlayer].noneActiveBorder;
+		}
+	}};
 	z-index: ${(props) => (props.$isSelected ? 2 : 1)};
 	&:hover {
 		background-color: blueviolet;
 		border-color: green;
-		z-index: 2;
+		z-index: 3;
 	}
 	${FakeHover} {
-		position: absolute;
 		width: ${(props) =>
 			props.direction === 'horizontal' ? 'calc(100% + 44px)' : '100%'};
 		height: ${(props) =>
 			props.direction === 'horizontal' ? '100%' : 'calc(100% + 44px)'};
-		background-color: inherit;
-		pointer-events: none;
 	}
 	${BoxSide} {
 		width: ${(props) =>
 			props.direction === 'horizontal' ? 'calc(100% + 44px)' : 'auto'};
 		height: ${(props) =>
 			props.direction === 'horizontal' ? 'auto' : 'calc(100% + 44px)'};
-		border-width: 2px;
-		border-style: solid;
-		border-color: inherit;
-		position: absolute;
+
 		left: ${(props) => (props.direction === 'horizontal' ? '-22px' : 'auto')};
 		top: ${(props) => (props.direction === 'horizontal' ? 'auto' : '-22px')};
-		pointer-events: none;
 	}
 `;
-
-interface boxCollectionProps extends directionInterface {
-	setSelected: setSelected;
-	borderId: number;
-	isLast?: boolean;
-	selected: selected;
-	boxes: boxes;
-	currentPlayer: player;
-	setBoxes: setBoxes;
-}
 
 const BoxCollection = ({
 	direction,
 	borderId,
 	isLast = false,
-	selected,
-	boxes,
-	currentPlayer,
-	setSelected,
-	setBoxes,
 }: boxCollectionProps) => {
+	const {
+		boxes,
+		setBoxes,
+		selected,
+		setSelected,
+		currentPlayer,
+		setCurrentPlayer,
+		players,
+		setPlayers,
+	} = useHomeContext();
 	const onBoxClick = (sideId: number) => {
 		console.log('border = ' + borderId, 'side = ' + sideId, boxes);
 		const boxLocation = (
@@ -190,6 +195,8 @@ const BoxCollection = ({
 						],
 				  }
 				: selected;
+
+		console.log(formattedSelected);
 
 		const getFilterdSelected = (direction: 'left' | 'right') => [
 			...formattedSelected.vertical.filter(
@@ -303,22 +310,22 @@ const BoxCollection = ({
 			};
 		};
 
-		const enclosedBoxes = findClosedBoxByDirection('horizontal').map((item) =>
+		/* const enclosedBoxes = findClosedBoxByDirection('horizontal').map((item) =>
 			getEnclosedBox(
 				item,
 				direction === 'horizontal' ? 'vertical' : 'horizontal'
 			)
 		);
-
+ */
 		/* 객체를 포함한 배열을 이런 방식으로 복사할 경우 데이터가 복사되는 '깊은 복사'가 되는 것이 아니라
 		같은 객체 데이터를 참조하는 배열을 하나 더 만드는 '얕은 복사'가 되기 때문에,
 		복사한 값을 담을 변수를 이용해 값을 변경해도 원본이 같이 변경될 수 있다. */
 
 		/* const newBoxes = [...boxes]; */
 
-		const deepNewBoxes = JSON.parse(JSON.stringify(boxes));
+		const deepNewBoxes: boxes = JSON.parse(JSON.stringify(boxes));
 
-		for (const box of enclosedBoxes) {
+		/* for (const box of enclosedBoxes) {
 			const surroundedBoxCount = box.horizontal.reduce(
 				(count, id) => (boxes[id].isSurrounded ? count + 1 : count),
 				0
@@ -331,7 +338,9 @@ const BoxCollection = ({
 					deepNewBoxes[item].isSurrounded = true;
 				});
 			}
-		}
+		} */
+
+		console.log(getFilterdSelected('left'), getFilterdSelected('right'));
 
 		if (
 			getFilterdSelected('left').length > 0 &&
@@ -352,7 +361,9 @@ const BoxCollection = ({
 					JSON.stringify(box.horizontal) === JSON.stringify(box.vertical) &&
 					surroundedBoxCount < box.horizontal.length
 				) {
-					setBoxes(deepNewBoxes);
+					box.horizontal.forEach((item) => {
+						deepNewBoxes[item].isSurrounded = true;
+					});
 				}
 			}
 		}
@@ -379,6 +390,14 @@ const BoxCollection = ({
 
 		setSelected(resultSelected);
 		setBoxes(deepNewBoxes);
+		setPlayers((p) => {
+			const newPlayers = { ...p };
+			newPlayers[currentPlayer].boxCount = deepNewBoxes.filter(
+				(item) => item.isSurrounded
+			).length;
+			return newPlayers;
+		});
+		setCurrentPlayer((p) => (p === 'player1' ? 'player2' : 'player1'));
 
 		/* why doesn't TypeGuard work when using a func return instead a variable? */
 	};
@@ -399,6 +418,7 @@ const BoxCollection = ({
 									(item) => item.border === borderId && item.side === sideId
 								)[0]?.isSelected
 							}
+							$currentPlayer={currentPlayer}
 						>
 							<FakeHover />
 							<BoxSide />
@@ -409,47 +429,19 @@ const BoxCollection = ({
 	);
 };
 
-interface borderBoxProps extends directionInterface {
-	setSelected: setSelected;
-	selected: selected;
-	setBoxes: setBoxes;
-	boxes: boxes;
-	currentPlayer: player;
-}
-
-const BorderBox = ({
-	direction,
-	selected,
-	boxes,
-	currentPlayer,
-	setSelected,
-	setBoxes,
-}: borderBoxProps) => {
+const BorderBox = ({ direction }: borderBoxProps) => {
 	return (
 		<>
 			{Array(5)
 				.fill(undefined)
 				.map((_, borderId) => (
 					<BoxStyle key={borderId} direction={direction}>
-						<BoxCollection
-							direction={direction}
-							borderId={borderId}
-							selected={selected}
-							boxes={boxes}
-							currentPlayer={currentPlayer}
-							setSelected={setSelected}
-							setBoxes={setBoxes}
-						/>
+						<BoxCollection direction={direction} borderId={borderId} />
 						{borderId === 4 ? (
 							<BoxCollection
 								direction={direction}
 								isLast={borderId === 4}
 								borderId={borderId + 1}
-								selected={selected}
-								boxes={boxes}
-								currentPlayer={currentPlayer}
-								setSelected={setSelected}
-								setBoxes={setBoxes}
 							/>
 						) : null}
 					</BoxStyle>
@@ -458,75 +450,58 @@ const BorderBox = ({
 	);
 };
 
-interface borderState {
-	border: number;
-	side: number;
-	isSelected: boolean;
-}
-
-interface selected {
-	vertical: borderState[];
-	horizontal: borderState[];
-}
-
 const Board = () => {
-	const {
-		currentPlayer,
-		setCurrentPlayer,
-		selected,
-		setSelected,
-		boxes,
-		setBoxes,
-	} = useAppContext();
+	const { boxes, currentPlayer, players } = useHomeContext();
 	return (
-		<BoardLayout>
-			<div>rate : {boxes.filter((box) => box.isSurrounded).length}</div>
+		<BoardLayout $currentPlayer={currentPlayer}>
+			<div>
+				{players.player1.name} <br />
+				rate : {boxes.filter((box) => box.isSurrounded).length}
+			</div>
 			<BoardItemsContainer>
 				{boxes.map((box, id) =>
 					id < 5 || id > 20 || id % 5 === 0 || id % 5 === 4 ? (
-						<Boxes key={box.id} $isSurrounded={box.isSurrounded}>
+						<Boxes
+							key={box.id}
+							$isSurrounded={box.isSurrounded}
+							$currentPlayer={currentPlayer}
+						>
 							{box.id}
 						</Boxes>
 					) : (
-						<Boxes key={box.id} $isSurrounded={box.isSurrounded}>
+						<Boxes
+							key={box.id}
+							$isSurrounded={box.isSurrounded}
+							$currentPlayer={currentPlayer}
+						>
 							{box.id}
 						</Boxes>
 					)
 				)}
 				<BoardBordersContainer $borderDirection="column">
 					<BoardBordersContainer $borderDirection="row">
-						<BorderBox
-							direction="vertical"
-							setSelected={setSelected}
-							selected={selected}
-							setBoxes={setBoxes}
-							boxes={boxes}
-							currentPlayer={currentPlayer}
-						/>
+						<BorderBox direction="vertical" />
 					</BoardBordersContainer>
-					<BorderBox
-						direction="horizontal"
-						setSelected={setSelected}
-						selected={selected}
-						setBoxes={setBoxes}
-						boxes={boxes}
-						currentPlayer={currentPlayer}
-					/>
+					<BorderBox direction="horizontal" />
 				</BoardBordersContainer>
 			</BoardItemsContainer>
-			<div>rate : {boxes.filter((box) => box.isSurrounded).length}</div>
+			<div>
+				{players.player2.name}
+				<br />
+				rate : {boxes.filter((box) => box.isSurrounded).length}
+			</div>
 		</BoardLayout>
 	);
 };
 
 const Home = () => {
 	return (
-		<Layout>
-			<AppProvider>
+		<HomeProvider>
+			<Layout>
 				The BorderGame
 				<Board />
-			</AppProvider>
-		</Layout>
+			</Layout>
+		</HomeProvider>
 	);
 };
 
