@@ -198,18 +198,38 @@ const BoxCollection = ({
 
 		console.log(formattedSelected);
 
-		const getFilterdSelected = (direction: 'left' | 'right') => [
-			...formattedSelected.vertical.filter(
+		const getFilteredSelected = (sidePos: 'left' | 'right') => [
+			...formattedSelected[
+				direction === 'horizontal' ? 'vertical' : 'horizontal'
+			].filter(
 				(item) =>
-					item.border === sideId + (direction === 'left' ? 0 : 1) &&
+					item.border ===
+						sideId +
+							(direction === 'horizontal'
+								? sidePos === 'left'
+									? 0
+									: 1
+								: sidePos === 'left'
+								? 1
+								: 0) &&
 					(item.side === borderId - 1 || item.side === borderId)
 			),
-			...formattedSelected.horizontal.filter(
+			...formattedSelected[direction].filter(
 				(item) =>
 					item.border === borderId &&
-					item.side === sideId + (direction === 'left' ? -1 : +1)
+					item.side ===
+						sideId +
+							(direction === 'horizontal'
+								? sidePos === 'left'
+									? -1
+									: 1
+								: sidePos === 'left'
+								? 1
+								: -1)
 			),
 		];
+
+		console.log(getFilteredSelected('left'), getFilteredSelected('right'));
 
 		const findClosedBoxByDirection = (direction: direction) => {
 			const isHorizontal = direction === 'horizontal';
@@ -340,11 +360,9 @@ const BoxCollection = ({
 			}
 		} */
 
-		console.log(getFilterdSelected('left'), getFilterdSelected('right'));
-
 		if (
-			getFilterdSelected('left').length > 0 &&
-			getFilterdSelected('right').length > 0
+			getFilteredSelected('left').length > 0 &&
+			getFilteredSelected('right').length > 0
 		) {
 			const enclosedBoxes = findClosedBoxByDirection('horizontal').map((item) =>
 				getEnclosedBox(
