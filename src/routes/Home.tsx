@@ -120,7 +120,7 @@ const BoxHover = styled.div<BoxHoverProps>`
 		props.direction === 'horizontal' ? 'center' : 'center'};
 	border-color: ${(props) => {
 		if (props.$isSelected) {
-			return '#f36614';
+			return props.$owner === 'player1' ? 'yellow' : 'orange';
 		} else {
 			return colors[props.$currentPlayer].noneActiveBorder;
 		}
@@ -191,12 +191,15 @@ const BoxCollection = ({
 						...selected,
 						[direction]: [
 							...selected[direction],
-							{ border: borderId, side: sideId, isSelected: true },
+							{
+								border: borderId,
+								side: sideId,
+								isSelected: true,
+								owner: currentPlayer,
+							} /* satisfies === 중복 검사 */ satisfies borderState,
 						],
 				  }
 				: selected;
-
-		console.log(formattedSelected);
 
 		const getFilteredSelected = (sidePos: 'left' | 'right') => [
 			...formattedSelected[
@@ -228,8 +231,6 @@ const BoxCollection = ({
 								: -1)
 			),
 		];
-
-		console.log(getFilteredSelected('left'), getFilteredSelected('right'));
 
 		const findClosedBoxByDirection = (direction: direction) => {
 			const isHorizontal = direction === 'horizontal';
@@ -330,35 +331,7 @@ const BoxCollection = ({
 			};
 		};
 
-		/* const enclosedBoxes = findClosedBoxByDirection('horizontal').map((item) =>
-			getEnclosedBox(
-				item,
-				direction === 'horizontal' ? 'vertical' : 'horizontal'
-			)
-		);
- */
-		/* 객체를 포함한 배열을 이런 방식으로 복사할 경우 데이터가 복사되는 '깊은 복사'가 되는 것이 아니라
-		같은 객체 데이터를 참조하는 배열을 하나 더 만드는 '얕은 복사'가 되기 때문에,
-		복사한 값을 담을 변수를 이용해 값을 변경해도 원본이 같이 변경될 수 있다. */
-
-		/* const newBoxes = [...boxes]; */
-
 		const deepNewBoxes: boxes = JSON.parse(JSON.stringify(boxes));
-
-		/* for (const box of enclosedBoxes) {
-			const surroundedBoxCount = box.horizontal.reduce(
-				(count, id) => (boxes[id].isSurrounded ? count + 1 : count),
-				0
-			);
-			if (
-				JSON.stringify(box.horizontal) === JSON.stringify(box.vertical) &&
-				surroundedBoxCount < box.horizontal.length
-			) {
-				box.horizontal.forEach((item) => {
-					deepNewBoxes[item].isSurrounded = true;
-				});
-			}
-		} */
 
 		if (
 			getFilteredSelected('left').length > 0 &&
@@ -437,6 +410,11 @@ const BoxCollection = ({
 								)[0]?.isSelected
 							}
 							$currentPlayer={currentPlayer}
+							$owner={
+								selected[direction].filter(
+									(item) => item.border === borderId && item.side === sideId
+								)[0]?.owner
+							}
 						>
 							<FakeHover />
 							<BoxSide />

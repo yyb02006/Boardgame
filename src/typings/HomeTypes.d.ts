@@ -26,6 +26,7 @@ interface BoxWrapperProps extends directionInterface {
 interface BoxHoverProps extends directionInterface {
 	$isSelected: boolean;
 	$currentPlayer: currentPlayer;
+	$owner: currentPlayer;
 }
 
 /** Components Types */

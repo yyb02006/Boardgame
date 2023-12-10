@@ -37,4 +37,5 @@ interface borderState {
 	border: number;
 	side: number;
 	isSelected: boolean;
+	owner: currentPlayer;
 }
