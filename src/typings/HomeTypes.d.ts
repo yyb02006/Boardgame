@@ -1,7 +1,19 @@
 type direction = 'horizontal' | 'vertical';
 
+type nestedArray<T> = T[][];
+
 interface directionInterface {
 	direction: direction;
+}
+
+interface closedBoxes {
+	arr: nestedArray<number>;
+	label: 'horizontal' | 'vertical';
+}
+
+interface getEnclosedBoxResult {
+	horizontal: nestedArray<number>;
+	vertical: nestedArray<number>;
 }
 
 /** Styled Components Types */
@@ -29,7 +41,7 @@ interface BoxHoverProps extends directionInterface {
 	$owner: currentPlayer;
 }
 
-/** Components Types */
+/** Routes Components Types */
 
 interface boxCollectionProps {
 	direction: direction;

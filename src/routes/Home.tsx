@@ -164,6 +164,12 @@ const BoxCollection = ({
 		setPlayers,
 	} = useHomeContext();
 	const onBoxClick = (sideId: number) => {
+		if (
+			selected[direction].find(
+				(item) => item.border === borderId && item.side === sideId
+			)
+		)
+			return;
 		console.log('border = ' + borderId, 'side = ' + sideId, boxes);
 		const boxLocation = (
 			direction: direction,
@@ -201,11 +207,12 @@ const BoxCollection = ({
 				  }
 				: selected;
 
-		const getFilteredSelected = (sidePos: 'left' | 'right') => [
+		const findExistSideSelected = (sidePos: 'left' | 'right') => [
 			...formattedSelected[
 				direction === 'horizontal' ? 'vertical' : 'horizontal'
 			].filter(
 				(item) =>
+					item.owner === currentPlayer &&
 					item.border ===
 						sideId +
 							(direction === 'horizontal'
@@ -219,6 +226,7 @@ const BoxCollection = ({
 			),
 			...formattedSelected[direction].filter(
 				(item) =>
+					item.owner === currentPlayer &&
 					item.border === borderId &&
 					item.side ===
 						sideId +
@@ -238,7 +246,7 @@ const BoxCollection = ({
 				const borders = formattedSelected[
 					isHorizontal ? 'horizontal' : 'vertical'
 				]
-					.filter((item) => item.side === id)
+					.filter((item) => item.side === id && item.owner === currentPlayer)
 					.sort((a, b) => a.border - b.border);
 				return borders.length > 1
 					? Array.from({ length: borders.length - 1 }, (_, idx) =>
@@ -269,23 +277,16 @@ const BoxCollection = ({
 		 *  */
 
 		const getEnclosedBox = (closedBox: number[], initDirection: direction) => {
-			/* 파라미터로 전달하든 함수를 만들든 아래 코드 수정해서 순수함수로 바꾸기 */
-			const horizontalClosedBoxes: {
-				arr: number[][];
-				label: 'horizontal' | 'vertical';
-			} = {
+			const horizontalClosedBoxes: closedBoxes = {
 				arr: findClosedBoxByDirection('horizontal'),
 				label: 'horizontal',
 			};
-			const verticalClosedBoxes: {
-				arr: number[][];
-				label: 'horizontal' | 'vertical';
-			} = {
+			const verticalClosedBoxes: closedBoxes = {
 				arr: findClosedBoxByDirection('vertical'),
 				label: 'vertical',
 			};
 
-			const result: { horizontal: number[][]; vertical: number[][] } = {
+			const result: getEnclosedBoxResult = {
 				horizontal: [],
 				vertical: [],
 			};
@@ -293,8 +294,8 @@ const BoxCollection = ({
 			const addEnclosedBoxesRecursive = (
 				closedBox: number[],
 				boxesObject: {
-					arr: number[][];
-					label: 'horizontal' | 'vertical';
+					arr: nestedArray<number>;
+					label: direction;
 				}
 			) => {
 				const resultIsIncluded = isElementInNestedArray(
@@ -331,11 +332,12 @@ const BoxCollection = ({
 			};
 		};
 
-		const deepNewBoxes: boxes = JSON.parse(JSON.stringify(boxes));
+		/* const deepNewBoxes: boxes = JSON.parse(JSON.stringify(boxes)); 이 방식의 깊은 복사는 undefined를 제거해버림 */
+		const deepNewBoxes: boxes = boxes.map((item) => ({ ...item }));
 
 		if (
-			getFilteredSelected('left').length > 0 &&
-			getFilteredSelected('right').length > 0
+			findExistSideSelected('left').length > 0 &&
+			findExistSideSelected('right').length > 0
 		) {
 			const enclosedBoxes = findClosedBoxByDirection('horizontal').map((item) =>
 				getEnclosedBox(
@@ -350,16 +352,22 @@ const BoxCollection = ({
 				);
 				if (
 					JSON.stringify(box.horizontal) === JSON.stringify(box.vertical) &&
-					surroundedBoxCount < box.horizontal.length
+					surroundedBoxCount < box.horizontal.length &&
+					box.horizontal.filter(
+						(boxEl) =>
+							boxes[boxEl].owner !== currentPlayer &&
+							boxes[boxEl].owner !== undefined
+					).length === 0
 				) {
 					box.horizontal.forEach((item) => {
 						deepNewBoxes[item].isSurrounded = true;
+						deepNewBoxes[item].owner = currentPlayer;
 					});
 				}
 			}
 		}
 
-		const filteredSelected = (direction: direction) =>
+		const isMergeableSelected = (direction: direction) =>
 			formattedSelected[direction].filter((item) => {
 				const upBox = boxLocation(direction, true, item.border, item.side);
 				const downBox = boxLocation(direction, false, item.border, item.side);
@@ -367,7 +375,9 @@ const BoxCollection = ({
 					upBox &&
 					downBox &&
 					deepNewBoxes[upBox].isSurrounded &&
-					deepNewBoxes[downBox].isSurrounded
+					deepNewBoxes[downBox].isSurrounded &&
+					deepNewBoxes[upBox].owner === currentPlayer &&
+					deepNewBoxes[downBox].owner === currentPlayer
 				) {
 					return false;
 				}
@@ -375,8 +385,8 @@ const BoxCollection = ({
 			});
 
 		const resultSelected = {
-			horizontal: filteredSelected('horizontal'),
-			vertical: filteredSelected('vertical'),
+			horizontal: isMergeableSelected('horizontal'),
+			vertical: isMergeableSelected('vertical'),
 		};
 
 		setSelected(resultSelected);
