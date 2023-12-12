@@ -120,7 +120,7 @@ const BoxHover = styled.div<BoxHoverProps>`
 		props.direction === 'horizontal' ? 'center' : 'center'};
 	border-color: ${(props) => {
 		if (props.$isSelected) {
-			return props.$owner === 'player1' ? 'yellow' : 'orange';
+			return props.$owner === 'player1' ? 'orange' : 'yellow';
 		} else {
 			return colors[props.$currentPlayer].noneActiveBorder;
 		}
