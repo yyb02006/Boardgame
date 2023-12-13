@@ -6,7 +6,7 @@ import { HomeProvider, useHomeContext } from './HomeContext';
 const colors = {
 	player1: {
 		noneActiveBorder: '#1696eb',
-		noneActiveBox: '#1244db',
+		noneActiveBox: '#1a4de6',
 		activeBox: '#1696eb',
 	},
 	player2: {
@@ -134,14 +134,16 @@ const BoxHover = styled.div<BoxHoverProps>`
 	justify-content: ${(props) =>
 		props.direction === 'horizontal' ? 'center' : 'center'};
 	border-color: ${(props) => {
-		if (props.$isSelected) {
+		if (props.$isSelected && !props.$isMergeable) {
 			return props.$owner === 'player1'
 				? props.$currentPlayer === 'player1'
 					? 'red'
-					: colors.player1.noneActiveBorder
+					: colors.player1.noneActiveBox
 				: props.$currentPlayer === 'player2'
 				? 'red'
 				: colors.player2.noneActiveBox;
+		} else if (props.$isMergeable) {
+			return colors[props.$owner].noneActiveBorder;
 		} else {
 			return colors[props.$currentPlayer].noneActiveBorder;
 		}
@@ -191,7 +193,7 @@ const BoxCollection = ({
 			)
 		)
 			return;
-		console.log('border = ' + borderId, 'side = ' + sideId, boxes);
+		console.log('border = ' + borderId, 'side = ' + sideId, boxes, selected);
 		const boxLocation = (
 			direction: direction,
 			isUpPos: boolean,
@@ -223,6 +225,7 @@ const BoxCollection = ({
 								side: sideId,
 								isSelected: true,
 								owner: currentPlayer,
+								isMergeable: false,
 							} /* satisfies === 중복 검사 */ satisfies borderState,
 						],
 				  }
@@ -389,7 +392,7 @@ const BoxCollection = ({
 		}
 
 		const isMergeableSelected = (direction: direction) =>
-			formattedSelected[direction].filter((item) => {
+			formattedSelected[direction].map((item) => {
 				const upBox = boxLocation(direction, true, item.border, item.side);
 				const downBox = boxLocation(direction, false, item.border, item.side);
 				if (
@@ -400,9 +403,9 @@ const BoxCollection = ({
 					deepNewBoxes[upBox].owner === currentPlayer &&
 					deepNewBoxes[downBox].owner === currentPlayer
 				) {
-					return false;
+					return { ...item, isMergeable: true };
 				}
-				return true;
+				return item;
 			});
 
 		const resultSelected = {
@@ -445,6 +448,11 @@ const BoxCollection = ({
 								selected[direction].filter(
 									(item) => item.border === borderId && item.side === sideId
 								)[0]?.owner
+							}
+							$isMergeable={
+								selected[direction].filter(
+									(item) => item.border === borderId && item.side === sideId
+								)[0]?.isMergeable
 							}
 						>
 							<FakeHover />

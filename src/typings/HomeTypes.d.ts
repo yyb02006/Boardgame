@@ -44,6 +44,7 @@ interface BoxHoverProps extends directionInterface {
 	$isSelected: boolean;
 	$currentPlayer: currentPlayer;
 	$owner: currentPlayer;
+	$isMergeable: boolean;
 }
 
 /** Routes Components Types */

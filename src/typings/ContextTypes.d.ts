@@ -38,4 +38,5 @@ interface borderState {
 	side: number;
 	isSelected: boolean;
 	owner: currentPlayer;
+	isMergeable: boolean;
 }
