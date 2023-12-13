@@ -30,17 +30,17 @@ const Layout = styled.section`
 	flex-direction: column;
 `;
 
-const BoardLayout = styled.div<BoardLayoutProps>`
+const BoardLayout = styled.div`
 	position: relative;
-	background-color: ${(props) => colors[props.$currentPlayer].noneActiveBox};
 	display: flex;
 	justify-content: space-between;
 	height: 100%;
 `;
 
-const BoardItemsContainer = styled.div`
+const BoardItemsContainer = styled.div<BoardItemsContainerProps>`
 	position: relative;
 	grid-template-columns: repeat(5, 1fr);
+	background-color: ${(props) => colors[props.$currentPlayer].noneActiveBox};
 	display: grid;
 	height: 100%;
 	aspect-ratio: 1;
@@ -52,8 +52,8 @@ const Boxes = styled.div<BoxesProps>`
 	justify-content: center;
 	align-items: center;
 	background-color: ${(props) => {
-		if (props.$isSurrounded) {
-			return colors[props.$currentPlayer].activeBox;
+		if (props.$isSurrounded && props.owner) {
+			return colors[props.owner].activeBox;
 		} else {
 			return 'transparent';
 		}
@@ -67,6 +67,21 @@ const BoardBordersContainer = styled.div<BoardBordersContainerProps>`
 	display: flex;
 	flex-direction: ${(props) => props.$borderDirection};
 	justify-content: space-between;
+`;
+
+const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
+	width: 400px;
+	background-color: ${(props) =>
+		props.player === 'player1'
+			? colors.player1.noneActiveBox
+			: colors.player2.noneActiveBox};
+	margin: ${(props) =>
+		props.player === 'player1' ? '0 20px 0 0' : '0 0 0 20px'};
+	padding: 0 24px;
+	h3 {
+		font-size: 2rem;
+		font-weight: 600;
+	}
 `;
 
 const BoxStyle = styled.div<directionInterface>`
@@ -120,7 +135,13 @@ const BoxHover = styled.div<BoxHoverProps>`
 		props.direction === 'horizontal' ? 'center' : 'center'};
 	border-color: ${(props) => {
 		if (props.$isSelected) {
-			return props.$owner === 'player1' ? 'orange' : 'yellow';
+			return props.$owner === 'player1'
+				? props.$currentPlayer === 'player1'
+					? 'red'
+					: colors.player1.noneActiveBorder
+				: props.$currentPlayer === 'player2'
+				? 'red'
+				: colors.player2.noneActiveBox;
 		} else {
 			return colors[props.$currentPlayer].noneActiveBorder;
 		}
@@ -456,21 +477,32 @@ const BorderBox = ({ direction }: borderBoxProps) => {
 	);
 };
 
+const PlayerCard = ({ player }: { player: currentPlayer }) => {
+	const { players, boxes } = useHomeContext();
+	return (
+		<PlayerCardStyle player={player}>
+			{players[player].name} <br />
+			<h3>
+				score :{' '}
+				{boxes.filter((box) => box.isSurrounded && box.owner === player).length}
+			</h3>
+		</PlayerCardStyle>
+	);
+};
+
 const Board = () => {
 	const { boxes, currentPlayer, players } = useHomeContext();
 	return (
-		<BoardLayout $currentPlayer={currentPlayer}>
-			<div>
-				{players.player1.name} <br />
-				rate : {boxes.filter((box) => box.isSurrounded).length}
-			</div>
-			<BoardItemsContainer>
+		<BoardLayout>
+			<PlayerCard player="player1" />
+			<BoardItemsContainer $currentPlayer={currentPlayer}>
 				{boxes.map((box, id) =>
 					id < 5 || id > 20 || id % 5 === 0 || id % 5 === 4 ? (
 						<Boxes
 							key={box.id}
 							$isSurrounded={box.isSurrounded}
 							$currentPlayer={currentPlayer}
+							owner={box.owner}
 						>
 							{box.id}
 						</Boxes>
@@ -479,6 +511,7 @@ const Board = () => {
 							key={box.id}
 							$isSurrounded={box.isSurrounded}
 							$currentPlayer={currentPlayer}
+							owner={box.owner}
 						>
 							{box.id}
 						</Boxes>
@@ -491,11 +524,7 @@ const Board = () => {
 					<BorderBox direction="horizontal" />
 				</BoardBordersContainer>
 			</BoardItemsContainer>
-			<div>
-				{players.player2.name}
-				<br />
-				rate : {boxes.filter((box) => box.isSurrounded).length}
-			</div>
+			<PlayerCard player="player2" />
 		</BoardLayout>
 	);
 };

@@ -18,13 +18,18 @@ interface getEnclosedBoxResult {
 
 /** Styled Components Types */
 
-interface BoardLayoutProps {
+interface PlayerCardStyleProps {
+	player: currentPlayer;
+}
+
+interface BoardItemsContainerProps {
 	$currentPlayer: currentPlayer;
 }
 
 interface BoxesProps {
 	$isSurrounded: boolean;
 	$currentPlayer: currentPlayer;
+	owner: currentPlayer | undefined;
 }
 
 interface BoardBordersContainerProps {
