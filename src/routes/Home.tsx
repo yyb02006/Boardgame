@@ -150,8 +150,9 @@ const BoxHover = styled.div<BoxHoverProps>`
 	}};
 	z-index: ${(props) => (props.$isSelected ? 2 : 1)};
 	&:hover {
-		background-color: blueviolet;
-		border-color: green;
+		background-color: ${(props) =>
+			props.$isMergeable ? 'auto' : 'blueviolet'};
+		border-color: ${(props) => (props.$isMergeable ? 'auto' : 'green')};
 		z-index: 3;
 	}
 	${FakeHover} {
@@ -162,12 +163,29 @@ const BoxHover = styled.div<BoxHoverProps>`
 	}
 	${BoxSide} {
 		width: ${(props) =>
-			props.direction === 'horizontal' ? 'calc(100% + 44px)' : 'auto'};
+			props.direction === 'horizontal'
+				? props.$isMergeable
+					? 'calc(100% + 36px)'
+					: 'calc(100% + 44px)'
+				: 'auto'};
 		height: ${(props) =>
-			props.direction === 'horizontal' ? 'auto' : 'calc(100% + 44px)'};
-
-		left: ${(props) => (props.direction === 'horizontal' ? '-22px' : 'auto')};
-		top: ${(props) => (props.direction === 'horizontal' ? 'auto' : '-22px')};
+			props.direction === 'horizontal'
+				? 'auto'
+				: props.$isMergeable
+				? 'calc(100% + 36px)'
+				: 'calc(100% + 44px)'};
+		left: ${(props) =>
+			props.direction === 'horizontal'
+				? props.$isMergeable
+					? '-18px'
+					: '-22px'
+				: 'auto'};
+		top: ${(props) =>
+			props.direction === 'horizontal'
+				? 'auto'
+				: props.$isMergeable
+				? '-18px'
+				: '-22px'};
 	}
 `;
 
@@ -193,7 +211,7 @@ const BoxCollection = ({
 			)
 		)
 			return;
-		console.log('border = ' + borderId, 'side = ' + sideId, boxes, selected);
+		// console.log('border = ' + borderId, 'side = ' + sideId, boxes, selected);
 		const borderToBox = (
 			direction: direction,
 			isUpPos: boolean,
@@ -214,7 +232,10 @@ const BoxCollection = ({
 
 		const boxToborder = (
 			boxIndex: number,
-			direction: 'left' | 'right' | 'up' | 'down'
+			direction: 'left' | 'right' | 'up' | 'down',
+			isSelected: boolean = false,
+			isMergeable: boolean = false,
+			owner: currentPlayer = currentPlayer
 		) => {
 			const resultSelected: (opt: number) => borderState = (opt) => {
 				const remainder = boxIndex % 5;
@@ -231,9 +252,9 @@ const BoxCollection = ({
 					return {
 						border,
 						side,
-						isMergeable: false,
-						owner: currentPlayer,
-						isSelected: false,
+						isSelected,
+						owner,
+						isMergeable,
 					};
 				}
 			};
@@ -244,8 +265,6 @@ const BoxCollection = ({
 					return resultSelected(1);
 			}
 		};
-
-		console.log(boxToborder(16, 'up'));
 
 		const formattedSelected: selected = !selected[direction].find(
 			(item) => item.border === borderId && item.side === sideId
@@ -413,15 +432,21 @@ const BoxCollection = ({
 						boxes[boxEl].owner ===
 						(currentPlayer === 'player1' ? 'player2' : 'player1')
 				);
-				/* const selectedMerge = () => {
+				/* 새로 enclosed상태가 된 박스들 간의 borderMerge */
+				const selectedMerge = () => {
 					const mergeableSelected: selected = { horizontal: [], vertical: [] };
-					for (const border of box.horizontal) {
-						if (box.horizontal.includes(border + 1)) {
-							mergeableSelected.vertical.push({border: border % 5, side: Math.floor(border / 5)})
-						} else if (box.horizontal.includes(border + 5)) {
+					for (const boxIndex of box.horizontal) {
+						const rightBorder = boxToborder(boxIndex, 'right', true, true);
+						const downBorder = boxToborder(boxIndex, 'down', true, true);
+						if (box.horizontal.includes(boxIndex + 1) && rightBorder) {
+							mergeableSelected.vertical.push(rightBorder);
+						}
+						if (box.horizontal.includes(boxIndex + 5) && downBorder) {
+							mergeableSelected.horizontal.push(downBorder);
 						}
 					}
-				}; */
+					return mergeableSelected;
+				};
 				if (
 					JSON.stringify(box.horizontal) === JSON.stringify(box.vertical) &&
 					surroundedBoxCount < box.horizontal.length &&
@@ -431,18 +456,32 @@ const BoxCollection = ({
 						deepNewBoxes[item].isSurrounded = true;
 						deepNewBoxes[item].owner = currentPlayer;
 					});
+					console.log(selectedMerge());
+					formattedSelected.horizontal = [
+						...new Set([
+							...formattedSelected.horizontal,
+							...selectedMerge().horizontal,
+						]),
+					];
+					formattedSelected.vertical = [
+						...new Set([
+							...formattedSelected.vertical,
+							...selectedMerge().vertical,
+						]),
+					];
 				}
 			}
 		}
 
-		/* 박스 중간에 있지만 클릭된 적 없던 border는 반응하지 않는 문제 있음 */
+		/* 이미 존재하는 박스와 새로 연결되는 박스들 간의 borderMerge */
 		const isMergeableSelected = (direction: direction) =>
 			formattedSelected[direction].map((item) => {
 				const upBox = borderToBox(direction, true, item.border, item.side);
 				const downBox = borderToBox(direction, false, item.border, item.side);
 				if (
-					upBox &&
-					downBox &&
+					/* 여기서 upBox !== false를 해줘야 upBox가 0일때 true를 반환해야 하지만 0자체가 falsy이기 때문에 false로 판단되는 버그를 방지할 수 있다. */
+					upBox !== false &&
+					downBox !== false &&
 					deepNewBoxes[upBox].isSurrounded &&
 					deepNewBoxes[downBox].isSurrounded &&
 					deepNewBoxes[upBox].owner === currentPlayer &&
