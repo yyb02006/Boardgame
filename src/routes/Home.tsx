@@ -52,8 +52,8 @@ const Boxes = styled.div<BoxesProps>`
 	justify-content: center;
 	align-items: center;
 	background-color: ${(props) => {
-		if (props.$isSurrounded && props.owner) {
-			return colors[props.owner].activeBox;
+		if (props.$isSurrounded && props.$owner) {
+			return colors[props.$owner].activeBox;
 		} else {
 			return 'transparent';
 		}
@@ -72,11 +72,11 @@ const BoardBordersContainer = styled.div<BoardBordersContainerProps>`
 const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 	width: 400px;
 	background-color: ${(props) =>
-		props.player === 'player1'
+		props.$player === 'player1'
 			? colors.player1.noneActiveBox
 			: colors.player2.noneActiveBox};
 	margin: ${(props) =>
-		props.player === 'player1' ? '0 20px 0 0' : '0 0 0 20px'};
+		props.$player === 'player1' ? '0 20px 0 0' : '0 0 0 20px'};
 	padding: 0 24px;
 	h3 {
 		font-size: 2rem;
@@ -194,7 +194,7 @@ const BoxCollection = ({
 		)
 			return;
 		console.log('border = ' + borderId, 'side = ' + sideId, boxes, selected);
-		const boxLocation = (
+		const borderToBox = (
 			direction: direction,
 			isUpPos: boolean,
 			border: number = borderId,
@@ -212,24 +212,58 @@ const BoxCollection = ({
 			}
 		};
 
-		const formattedSelected: selected =
-			selected[direction].filter(
-				(item) => item.border === borderId && item.side === sideId
-			).length === 0
-				? {
-						...selected,
-						[direction]: [
-							...selected[direction],
-							{
-								border: borderId,
-								side: sideId,
-								isSelected: true,
-								owner: currentPlayer,
-								isMergeable: false,
-							} /* satisfies === 중복 검사 */ satisfies borderState,
-						],
-				  }
-				: selected;
+		const boxToborder = (
+			boxIndex: number,
+			direction: 'left' | 'right' | 'up' | 'down'
+		) => {
+			const resultSelected: (opt: number) => borderState = (opt) => {
+				const remainder = boxIndex % 5;
+				const quotient = Math.floor(boxIndex / 5);
+				const isHorizontal = direction === 'left' || direction === 'right';
+				const border = (isHorizontal ? remainder : quotient) + opt;
+				const side = isHorizontal ? quotient : remainder;
+				const existSelected = selected[
+					isHorizontal ? 'vertical' : 'horizontal'
+				].find((item) => item.border === border && item.side === side);
+				if (existSelected) {
+					return existSelected;
+				} else {
+					return {
+						border,
+						side,
+						isMergeable: false,
+						owner: currentPlayer,
+						isSelected: false,
+					};
+				}
+			};
+			switch (true) {
+				case direction === 'left' || direction === 'up':
+					return resultSelected(0);
+				case direction === 'right' || direction === 'down':
+					return resultSelected(1);
+			}
+		};
+
+		console.log(boxToborder(16, 'up'));
+
+		const formattedSelected: selected = !selected[direction].find(
+			(item) => item.border === borderId && item.side === sideId
+		)
+			? {
+					...selected,
+					[direction]: [
+						...selected[direction],
+						{
+							border: borderId,
+							side: sideId,
+							isSelected: true,
+							owner: currentPlayer,
+							isMergeable: false,
+						} /* satisfies === 중복 검사 */ satisfies borderState,
+					],
+			  }
+			: selected;
 
 		const findExistSideSelected = (sidePos: 'left' | 'right') => [
 			...formattedSelected[
@@ -374,14 +408,24 @@ const BoxCollection = ({
 					(count, id) => (boxes[id].isSurrounded ? count + 1 : count),
 					0
 				);
+				const isBoxesIncludeOtherPlayers = box.horizontal.find(
+					(boxEl) =>
+						boxes[boxEl].owner ===
+						(currentPlayer === 'player1' ? 'player2' : 'player1')
+				);
+				/* const selectedMerge = () => {
+					const mergeableSelected: selected = { horizontal: [], vertical: [] };
+					for (const border of box.horizontal) {
+						if (box.horizontal.includes(border + 1)) {
+							mergeableSelected.vertical.push({border: border % 5, side: Math.floor(border / 5)})
+						} else if (box.horizontal.includes(border + 5)) {
+						}
+					}
+				}; */
 				if (
 					JSON.stringify(box.horizontal) === JSON.stringify(box.vertical) &&
 					surroundedBoxCount < box.horizontal.length &&
-					box.horizontal.filter(
-						(boxEl) =>
-							boxes[boxEl].owner !== currentPlayer &&
-							boxes[boxEl].owner !== undefined
-					).length === 0
+					!isBoxesIncludeOtherPlayers
 				) {
 					box.horizontal.forEach((item) => {
 						deepNewBoxes[item].isSurrounded = true;
@@ -391,10 +435,11 @@ const BoxCollection = ({
 			}
 		}
 
+		/* 박스 중간에 있지만 클릭된 적 없던 border는 반응하지 않는 문제 있음 */
 		const isMergeableSelected = (direction: direction) =>
 			formattedSelected[direction].map((item) => {
-				const upBox = boxLocation(direction, true, item.border, item.side);
-				const downBox = boxLocation(direction, false, item.border, item.side);
+				const upBox = borderToBox(direction, true, item.border, item.side);
+				const downBox = borderToBox(direction, false, item.border, item.side);
 				if (
 					upBox &&
 					downBox &&
@@ -431,35 +476,28 @@ const BoxCollection = ({
 		<>
 			{Array(5)
 				.fill(undefined)
-				.map((_, sideId) => (
-					<BoxWrapper key={sideId} direction={direction} $isLast={isLast}>
-						<BoxHover
-							onClick={() => {
-								onBoxClick(sideId);
-							}}
-							direction={direction}
-							$isSelected={
-								!!selected[direction].filter(
-									(item) => item.border === borderId && item.side === sideId
-								)[0]?.isSelected
-							}
-							$currentPlayer={currentPlayer}
-							$owner={
-								selected[direction].filter(
-									(item) => item.border === borderId && item.side === sideId
-								)[0]?.owner
-							}
-							$isMergeable={
-								selected[direction].filter(
-									(item) => item.border === borderId && item.side === sideId
-								)[0]?.isMergeable
-							}
-						>
-							<FakeHover />
-							<BoxSide />
-						</BoxHover>
-					</BoxWrapper>
-				))}
+				.map((_, sideId) => {
+					const foundSelected = selected[direction].find(
+						(item) => item.border === borderId && item.side === sideId
+					);
+					return (
+						<BoxWrapper key={sideId} direction={direction} $isLast={isLast}>
+							<BoxHover
+								onClick={() => {
+									onBoxClick(sideId);
+								}}
+								direction={direction}
+								$isSelected={!!foundSelected?.isSelected}
+								$currentPlayer={currentPlayer}
+								$owner={foundSelected ? foundSelected.owner : currentPlayer}
+								$isMergeable={foundSelected ? foundSelected.isMergeable : false}
+							>
+								<FakeHover />
+								<BoxSide />
+							</BoxHover>
+						</BoxWrapper>
+					);
+				})}
 		</>
 	);
 };
@@ -488,7 +526,7 @@ const BorderBox = ({ direction }: borderBoxProps) => {
 const PlayerCard = ({ player }: { player: currentPlayer }) => {
 	const { players, boxes } = useHomeContext();
 	return (
-		<PlayerCardStyle player={player}>
+		<PlayerCardStyle $player={player}>
 			{players[player].name} <br />
 			<h3>
 				score :{' '}
@@ -510,7 +548,7 @@ const Board = () => {
 							key={box.id}
 							$isSurrounded={box.isSurrounded}
 							$currentPlayer={currentPlayer}
-							owner={box.owner}
+							$owner={box.owner}
 						>
 							{box.id}
 						</Boxes>
@@ -519,7 +557,7 @@ const Board = () => {
 							key={box.id}
 							$isSurrounded={box.isSurrounded}
 							$currentPlayer={currentPlayer}
-							owner={box.owner}
+							$owner={box.owner}
 						>
 							{box.id}
 						</Boxes>

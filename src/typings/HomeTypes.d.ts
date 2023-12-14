@@ -19,7 +19,7 @@ interface getEnclosedBoxResult {
 /** Styled Components Types */
 
 interface PlayerCardStyleProps {
-	player: currentPlayer;
+	$player: currentPlayer;
 }
 
 interface BoardItemsContainerProps {
@@ -29,7 +29,7 @@ interface BoardItemsContainerProps {
 interface BoxesProps {
 	$isSurrounded: boolean;
 	$currentPlayer: currentPlayer;
-	owner: currentPlayer | undefined;
+	$owner: currentPlayer | undefined;
 }
 
 interface BoardBordersContainerProps {
