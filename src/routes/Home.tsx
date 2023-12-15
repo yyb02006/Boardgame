@@ -33,6 +33,13 @@ const Layout = styled.section`
 	}
 `;
 
+const Title = styled.div`
+	@media screen and (max-width: 1024px) {
+		font-size: 2rem;
+		margin-left: 24px;
+	}
+`;
+
 const BoardLayout = styled.div`
 	position: relative;
 	display: flex;
@@ -82,6 +89,8 @@ const BoardItemsContainer = styled.div<BoardItemsContainerProps>`
 	@media screen and (max-width: 1024px) {
 		height: 100%;
 		width: auto;
+		max-width: 90vw;
+		max-height: 90vw;
 		aspect-ratio: 1;
 	}
 `;
@@ -644,7 +653,7 @@ const Home = () => {
 	return (
 		<HomeProvider>
 			<Layout>
-				<div>The BorderGame</div>
+				<Title>The BorderGame</Title>
 				<Board />
 			</Layout>
 		</HomeProvider>
