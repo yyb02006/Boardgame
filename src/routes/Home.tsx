@@ -26,15 +26,49 @@ const Layout = styled.section`
 	font-weight: 800;
 	position: relative;
 	padding: 80px 120px 40px 120px;
-	display: flex;
-	flex-direction: column;
+	@media screen and (max-width: 1024px) {
+		display: flex;
+		flex-direction: column;
+		padding: 80px 0 40px 0;
+	}
 `;
 
 const BoardLayout = styled.div`
 	position: relative;
 	display: flex;
 	justify-content: space-between;
-	height: 100%;
+	height: auto;
+	@media screen and (max-width: 1024px) {
+		flex-direction: column;
+		align-items: center;
+		width: 100%;
+		height: 100%;
+	}
+`;
+
+const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
+	max-width: 400px;
+	width: 100%;
+	background-color: ${(props) =>
+		props.$player === 'player1'
+			? colors.player1.noneActiveBox
+			: colors.player2.noneActiveBox};
+	margin: ${(props) =>
+		props.$player === 'player1' ? '0 40px 0 0' : '0 0 0 40px'};
+	padding: 12px 24px;
+	font-size: 4vw;
+	h3 {
+		font-size: 2rem;
+		font-weight: 600;
+		margin: 0;
+	}
+	@media screen and (max-width: 1024px) {
+		margin: ${(props) =>
+			props.$player === 'player1' ? '0 0 20px 0' : '20px 0 0 0 '};
+		max-width: 100%;
+		display: flex;
+		justify-content: space-between;
+	}
 `;
 
 const BoardItemsContainer = styled.div<BoardItemsContainerProps>`
@@ -42,8 +76,14 @@ const BoardItemsContainer = styled.div<BoardItemsContainerProps>`
 	grid-template-columns: repeat(5, 1fr);
 	background-color: ${(props) => colors[props.$currentPlayer].noneActiveBox};
 	display: grid;
-	height: 100%;
+	width: 35vw;
+	height: 35vw;
 	aspect-ratio: 1;
+	@media screen and (max-width: 1024px) {
+		height: 100%;
+		width: auto;
+		aspect-ratio: 1;
+	}
 `;
 
 const Boxes = styled.div<BoxesProps>`
@@ -58,6 +98,7 @@ const Boxes = styled.div<BoxesProps>`
 			return 'transparent';
 		}
 	}};
+	font-size: 3vw;
 `;
 
 const BoardBordersContainer = styled.div<BoardBordersContainerProps>`
@@ -67,21 +108,6 @@ const BoardBordersContainer = styled.div<BoardBordersContainerProps>`
 	display: flex;
 	flex-direction: ${(props) => props.$borderDirection};
 	justify-content: space-between;
-`;
-
-const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
-	width: 400px;
-	background-color: ${(props) =>
-		props.$player === 'player1'
-			? colors.player1.noneActiveBox
-			: colors.player2.noneActiveBox};
-	margin: ${(props) =>
-		props.$player === 'player1' ? '0 20px 0 0' : '0 0 0 20px'};
-	padding: 0 24px;
-	h3 {
-		font-size: 2rem;
-		font-weight: 600;
-	}
 `;
 
 const BoxStyle = styled.div<directionInterface>`
@@ -618,7 +644,7 @@ const Home = () => {
 	return (
 		<HomeProvider>
 			<Layout>
-				The BorderGame
+				<div>The BorderGame</div>
 				<Board />
 			</Layout>
 		</HomeProvider>
