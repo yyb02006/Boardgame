@@ -295,6 +295,7 @@ const BoxCollection = ({
 					isHorizontal ? 'vertical' : 'horizontal'
 				].find((item) => item.border === border && item.side === side);
 				if (existSelected) {
+					existSelected.owner = currentPlayer;
 					return existSelected;
 				} else {
 					return {
@@ -457,7 +458,10 @@ const BoxCollection = ({
 			};
 		};
 
-		/* const deepNewBoxes: boxes = JSON.parse(JSON.stringify(boxes)); 이 방식의 깊은 복사는 undefined를 제거해버림 */
+		/** const deepNewBoxes: boxes = JSON.parse(JSON.stringify(boxes));
+		 *
+		 *  이러한 방식의 깊은 복사는 undefined를 제거해버림
+		 * */
 		const deepNewBoxes: boxes = boxes.map((item) => ({ ...item }));
 
 		if (
