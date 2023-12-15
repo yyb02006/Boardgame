@@ -18,6 +18,10 @@ interface getEnclosedBoxResult {
 
 /** Styled Components Types */
 
+interface PlayerProps {
+	$currentPlayer: currentPlayer;
+}
+
 interface PlayerCardStyleProps {
 	$player: currentPlayer;
 }

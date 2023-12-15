@@ -8,13 +8,15 @@ const colors = {
 		noneActiveBorder: '#1696eb',
 		noneActiveBox: '#1a4de6',
 		activeBox: '#1696eb',
+		emphaticColor: '#00ffdd',
 	},
 	player2: {
 		noneActiveBorder: '#73dd85',
 		noneActiveBox: '#1bc237',
 		activeBox: '#73dd85',
+		emphaticColor: '#a1ff09',
 	},
-	common: { noneActiveBox: '#1696eb' },
+	common: { noneActiveBorder: '#808080', activeBorder: '#ffbb00' },
 };
 
 const Layout = styled.section`
@@ -33,10 +35,21 @@ const Layout = styled.section`
 	}
 `;
 
-const Title = styled.div`
+const Turn = styled.span``;
+
+const Player = styled.div<PlayerProps>`
+	margin-bottom: 16px;
+	color: ${(props) => colors[props.$currentPlayer].noneActiveBox};
 	@media screen and (max-width: 1024px) {
 		font-size: 2rem;
 		margin-left: 24px;
+	}
+`;
+
+const TitleContainer = styled.div`
+	display: flex;
+	${Turn} {
+		color: ${colors.common.activeBorder};
 	}
 `;
 
@@ -172,10 +185,10 @@ const BoxHover = styled.div<BoxHoverProps>`
 		if (props.$isSelected && !props.$isMergeable) {
 			return props.$owner === 'player1'
 				? props.$currentPlayer === 'player1'
-					? 'red'
+					? colors.common.activeBorder
 					: colors.player1.noneActiveBox
 				: props.$currentPlayer === 'player2'
-				? 'red'
+				? colors.common.activeBorder
 				: colors.player2.noneActiveBox;
 		} else if (props.$isMergeable) {
 			return colors[props.$owner].noneActiveBorder;
@@ -611,41 +624,48 @@ const PlayerCard = ({ player }: { player: currentPlayer }) => {
 };
 
 const Board = () => {
-	const { boxes, currentPlayer, players } = useHomeContext();
+	const { boxes, currentPlayer } = useHomeContext();
 	return (
-		<BoardLayout>
-			<PlayerCard player="player1" />
-			<BoardItemsContainer $currentPlayer={currentPlayer}>
-				{boxes.map((box, id) =>
-					id < 5 || id > 20 || id % 5 === 0 || id % 5 === 4 ? (
-						<Boxes
-							key={box.id}
-							$isSurrounded={box.isSurrounded}
-							$currentPlayer={currentPlayer}
-							$owner={box.owner}
-						>
-							{box.id}
-						</Boxes>
-					) : (
-						<Boxes
-							key={box.id}
-							$isSurrounded={box.isSurrounded}
-							$currentPlayer={currentPlayer}
-							$owner={box.owner}
-						>
-							{box.id}
-						</Boxes>
-					)
-				)}
-				<BoardBordersContainer $borderDirection="column">
-					<BoardBordersContainer $borderDirection="row">
-						<BorderBox direction="vertical" />
+		<>
+			<TitleContainer>
+				<Player $currentPlayer={currentPlayer}>{currentPlayer}</Player>
+				<span>{`'s`}&nbsp;</span>
+				<Turn>{`turn`}</Turn>
+			</TitleContainer>
+			<BoardLayout>
+				<PlayerCard player="player1" />
+				<BoardItemsContainer $currentPlayer={currentPlayer}>
+					{boxes.map((box, id) =>
+						id < 5 || id > 20 || id % 5 === 0 || id % 5 === 4 ? (
+							<Boxes
+								key={box.id}
+								$isSurrounded={box.isSurrounded}
+								$currentPlayer={currentPlayer}
+								$owner={box.owner}
+							>
+								{box.id}
+							</Boxes>
+						) : (
+							<Boxes
+								key={box.id}
+								$isSurrounded={box.isSurrounded}
+								$currentPlayer={currentPlayer}
+								$owner={box.owner}
+							>
+								{box.id}
+							</Boxes>
+						)
+					)}
+					<BoardBordersContainer $borderDirection="column">
+						<BoardBordersContainer $borderDirection="row">
+							<BorderBox direction="vertical" />
+						</BoardBordersContainer>
+						<BorderBox direction="horizontal" />
 					</BoardBordersContainer>
-					<BorderBox direction="horizontal" />
-				</BoardBordersContainer>
-			</BoardItemsContainer>
-			<PlayerCard player="player2" />
-		</BoardLayout>
+				</BoardItemsContainer>
+				<PlayerCard player="player2" />
+			</BoardLayout>
+		</>
 	);
 };
 
@@ -653,7 +673,6 @@ const Home = () => {
 	return (
 		<HomeProvider>
 			<Layout>
-				<Title>The BorderGame</Title>
 				<Board />
 			</Layout>
 		</HomeProvider>
