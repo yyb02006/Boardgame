@@ -253,12 +253,71 @@ const BoxCollection = ({
 		setPlayers,
 	} = useHomeContext();
 	const onBoxClick = (sideId: number) => {
-		if (
+		const formattedSelected: selected = !selected[direction].find(
+			(item) => item.border === borderId && item.side === sideId
+		)
+			? {
+					...selected,
+					[direction]: [
+						...selected[direction],
+						{
+							border: borderId,
+							side: sideId,
+							isSelected: true,
+							owner: currentPlayer,
+							isMergeable: false,
+						} /* satisfies === 중복 검사 */ satisfies borderState,
+					],
+			  }
+			: selected;
+
+		const findExistSideSelected = (sidePos: 'left' | 'right') => [
+			...formattedSelected[
+				direction === 'horizontal' ? 'vertical' : 'horizontal'
+			].filter(
+				(item) =>
+					item.owner === currentPlayer &&
+					item.border ===
+						sideId +
+							(direction === 'horizontal'
+								? sidePos === 'left'
+									? 0
+									: 1
+								: sidePos === 'left'
+								? 1
+								: 0) &&
+					(item.side === borderId - 1 || item.side === borderId)
+			),
+			...formattedSelected[direction].filter(
+				(item) =>
+					item.owner === currentPlayer &&
+					item.border === borderId &&
+					item.side ===
+						sideId +
+							(direction === 'horizontal'
+								? sidePos === 'left'
+									? -1
+									: 1
+								: sidePos === 'left'
+								? 1
+								: -1)
+			),
+		];
+
+		const breakOnClickCondition =
 			selected[direction].find(
 				(item) => item.border === borderId && item.side === sideId
-			)
-		)
-			return;
+			) ??
+			(!findExistSideSelected('left').find(
+				(border) => border.owner === currentPlayer
+			) &&
+				!findExistSideSelected('right').find(
+					(border) => border.owner === currentPlayer
+				) &&
+				(selected.horizontal.find((border) => border.owner === currentPlayer) ??
+					selected.vertical.find((border) => border.owner === currentPlayer)));
+
+		if (breakOnClickCondition) return;
 		// console.log('border = ' + borderId, 'side = ' + sideId, boxes, selected);
 		const borderToBox = (
 			direction: direction,
@@ -314,57 +373,6 @@ const BoxCollection = ({
 					return resultSelected(1);
 			}
 		};
-
-		const formattedSelected: selected = !selected[direction].find(
-			(item) => item.border === borderId && item.side === sideId
-		)
-			? {
-					...selected,
-					[direction]: [
-						...selected[direction],
-						{
-							border: borderId,
-							side: sideId,
-							isSelected: true,
-							owner: currentPlayer,
-							isMergeable: false,
-						} /* satisfies === 중복 검사 */ satisfies borderState,
-					],
-			  }
-			: selected;
-
-		const findExistSideSelected = (sidePos: 'left' | 'right') => [
-			...formattedSelected[
-				direction === 'horizontal' ? 'vertical' : 'horizontal'
-			].filter(
-				(item) =>
-					item.owner === currentPlayer &&
-					item.border ===
-						sideId +
-							(direction === 'horizontal'
-								? sidePos === 'left'
-									? 0
-									: 1
-								: sidePos === 'left'
-								? 1
-								: 0) &&
-					(item.side === borderId - 1 || item.side === borderId)
-			),
-			...formattedSelected[direction].filter(
-				(item) =>
-					item.owner === currentPlayer &&
-					item.border === borderId &&
-					item.side ===
-						sideId +
-							(direction === 'horizontal'
-								? sidePos === 'left'
-									? -1
-									: 1
-								: sidePos === 'left'
-								? 1
-								: -1)
-			),
-		];
 
 		const findClosedBoxByDirection = (direction: direction) => {
 			const isHorizontal = direction === 'horizontal';
@@ -531,7 +539,8 @@ const BoxCollection = ({
 				const upBox = borderToBox(direction, true, item.border, item.side);
 				const downBox = borderToBox(direction, false, item.border, item.side);
 				if (
-					/* 여기서 upBox !== false를 해줘야 upBox가 0일때 true를 반환해야 하지만 0자체가 falsy이기 때문에 false로 판단되는 버그를 방지할 수 있다. */
+					/* 여기서 upBox !== false를 해줘야 upBox가 0일때 true를 반환해야 하지만 0자체가 falsy이기 때문에 false로 판단되는 버그를 방지할 수 있다. 
+					   논리합 사용 상황에서는 논리합('||') 대신 병합연산자('??')를 사용하면 falsy인 상황이 아닌 null이나 undefined상황만 잡아줄 수도 있다. */
 					upBox !== false &&
 					downBox !== false &&
 					deepNewBoxes[upBox].isSurrounded &&
