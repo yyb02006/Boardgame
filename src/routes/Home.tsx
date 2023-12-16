@@ -16,7 +16,7 @@ const colors = {
 		activeBox: '#73dd85',
 		emphaticColor: '#a1ff09',
 	},
-	common: { noneActiveBorder: '#808080', activeBorder: '#ffbb00' },
+	common: { noneActiveBorder: '#808080', activeBorder: '#e48100' },
 };
 
 const Layout = styled.section`
@@ -40,16 +40,16 @@ const Turn = styled.span``;
 const Player = styled.div<PlayerProps>`
 	margin-bottom: 16px;
 	color: ${(props) => colors[props.$currentPlayer].noneActiveBox};
-	@media screen and (max-width: 1024px) {
-		font-size: 2rem;
-		margin-left: 24px;
-	}
 `;
 
 const TitleContainer = styled.div`
 	display: flex;
 	${Turn} {
 		color: ${colors.common.activeBorder};
+	}
+	@media screen and (max-width: 1024px) {
+		font-size: 2rem;
+		margin-left: 24px;
 	}
 `;
 
@@ -91,6 +91,18 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 	}
 `;
 
+const BoardItemsWrapper = styled.div`
+	height: 100%;
+	max-height: 100vw;
+	aspect-ratio: 1;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	@media screen and (max-width: 1024px) {
+		padding: 24px 0;
+	}
+`;
+
 const BoardItemsContainer = styled.div<BoardItemsContainerProps>`
 	position: relative;
 	grid-template-columns: repeat(5, 1fr);
@@ -102,9 +114,6 @@ const BoardItemsContainer = styled.div<BoardItemsContainerProps>`
 	@media screen and (max-width: 1024px) {
 		height: 100%;
 		width: auto;
-		max-width: 90vw;
-		max-height: 90vw;
-		aspect-ratio: 1;
 	}
 `;
 
@@ -647,35 +656,37 @@ const Board = () => {
 			</TitleContainer>
 			<BoardLayout>
 				<PlayerCard player="player1" />
-				<BoardItemsContainer $currentPlayer={currentPlayer}>
-					{boxes.map((box, id) =>
-						id < 5 || id > 20 || id % 5 === 0 || id % 5 === 4 ? (
-							<Boxes
-								key={box.id}
-								$isSurrounded={box.isSurrounded}
-								$currentPlayer={currentPlayer}
-								$owner={box.owner}
-							>
-								{box.id}
-							</Boxes>
-						) : (
-							<Boxes
-								key={box.id}
-								$isSurrounded={box.isSurrounded}
-								$currentPlayer={currentPlayer}
-								$owner={box.owner}
-							>
-								{box.id}
-							</Boxes>
-						)
-					)}
-					<BoardBordersContainer $borderDirection="column">
-						<BoardBordersContainer $borderDirection="row">
-							<BorderBox direction="vertical" />
+				<BoardItemsWrapper>
+					<BoardItemsContainer $currentPlayer={currentPlayer}>
+						{boxes.map((box, id) =>
+							id < 5 || id > 20 || id % 5 === 0 || id % 5 === 4 ? (
+								<Boxes
+									key={box.id}
+									$isSurrounded={box.isSurrounded}
+									$currentPlayer={currentPlayer}
+									$owner={box.owner}
+								>
+									{box.id}
+								</Boxes>
+							) : (
+								<Boxes
+									key={box.id}
+									$isSurrounded={box.isSurrounded}
+									$currentPlayer={currentPlayer}
+									$owner={box.owner}
+								>
+									{box.id}
+								</Boxes>
+							)
+						)}
+						<BoardBordersContainer $borderDirection="column">
+							<BoardBordersContainer $borderDirection="row">
+								<BorderBox direction="vertical" />
+							</BoardBordersContainer>
+							<BorderBox direction="horizontal" />
 						</BoardBordersContainer>
-						<BorderBox direction="horizontal" />
-					</BoardBordersContainer>
-				</BoardItemsContainer>
+					</BoardItemsContainer>
+				</BoardItemsWrapper>
 				<PlayerCard player="player2" />
 			</BoardLayout>
 		</>
