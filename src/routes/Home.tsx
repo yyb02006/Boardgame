@@ -208,8 +208,9 @@ const BoxHover = styled.div<BoxHoverProps>`
 	z-index: ${(props) => (props.$isSelected ? 2 : 1)};
 	&:hover {
 		background-color: ${(props) =>
-			props.$isMergeable ? 'auto' : 'blueviolet'};
-		border-color: ${(props) => (props.$isMergeable ? 'auto' : 'green')};
+			props.$isMergeable ? 'auto' : colors.common.activeBorder};
+		border-color: ${(props) =>
+			props.$isMergeable ? 'auto' : colors[props.$currentPlayer].noneActiveBox};
 		z-index: 3;
 	}
 	${FakeHover} {
@@ -261,6 +262,8 @@ const BoxCollection = ({
 		players,
 		setPlayers,
 	} = useHomeContext();
+	const otherPlayer = currentPlayer === 'player1' ? 'player2' : 'player1';
+	const otherDirection = direction === 'horizontal' ? 'vertical' : 'horizontal';
 	const onBoxClick = (sideId: number) => {
 		const formattedSelected: selected = !selected[direction].find(
 			(item) => item.border === borderId && item.side === sideId
@@ -280,51 +283,94 @@ const BoxCollection = ({
 			  }
 			: selected;
 
-		const findExistSideSelected = (sidePos: 'left' | 'right') => [
+		const findExistSideSelected = (
+			borderId: number,
+			sideId: number,
+			sidePos: 'left' | 'right',
+			owner: 'current' | 'other' | 'all'
+		) => [
 			...formattedSelected[
 				direction === 'horizontal' ? 'vertical' : 'horizontal'
-			].filter(
-				(item) =>
-					item.owner === currentPlayer &&
-					item.border ===
-						sideId +
-							(direction === 'horizontal'
-								? sidePos === 'left'
-									? 0
-									: 1
-								: sidePos === 'left'
-								? 1
-								: 0) &&
-					(item.side === borderId - 1 || item.side === borderId)
-			),
-			...formattedSelected[direction].filter(
-				(item) =>
-					item.owner === currentPlayer &&
-					item.border === borderId &&
-					item.side ===
-						sideId +
-							(direction === 'horizontal'
-								? sidePos === 'left'
-									? -1
-									: 1
-								: sidePos === 'left'
-								? 1
-								: -1)
-			),
+			]
+				.filter(
+					(item) =>
+						(owner === 'current'
+							? item.owner === currentPlayer
+							: owner === 'other'
+							? item.owner === otherPlayer
+							: true) &&
+						item.border ===
+							sideId +
+								(direction === 'horizontal'
+									? sidePos === 'left'
+										? 0
+										: 1
+									: sidePos === 'left'
+									? 1
+									: 0) &&
+						(item.side === borderId - 1 || item.side === borderId)
+				)
+				.map((item) => ({ ...item, direction: otherDirection })),
+			...formattedSelected[direction]
+				.filter(
+					(item) =>
+						(owner === 'current'
+							? item.owner === currentPlayer
+							: owner === 'other'
+							? item.owner === otherPlayer
+							: true) &&
+						item.border === borderId &&
+						item.side ===
+							sideId +
+								(direction === 'horizontal'
+									? sidePos === 'left'
+										? -1
+										: 1
+									: sidePos === 'left'
+									? 1
+									: -1)
+				)
+				.map((item) => ({ ...item, direction })),
 		];
 
+		/* ??와 ||는 서로 완전히 같은 목적으로 사용할 수 없음 */
 		const breakOnClickCondition =
-			selected[direction].find(
+			/* 같은 자리에 이미 클릭된 border가 있을 경우  */
+			!!selected[direction].find(
 				(item) => item.border === borderId && item.side === sideId
-			) ??
-			(!findExistSideSelected('left').find(
-				(border) => border.owner === currentPlayer
-			) &&
-				!findExistSideSelected('right').find(
-					(border) => border.owner === currentPlayer
-				) &&
+			) ||
+			/* 다른 곳에 있는 border에 이어지는 border만 클릭할 수 있음(가장 첫번째 selected 예외) */
+			!!(
+				findExistSideSelected(borderId, sideId, 'left', 'current').length ===
+					0 &&
+				findExistSideSelected(borderId, sideId, 'right', 'current').length ===
+					0 &&
 				(selected.horizontal.find((border) => border.owner === currentPlayer) ??
-					selected.vertical.find((border) => border.owner === currentPlayer)));
+					selected.vertical.find((border) => border.owner === currentPlayer))
+			) ||
+			/* 다른 border 2개로 막혀있는 곳 사이를 뚫고 지나갈 수 없음 */
+			!!(
+				(findExistSideSelected(borderId, sideId, 'left', 'other').filter(
+					(border) => border.direction === otherDirection
+				).length === 2 &&
+					findExistSideSelected(borderId, sideId, 'right', 'current').length ===
+						0) ||
+				(findExistSideSelected(borderId, sideId, 'right', 'other').filter(
+					(border) => border.direction === otherDirection
+				).length === 2 &&
+					findExistSideSelected(borderId, sideId, 'left', 'current').length ===
+						0) ||
+				(findExistSideSelected(borderId, sideId, 'left', 'other').filter(
+					(border) => border.direction === otherDirection
+				).length === 2 &&
+					findExistSideSelected(borderId, sideId, 'right', 'other').filter(
+						(border) => border.direction === otherDirection
+					).length === 2)
+			);
+
+		const skipCondition = 1;
+
+		// const countSelectableBorder = () => {formattedSelected.horizontal.filter(border => border.)};
 
 		if (breakOnClickCondition) return;
 		// console.log('border = ' + borderId, 'side = ' + sideId, boxes, selected);
@@ -482,14 +528,11 @@ const BoxCollection = ({
 		const deepNewBoxes: boxes = boxes.map((item) => ({ ...item }));
 
 		if (
-			findExistSideSelected('left').length > 0 &&
-			findExistSideSelected('right').length > 0
+			findExistSideSelected(borderId, sideId, 'left', 'current').length > 0 &&
+			findExistSideSelected(borderId, sideId, 'right', 'current').length > 0
 		) {
 			const enclosedBoxes = findClosedBoxByDirection('horizontal').map((item) =>
-				getEnclosedBox(
-					item,
-					direction === 'horizontal' ? 'vertical' : 'horizontal'
-				)
+				getEnclosedBox(item, otherDirection)
 			);
 			for (const box of enclosedBoxes) {
 				const surroundedBoxCount = box.horizontal.reduce(
@@ -497,9 +540,7 @@ const BoxCollection = ({
 					0
 				);
 				const isBoxesIncludeOtherPlayers = box.horizontal.find(
-					(boxEl) =>
-						boxes[boxEl].owner ===
-						(currentPlayer === 'player1' ? 'player2' : 'player1')
+					(boxEl) => boxes[boxEl].owner === otherPlayer
 				);
 				/* 새로 enclosed상태가 된 박스들 간의 borderMerge */
 				const selectedMerge = () => {
@@ -576,7 +617,7 @@ const BoxCollection = ({
 			).length;
 			return newPlayers;
 		});
-		setCurrentPlayer((p) => (p === 'player1' ? 'player2' : 'player1'));
+		setCurrentPlayer(otherPlayer);
 
 		/* why doesn't TypeGuard work when using a func return instead a variable? */
 	};
