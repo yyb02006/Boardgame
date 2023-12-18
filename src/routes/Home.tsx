@@ -283,15 +283,71 @@ const BoxCollection = ({
 			  }
 			: selected;
 
+		const findSideSelected: (
+			borderId: number,
+			sideId: number,
+			sidePos: 'left' | 'right'
+		) => { top: borderState; middle: borderState; bottom: borderState } = (
+			borderId,
+			sideId,
+			sidePos
+		) => {
+			return {
+				top: {
+					border:
+						sideId +
+						(direction === 'horizontal'
+							? sidePos === 'left'
+								? 0
+								: 1
+							: sidePos === 'left'
+							? 1
+							: 0),
+					side: borderId - 1,
+					isSelected: true,
+					owner: currentPlayer,
+					isMergeable: false,
+				},
+				middle: {
+					border: borderId,
+					side:
+						sideId +
+						(direction === 'horizontal'
+							? sidePos === 'left'
+								? -1
+								: 1
+							: sidePos === 'left'
+							? 1
+							: -1),
+					isSelected: true,
+					owner: currentPlayer,
+					isMergeable: false,
+				},
+				bottom: {
+					border:
+						sideId +
+						(direction === 'horizontal'
+							? sidePos === 'left'
+								? 0
+								: 1
+							: sidePos === 'left'
+							? 1
+							: 0),
+					side: borderId,
+					isSelected: true,
+					owner: currentPlayer,
+					isMergeable: false,
+				},
+			};
+		};
+
 		const findExistSideSelected = (
 			borderId: number,
 			sideId: number,
 			sidePos: 'left' | 'right',
 			owner: 'current' | 'other' | 'all'
 		) => [
-			...formattedSelected[
-				direction === 'horizontal' ? 'vertical' : 'horizontal'
-			]
+			...formattedSelected[otherDirection]
 				.filter(
 					(item) =>
 						(owner === 'current'
@@ -368,7 +424,103 @@ const BoxCollection = ({
 					).length === 2)
 			);
 
-		const skipCondition = 1;
+		/* 하나의 selected 주변에 아무에게도 선택되지 않은 selected를 찾는 함수 */
+		const findUnownedSelecteds = () => {
+			const newSelecteds: selected = {
+				horizontal: [],
+				vertical: [],
+			};
+			for (const item of formattedSelected.horizontal) {
+				const { border, side, owner } = item;
+				if (
+					findExistSideSelected(border, side, 'left', 'other').filter(
+						(border) => border.direction === otherDirection
+					).length !== 2
+				) {
+					if (
+						!findExistSideSelected(border, side, 'left', 'all').find(
+							(border) => border.direction === direction
+						)
+					) {
+						newSelecteds[direction].push(
+							findSideSelected(border, side, 'left').middle
+						);
+					}
+					if (
+						!findExistSideSelected(border, side, 'left', 'all').find(
+							(item) =>
+								item.direction === otherDirection &&
+								item.border ===
+									findSideSelected(border, side, 'left').top.border &&
+								item.side === findSideSelected(border, side, 'left').top.side
+						)
+					) {
+						newSelecteds[otherDirection].push(
+							findSideSelected(border, side, 'left').top
+						);
+					}
+					if (
+						!findExistSideSelected(border, side, 'left', 'all').find(
+							(item) =>
+								item.direction === otherDirection &&
+								item.border ===
+									findSideSelected(border, side, 'left').bottom.border &&
+								item.side === findSideSelected(border, side, 'left').bottom.side
+						)
+					) {
+						newSelecteds[otherDirection].push(
+							findSideSelected(border, side, 'left').bottom
+						);
+					}
+					console.log(newSelecteds);
+				}
+				if (
+					findExistSideSelected(border, side, 'right', 'other').filter(
+						(border) => border.direction === otherDirection
+					).length !== 2
+				) {
+					if (
+						!findExistSideSelected(border, side, 'right', 'all').find(
+							(border) => border.direction === direction
+						)
+					) {
+						newSelecteds[direction].push(
+							findSideSelected(border, side, 'right').middle
+						);
+					}
+					if (
+						!findExistSideSelected(border, side, 'right', 'all').find(
+							(item) =>
+								item.direction === otherDirection &&
+								item.border ===
+									findSideSelected(border, side, 'right').top.border &&
+								item.side === findSideSelected(border, side, 'right').top.side
+						)
+					) {
+						newSelecteds[otherDirection].push(
+							findSideSelected(border, side, 'right').top
+						);
+					}
+					if (
+						!findExistSideSelected(border, side, 'right', 'all').find(
+							(item) =>
+								item.direction === otherDirection &&
+								item.border ===
+									findSideSelected(border, side, 'right').bottom.border &&
+								item.side ===
+									findSideSelected(border, side, 'right').bottom.side
+						)
+					) {
+						newSelecteds[otherDirection].push(
+							findSideSelected(border, side, 'right').bottom
+						);
+					}
+					console.log(newSelecteds);
+				}
+			}
+		};
+
+		findUnownedSelecteds();
 
 		// const countSelectableBorder = () => {formattedSelected.horizontal.filter(border => border.)};
 
