@@ -424,103 +424,78 @@ const BoxCollection = ({
 					).length === 2)
 			);
 
-		/* 하나의 selected 주변에 아무에게도 선택되지 않은 selected를 찾는 함수 */
-		const findUnownedSelecteds = () => {
-			const newSelecteds: selected = {
-				horizontal: [],
-				vertical: [],
-			};
-			for (const item of formattedSelected.horizontal) {
-				const { border, side, owner } = item;
-				if (
-					findExistSideSelected(border, side, 'left', 'other').filter(
-						(border) => border.direction === otherDirection
-					).length !== 2
-				) {
-					if (
-						!findExistSideSelected(border, side, 'left', 'all').find(
-							(border) => border.direction === direction
-						)
-					) {
-						newSelecteds[direction].push(
-							findSideSelected(border, side, 'left').middle
-						);
-					}
-					if (
-						!findExistSideSelected(border, side, 'left', 'all').find(
-							(item) =>
-								item.direction === otherDirection &&
-								item.border ===
-									findSideSelected(border, side, 'left').top.border &&
-								item.side === findSideSelected(border, side, 'left').top.side
-						)
-					) {
-						newSelecteds[otherDirection].push(
-							findSideSelected(border, side, 'left').top
-						);
-					}
-					if (
-						!findExistSideSelected(border, side, 'left', 'all').find(
-							(item) =>
-								item.direction === otherDirection &&
-								item.border ===
-									findSideSelected(border, side, 'left').bottom.border &&
-								item.side === findSideSelected(border, side, 'left').bottom.side
-						)
-					) {
-						newSelecteds[otherDirection].push(
-							findSideSelected(border, side, 'left').bottom
-						);
-					}
-					console.log(newSelecteds);
-				}
-				if (
-					findExistSideSelected(border, side, 'right', 'other').filter(
-						(border) => border.direction === otherDirection
-					).length !== 2
-				) {
-					if (
-						!findExistSideSelected(border, side, 'right', 'all').find(
-							(border) => border.direction === direction
-						)
-					) {
-						newSelecteds[direction].push(
-							findSideSelected(border, side, 'right').middle
-						);
-					}
-					if (
-						!findExistSideSelected(border, side, 'right', 'all').find(
-							(item) =>
-								item.direction === otherDirection &&
-								item.border ===
-									findSideSelected(border, side, 'right').top.border &&
-								item.side === findSideSelected(border, side, 'right').top.side
-						)
-					) {
-						newSelecteds[otherDirection].push(
-							findSideSelected(border, side, 'right').top
-						);
-					}
-					if (
-						!findExistSideSelected(border, side, 'right', 'all').find(
-							(item) =>
-								item.direction === otherDirection &&
-								item.border ===
-									findSideSelected(border, side, 'right').bottom.border &&
-								item.side ===
-									findSideSelected(border, side, 'right').bottom.side
-						)
-					) {
-						newSelecteds[otherDirection].push(
-							findSideSelected(border, side, 'right').bottom
-						);
-					}
-					console.log(newSelecteds);
-				}
-			}
+		const newSelecteds: selected = {
+			horizontal: [],
+			vertical: [],
 		};
 
-		findUnownedSelecteds();
+		/* 하나의 selected 주변에 아무에게도 선택되지 않은 selected를 찾는 함수 */
+		const findUnownedSelecteds = (selecteds: selected) => {
+			const tempSelecteds: selected = { horizontal: [], vertical: [] };
+			for (const selectedKey in selecteds) {
+				if (selectedKey !== 'horizontal' && selectedKey !== 'vertical') return;
+				for (const item of selecteds[selectedKey]) {
+					const { border, side } = item;
+					const processIterate = (horizontalDirection: 'left' | 'right') => {
+						const commonExistSelected = (kind: 'all' | 'other' | 'current') =>
+							findExistSideSelected(border, side, horizontalDirection, kind);
+						const verticalCondition = (verticalDirection: 'top' | 'bottom') =>
+							!commonExistSelected('all').find(
+								(item) =>
+									item.direction === otherDirection &&
+									item.border ===
+										findSideSelected(border, side, horizontalDirection)[
+											verticalDirection
+										].border &&
+									item.side ===
+										findSideSelected(border, side, horizontalDirection)[
+											verticalDirection
+										].side
+							);
+
+						if (
+							commonExistSelected('other').filter(
+								(border) => border.direction === otherDirection
+							).length !== 2
+						) {
+							if (
+								!commonExistSelected('all').find(
+									(border) => border.direction === direction
+								)
+							) {
+								tempSelecteds[direction].push(
+									findSideSelected(border, side, horizontalDirection).middle
+								);
+							}
+							if (verticalCondition('top')) {
+								tempSelecteds[otherDirection].push(
+									findSideSelected(border, side, horizontalDirection).top
+								);
+							}
+							if (verticalCondition('bottom')) {
+								tempSelecteds[otherDirection].push(
+									findSideSelected(border, side, horizontalDirection).bottom
+								);
+							}
+						}
+					};
+					processIterate('left');
+					processIterate('right');
+				}
+			}
+			console.log(tempSelecteds);
+
+			/* if (
+				tempSelecteds.horizontal.length > 0 &&
+				tempSelecteds.vertical.length > 0
+			) {
+				findUnownedSelecteds(tempSelecteds);
+			} */
+		};
+
+		findUnownedSelecteds(formattedSelected);
+
+		console.log(newSelecteds);
 
 		// const countSelectableBorder = () => {formattedSelected.horizontal.filter(border => border.)};
 
