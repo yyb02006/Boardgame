@@ -284,35 +284,37 @@ const BoxCollection = ({
 			: selected;
 
 		const findSideSelected: (
-			borderId: number,
-			sideId: number,
-			sidePos: 'left' | 'right'
+			selectedBorderId: number,
+			selectedSideId: number,
+			sidePos: 'left' | 'right',
+			sideDireciton: direction
 		) => { top: borderState; middle: borderState; bottom: borderState } = (
-			borderId,
-			sideId,
-			sidePos
+			selectedBorderId,
+			selectedSideId,
+			sidePos,
+			selectedDireciton
 		) => {
 			return {
 				top: {
 					border:
-						sideId +
-						(direction === 'horizontal'
+						selectedSideId +
+						(selectedDireciton === 'horizontal'
 							? sidePos === 'left'
 								? 0
 								: 1
 							: sidePos === 'left'
 							? 1
 							: 0),
-					side: borderId - 1,
+					side: selectedBorderId - 1,
 					isSelected: true,
 					owner: currentPlayer,
 					isMergeable: false,
 				},
 				middle: {
-					border: borderId,
+					border: selectedBorderId,
 					side:
-						sideId +
-						(direction === 'horizontal'
+						selectedSideId +
+						(selectedDireciton === 'horizontal'
 							? sidePos === 'left'
 								? -1
 								: 1
@@ -325,15 +327,15 @@ const BoxCollection = ({
 				},
 				bottom: {
 					border:
-						sideId +
-						(direction === 'horizontal'
+						selectedSideId +
+						(selectedDireciton === 'horizontal'
 							? sidePos === 'left'
 								? 0
 								: 1
 							: sidePos === 'left'
 							? 1
 							: 0),
-					side: borderId,
+					side: selectedBorderId,
 					isSelected: true,
 					owner: currentPlayer,
 					isMergeable: false,
@@ -429,58 +431,112 @@ const BoxCollection = ({
 			vertical: [],
 		};
 
+		console.log(findSideSelected(2, 2, 'left', 'horizontal'));
+
 		/* 하나의 selected 주변에 아무에게도 선택되지 않은 selected를 찾는 함수 */
+		/* 재귀실행은 포기하고 단일 selected에 적용되는 함수로 변환해야함. */
 		const findUnownedSelecteds = (selecteds: selected) => {
 			const tempSelecteds: selected = { horizontal: [], vertical: [] };
 			for (const selectedKey in selecteds) {
 				if (selectedKey !== 'horizontal' && selectedKey !== 'vertical') return;
+				const otherSelectedKey =
+					selectedKey === 'horizontal' ? 'vertical' : 'horizontal';
 				for (const item of selecteds[selectedKey]) {
-					const { border, side } = item;
-					const processIterate = (horizontalDirection: 'left' | 'right') => {
-						const commonExistSelected = (kind: 'all' | 'other' | 'current') =>
-							findExistSideSelected(border, side, horizontalDirection, kind);
-						const verticalCondition = (verticalDirection: 'top' | 'bottom') =>
-							!commonExistSelected('all').find(
-								(item) =>
-									item.direction === otherDirection &&
-									item.border ===
-										findSideSelected(border, side, horizontalDirection)[
-											verticalDirection
-										].border &&
-									item.side ===
-										findSideSelected(border, side, horizontalDirection)[
-											verticalDirection
-										].side
-							);
-
-						if (
-							commonExistSelected('other').filter(
-								(border) => border.direction === otherDirection
-							).length !== 2
-						) {
+					if (item.owner === currentPlayer) {
+						const { border, side } = item;
+						const processIterate = (horizontalDirection: 'left' | 'right') => {
+							const commonExistSelected = (kind: 'all' | 'other' | 'current') =>
+								findExistSideSelected(border, side, horizontalDirection, kind);
+							const verticalCondition = (
+								verticalDirection: 'top' | 'bottom'
+							) => {
+								const objectSelected = findSideSelected(
+									border,
+									side,
+									horizontalDirection,
+									selectedKey
+								)[verticalDirection];
+								if (
+									border === 2 &&
+									side === 2 &&
+									selectedKey === 'horizontal'
+								) {
+									console.log(
+										commonExistSelected('all').find(
+											(item) =>
+												item.direction === otherSelectedKey &&
+												item.border === objectSelected.border &&
+												item.side === objectSelected.side
+										),
+										tempSelecteds[otherSelectedKey].find(
+											(item) =>
+												item.border === objectSelected.border &&
+												item.side === objectSelected.side
+										),
+										horizontalDirection,
+										verticalDirection,
+										objectSelected
+									);
+								}
+								if (
+									!commonExistSelected('all').find(
+										(item) =>
+											item.direction === otherSelectedKey &&
+											item.border === objectSelected.border &&
+											item.side === objectSelected.side
+									) &&
+									!tempSelecteds[otherSelectedKey].find(
+										(item) =>
+											item.border === objectSelected.border &&
+											item.side === objectSelected.side
+									)
+								) {
+									tempSelecteds[otherSelectedKey].push(objectSelected);
+								}
+							};
 							if (
-								!commonExistSelected('all').find(
-									(border) => border.direction === direction
-								)
+								commonExistSelected('other').filter(
+									(border) => border.direction === otherSelectedKey
+								).length !== 2
 							) {
-								tempSelecteds[direction].push(
-									findSideSelected(border, side, horizontalDirection).middle
-								);
+								if (
+									!commonExistSelected('all').find(
+										(border) => border.direction === selectedKey
+									) &&
+									!tempSelecteds[selectedKey].find(
+										(item) =>
+											item.border ===
+												findSideSelected(
+													border,
+													side,
+													horizontalDirection,
+													selectedKey
+												).middle.border &&
+											item.side ===
+												findSideSelected(
+													border,
+													side,
+													horizontalDirection,
+													selectedKey
+												).middle.side
+									)
+								) {
+									tempSelecteds[selectedKey].push(
+										findSideSelected(
+											border,
+											side,
+											horizontalDirection,
+											selectedKey
+										).middle
+									);
+								}
+								verticalCondition('top');
+								verticalCondition('bottom');
 							}
-							if (verticalCondition('top')) {
-								tempSelecteds[otherDirection].push(
-									findSideSelected(border, side, horizontalDirection).top
-								);
-							}
-							if (verticalCondition('bottom')) {
-								tempSelecteds[otherDirection].push(
-									findSideSelected(border, side, horizontalDirection).bottom
-								);
-							}
-						}
-					};
-					processIterate('left');
-					processIterate('right');
+						};
+						processIterate('left');
+						processIterate('right');
+					}
 				}
 			}
 			console.log(tempSelecteds);
