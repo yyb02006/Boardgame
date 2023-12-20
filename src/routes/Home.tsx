@@ -347,9 +347,12 @@ const BoxCollection = ({
 			borderId: number,
 			sideId: number,
 			sidePos: 'left' | 'right',
-			owner: 'current' | 'other' | 'all'
+			owner: 'current' | 'other' | 'all',
+			selectedDirection: direction = direction
 		) => [
-			...formattedSelected[otherDirection]
+			...formattedSelected[
+				selectedDirection === 'horizontal' ? 'vertical' : 'horizontal'
+			]
 				.filter(
 					(item) =>
 						(owner === 'current'
@@ -359,7 +362,7 @@ const BoxCollection = ({
 							: true) &&
 						item.border ===
 							sideId +
-								(direction === 'horizontal'
+								(selectedDirection === 'horizontal'
 									? sidePos === 'left'
 										? 0
 										: 1
@@ -368,8 +371,12 @@ const BoxCollection = ({
 									: 0) &&
 						(item.side === borderId - 1 || item.side === borderId)
 				)
-				.map((item) => ({ ...item, direction: otherDirection })),
-			...formattedSelected[direction]
+				.map((item) => ({
+					...item,
+					direction:
+						selectedDirection === 'horizontal' ? 'vertical' : 'horizontal',
+				})),
+			...formattedSelected[selectedDirection]
 				.filter(
 					(item) =>
 						(owner === 'current'
@@ -380,7 +387,7 @@ const BoxCollection = ({
 						item.border === borderId &&
 						item.side ===
 							sideId +
-								(direction === 'horizontal'
+								(selectedDirection === 'horizontal'
 									? sidePos === 'left'
 										? -1
 										: 1
@@ -388,7 +395,7 @@ const BoxCollection = ({
 									? 1
 									: -1)
 				)
-				.map((item) => ({ ...item, direction })),
+				.map((item) => ({ ...item, direction: selectedDirection })),
 		];
 
 		/* ??와 ||는 서로 완전히 같은 목적으로 사용할 수 없음 */
@@ -435,6 +442,7 @@ const BoxCollection = ({
 
 		/* 하나의 selected 주변에 아무에게도 선택되지 않은 selected를 찾는 함수 */
 		/* 재귀실행은 포기하고 단일 selected에 적용되는 함수로 변환해야함. */
+		/* 12/21 selected와 이웃한 selected 중 소유권 없는 selected 찾기 완료 */
 		const findUnownedSelecteds = (selecteds: selected) => {
 			const tempSelecteds: selected = { horizontal: [], vertical: [] };
 			for (const selectedKey in selecteds) {
@@ -446,7 +454,13 @@ const BoxCollection = ({
 						const { border, side } = item;
 						const processIterate = (horizontalDirection: 'left' | 'right') => {
 							const commonExistSelected = (kind: 'all' | 'other' | 'current') =>
-								findExistSideSelected(border, side, horizontalDirection, kind);
+								findExistSideSelected(
+									border,
+									side,
+									horizontalDirection,
+									kind,
+									selectedKey
+								);
 							const verticalCondition = (
 								verticalDirection: 'top' | 'bottom'
 							) => {
@@ -456,28 +470,6 @@ const BoxCollection = ({
 									horizontalDirection,
 									selectedKey
 								)[verticalDirection];
-								if (
-									border === 2 &&
-									side === 2 &&
-									selectedKey === 'horizontal'
-								) {
-									console.log(
-										commonExistSelected('all').find(
-											(item) =>
-												item.direction === otherSelectedKey &&
-												item.border === objectSelected.border &&
-												item.side === objectSelected.side
-										),
-										tempSelecteds[otherSelectedKey].find(
-											(item) =>
-												item.border === objectSelected.border &&
-												item.side === objectSelected.side
-										),
-										horizontalDirection,
-										verticalDirection,
-										objectSelected
-									);
-								}
 								if (
 									!commonExistSelected('all').find(
 										(item) =>
@@ -550,8 +542,6 @@ const BoxCollection = ({
 		};
 
 		findUnownedSelecteds(formattedSelected);
-
-		console.log(newSelecteds);
 
 		// const countSelectableBorder = () => {formattedSelected.horizontal.filter(border => border.)};
 
