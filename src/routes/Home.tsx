@@ -481,7 +481,9 @@ const BoxCollection = ({
 										(item) =>
 											item.border === objectSelected.border &&
 											item.side === objectSelected.side
-									)
+									) &&
+									objectSelected.border >= 0 &&
+									objectSelected.side >= 0
 								) {
 									tempSelecteds[otherSelectedKey].push(objectSelected);
 								}
@@ -491,36 +493,25 @@ const BoxCollection = ({
 									(border) => border.direction === otherSelectedKey
 								).length !== 2
 							) {
+								const commonFindSideSelected = findSideSelected(
+									border,
+									side,
+									horizontalDirection,
+									selectedKey
+								).middle;
 								if (
 									!commonExistSelected('all').find(
 										(border) => border.direction === selectedKey
 									) &&
 									!tempSelecteds[selectedKey].find(
 										(item) =>
-											item.border ===
-												findSideSelected(
-													border,
-													side,
-													horizontalDirection,
-													selectedKey
-												).middle.border &&
-											item.side ===
-												findSideSelected(
-													border,
-													side,
-													horizontalDirection,
-													selectedKey
-												).middle.side
-									)
+											item.border === commonFindSideSelected.border &&
+											item.side === commonFindSideSelected.side
+									) &&
+									commonFindSideSelected.border >= 0 &&
+									commonFindSideSelected.side >= 0
 								) {
-									tempSelecteds[selectedKey].push(
-										findSideSelected(
-											border,
-											side,
-											horizontalDirection,
-											selectedKey
-										).middle
-									);
+									tempSelecteds[selectedKey].push(commonFindSideSelected);
 								}
 								verticalCondition('top');
 								verticalCondition('bottom');
@@ -532,6 +523,15 @@ const BoxCollection = ({
 				}
 			}
 			console.log(tempSelecteds);
+
+			/* tempSelecteds.horizontal = [
+				...formattedSelected.horizontal,
+				...tempSelecteds.horizontal,
+			];
+			tempSelecteds.vertical = [
+				...formattedSelected.vertical,
+				...tempSelecteds.vertical,
+			]; */
 
 			/* if (
 				tempSelecteds.horizontal.length > 0 &&
