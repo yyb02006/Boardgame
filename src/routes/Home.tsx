@@ -283,6 +283,13 @@ const BoxCollection = ({
 			  }
 			: selected;
 
+		const matchSelectedsLocation = (
+			comparatorSelected: borderState,
+			targetSelected: borderState
+		) =>
+			comparatorSelected.border === targetSelected.border &&
+			comparatorSelected.side === targetSelected.side;
+
 		const findSideSelected: (
 			selectedBorderId: number,
 			selectedSideId: number,
@@ -459,6 +466,11 @@ const BoxCollection = ({
 				for (const item of selecteds[selectedKey]) {
 					if (item.owner === currentPlayer) {
 						const { border, side } = item;
+						const limitSelectedsLocation = (selected: borderState) =>
+							selected.border >= 0 &&
+							selected.border < 6 &&
+							selected.side >= 0 &&
+							selected.side < 5;
 						const processIterate = (horizontalDirection: 'left' | 'right') => {
 							const commonExistSelected = (kind: 'all' | 'other' | 'current') =>
 								findExistSideSelected(
@@ -481,23 +493,15 @@ const BoxCollection = ({
 									!commonExistSelected('all').find(
 										(item) =>
 											item.direction === otherSelectedKey &&
-											item.border === objectSelected.border &&
-											item.side === objectSelected.side
+											matchSelectedsLocation(item, objectSelected)
 									) &&
-									!selecteds[otherSelectedKey].find(
-										(item) =>
-											item.border === objectSelected.border &&
-											item.side === objectSelected.side
+									!selecteds[otherSelectedKey].find((item) =>
+										matchSelectedsLocation(item, objectSelected)
 									) &&
-									!tempSelecteds[otherSelectedKey].find(
-										(item) =>
-											item.border === objectSelected.border &&
-											item.side === objectSelected.side
+									!tempSelecteds[otherSelectedKey].find((item) =>
+										matchSelectedsLocation(item, objectSelected)
 									) &&
-									objectSelected.border >= 0 &&
-									objectSelected.border < 6 &&
-									objectSelected.side >= 0 &&
-									objectSelected.side < 5
+									limitSelectedsLocation(objectSelected)
 								) {
 									tempSelecteds[otherSelectedKey].push(objectSelected);
 								}
@@ -517,20 +521,13 @@ const BoxCollection = ({
 									!commonExistSelected('all').find(
 										(border) => border.direction === selectedKey
 									) &&
-									!selecteds[selectedKey].find(
-										(item) =>
-											item.border === commonFindSideSelected.border &&
-											item.side === commonFindSideSelected.side
+									!selecteds[selectedKey].find((item) =>
+										matchSelectedsLocation(item, commonFindSideSelected)
 									) &&
-									!tempSelecteds[selectedKey].find(
-										(item) =>
-											item.border === commonFindSideSelected.border &&
-											item.side === commonFindSideSelected.side
+									!tempSelecteds[selectedKey].find((item) =>
+										matchSelectedsLocation(item, commonFindSideSelected)
 									) &&
-									commonFindSideSelected.border >= 0 &&
-									commonFindSideSelected.border < 6 &&
-									commonFindSideSelected.side >= 0 &&
-									commonFindSideSelected.side < 5
+									limitSelectedsLocation(commonFindSideSelected)
 								) {
 									tempSelecteds[selectedKey].push(commonFindSideSelected);
 								}
@@ -556,18 +553,14 @@ const BoxCollection = ({
 				const defalutNotIncludeSelectds: selected = {
 					horizontal: selecteds.horizontal.filter(
 						(selected) =>
-							!currentPlayerSelecteds.horizontal.find(
-								(currentPlayerSelected) =>
-									currentPlayerSelected.border === selected.border &&
-									currentPlayerSelected.side === selected.side
+							!currentPlayerSelecteds.horizontal.find((currentPlayerSelected) =>
+								matchSelectedsLocation(currentPlayerSelected, selected)
 							)
 					),
 					vertical: selecteds.vertical.filter(
 						(selected) =>
-							!currentPlayerSelecteds.vertical.find(
-								(currentPlayerSelected) =>
-									currentPlayerSelected.border === selected.border &&
-									currentPlayerSelected.side === selected.side
+							!currentPlayerSelecteds.vertical.find((currentPlayerSelected) =>
+								matchSelectedsLocation(currentPlayerSelected, selected)
 							)
 					),
 				};
