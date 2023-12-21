@@ -433,16 +433,23 @@ const BoxCollection = ({
 					).length === 2)
 			);
 
-		const newSelecteds: selected = {
-			horizontal: [],
-			vertical: [],
+		const unownedSelecteds: unownedSelecteds = {
+			includeDefault: { horizontal: [], vertical: [] },
+			notIncludeDefault: { horizontal: [], vertical: [] },
 		};
 
-		console.log(findSideSelected(2, 2, 'left', 'horizontal'));
+		const currentPlayerSelecteds = {
+			horizontal: formattedSelected.horizontal.filter(
+				(item) => item.owner === currentPlayer
+			),
+			vertical: formattedSelected.vertical.filter(
+				(item) => item.owner === currentPlayer
+			),
+		};
 
 		/* 하나의 selected 주변에 아무에게도 선택되지 않은 selected를 찾는 함수 */
-		/* 재귀실행은 포기하고 단일 selected에 적용되는 함수로 변환해야함. */
 		/* 12/21 selected와 이웃한 selected 중 소유권 없는 selected 찾기 완료 */
+		/* 12/22 재귀적 실행 구현, 재귀함수에서 return을 받으려고 하면 첫 실행에서의 함수가 끝난 뒤 undefined값 밖에 못 받는다. */
 		const findUnownedSelecteds = (selecteds: selected) => {
 			const tempSelecteds: selected = { horizontal: [], vertical: [] };
 			for (const selectedKey in selecteds) {
@@ -477,13 +484,20 @@ const BoxCollection = ({
 											item.border === objectSelected.border &&
 											item.side === objectSelected.side
 									) &&
+									!selecteds[otherSelectedKey].find(
+										(item) =>
+											item.border === objectSelected.border &&
+											item.side === objectSelected.side
+									) &&
 									!tempSelecteds[otherSelectedKey].find(
 										(item) =>
 											item.border === objectSelected.border &&
 											item.side === objectSelected.side
 									) &&
 									objectSelected.border >= 0 &&
-									objectSelected.side >= 0
+									objectSelected.border < 6 &&
+									objectSelected.side >= 0 &&
+									objectSelected.side < 5
 								) {
 									tempSelecteds[otherSelectedKey].push(objectSelected);
 								}
@@ -503,13 +517,20 @@ const BoxCollection = ({
 									!commonExistSelected('all').find(
 										(border) => border.direction === selectedKey
 									) &&
+									!selecteds[selectedKey].find(
+										(item) =>
+											item.border === commonFindSideSelected.border &&
+											item.side === commonFindSideSelected.side
+									) &&
 									!tempSelecteds[selectedKey].find(
 										(item) =>
 											item.border === commonFindSideSelected.border &&
 											item.side === commonFindSideSelected.side
 									) &&
 									commonFindSideSelected.border >= 0 &&
-									commonFindSideSelected.side >= 0
+									commonFindSideSelected.border < 6 &&
+									commonFindSideSelected.side >= 0 &&
+									commonFindSideSelected.side < 5
 								) {
 									tempSelecteds[selectedKey].push(commonFindSideSelected);
 								}
@@ -522,51 +543,42 @@ const BoxCollection = ({
 					}
 				}
 			}
-			/* console.log(selecteds);
-
-			console.log(tempSelecteds); */
 			if (
-				tempSelecteds.horizontal.length > 0 &&
+				tempSelecteds.horizontal.length > 0 ||
 				tempSelecteds.vertical.length > 0
 			) {
 				const recursiveSelecteds: selected = {
-					horizontal: [
-						...selecteds.horizontal.filter(
-							(item) => item.owner === currentPlayer
-						),
-						...tempSelecteds.horizontal,
-					],
-					vertical: [
-						...selecteds.vertical.filter(
-							(item) => item.owner === currentPlayer
-						),
-						...tempSelecteds.vertical,
-					],
+					horizontal: [...selecteds.horizontal, ...tempSelecteds.horizontal],
+					vertical: [...selecteds.vertical, ...tempSelecteds.vertical],
 				};
-				console.log(recursiveSelecteds);
+				findUnownedSelecteds(recursiveSelecteds);
 			} else {
-				console.log(`result = `, selecteds);
+				const defalutNotIncludeSelectds: selected = {
+					horizontal: selecteds.horizontal.filter(
+						(selected) =>
+							!currentPlayerSelecteds.horizontal.find(
+								(currentPlayerSelected) =>
+									currentPlayerSelected.border === selected.border &&
+									currentPlayerSelected.side === selected.side
+							)
+					),
+					vertical: selecteds.vertical.filter(
+						(selected) =>
+							!currentPlayerSelecteds.vertical.find(
+								(currentPlayerSelected) =>
+									currentPlayerSelected.border === selected.border &&
+									currentPlayerSelected.side === selected.side
+							)
+					),
+				};
+				unownedSelecteds.includeDefault = selecteds;
+				unownedSelecteds.notIncludeDefault = defalutNotIncludeSelectds;
 			}
-			/* tempSelecteds.horizontal = [
-				...formattedSelected.horizontal,
-				...tempSelecteds.horizontal,
-			];
-			tempSelecteds.vertical = [
-				...formattedSelected.vertical,
-				...tempSelecteds.vertical,
-			]; */
-
-			/* if (
-				tempSelecteds.horizontal.length > 0 &&
-				tempSelecteds.vertical.length > 0
-			) {
-				findUnownedSelecteds(tempSelecteds);
-			} */
 		};
 
-		/* findUnownedSelecteds(formattedSelected); */
+		findUnownedSelecteds(currentPlayerSelecteds);
 
-		// const countSelectableBorder = () => {formattedSelected.horizontal.filter(border => border.)};
+		console.log(unownedSelecteds);
 
 		if (breakOnClickCondition) return;
 		// console.log('border = ' + borderId, 'side = ' + sideId, boxes, selected);
@@ -752,7 +764,6 @@ const BoxCollection = ({
 								item.side === rightBorder.side
 						)
 					) {
-						console.log('vertical run');
 						mergeableSelected.vertical.push(rightBorder);
 					}
 					if (
@@ -764,7 +775,6 @@ const BoxCollection = ({
 								item.side === downBorder.side
 						)
 					) {
-						console.log('horizontal run');
 						mergeableSelected.horizontal.push(downBorder);
 					}
 				}

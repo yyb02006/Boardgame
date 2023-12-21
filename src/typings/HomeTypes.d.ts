@@ -16,6 +16,11 @@ interface getEnclosedBoxResult {
 	vertical: nestedArray<number>;
 }
 
+interface unownedSelecteds {
+	includeDefault: selected;
+	notIncludeDefault: selected;
+}
+
 /** Styled Components Types */
 
 interface PlayerProps {
