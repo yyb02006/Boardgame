@@ -522,8 +522,31 @@ const BoxCollection = ({
 					}
 				}
 			}
-			console.log(tempSelecteds);
+			/* console.log(selecteds);
 
+			console.log(tempSelecteds); */
+			if (
+				tempSelecteds.horizontal.length > 0 &&
+				tempSelecteds.vertical.length > 0
+			) {
+				const recursiveSelecteds: selected = {
+					horizontal: [
+						...selecteds.horizontal.filter(
+							(item) => item.owner === currentPlayer
+						),
+						...tempSelecteds.horizontal,
+					],
+					vertical: [
+						...selecteds.vertical.filter(
+							(item) => item.owner === currentPlayer
+						),
+						...tempSelecteds.vertical,
+					],
+				};
+				console.log(recursiveSelecteds);
+			} else {
+				console.log(`result = `, selecteds);
+			}
 			/* tempSelecteds.horizontal = [
 				...formattedSelected.horizontal,
 				...tempSelecteds.horizontal,
@@ -541,7 +564,7 @@ const BoxCollection = ({
 			} */
 		};
 
-		findUnownedSelecteds(formattedSelected);
+		/* findUnownedSelecteds(formattedSelected); */
 
 		// const countSelectableBorder = () => {formattedSelected.horizontal.filter(border => border.)};
 
@@ -591,7 +614,7 @@ const BoxCollection = ({
 						isSelected,
 						owner,
 						isMergeable,
-					};
+					} satisfies borderState;
 				}
 			};
 			switch (true) {
@@ -605,9 +628,7 @@ const BoxCollection = ({
 		const findClosedBoxByDirection = (direction: direction) => {
 			const isHorizontal = direction === 'horizontal';
 			return Array.from({ length: 5 }, (_, id) => {
-				const borders = formattedSelected[
-					isHorizontal ? 'horizontal' : 'vertical'
-				]
+				const borders = formattedSelected[direction]
 					.filter((item) => item.side === id && item.owner === currentPlayer)
 					.sort((a, b) => a.border - b.border);
 				return borders.length > 1
@@ -700,6 +721,7 @@ const BoxCollection = ({
 		 * */
 		const deepNewBoxes: boxes = boxes.map((item) => ({ ...item }));
 
+		/* 임의의 구역이 enclosed가 될 시 */
 		if (
 			findExistSideSelected(borderId, sideId, 'left', 'current').length > 0 &&
 			findExistSideSelected(borderId, sideId, 'right', 'current').length > 0
@@ -707,6 +729,7 @@ const BoxCollection = ({
 			const enclosedBoxes = findClosedBoxByDirection('horizontal').map((item) =>
 				getEnclosedBox(item, otherDirection)
 			);
+			const mergeableSelected: selected = { horizontal: [], vertical: [] };
 			for (const box of enclosedBoxes) {
 				const surroundedBoxCount = box.horizontal.reduce(
 					(count, id) => (boxes[id].isSurrounded ? count + 1 : count),
@@ -716,20 +739,35 @@ const BoxCollection = ({
 					(boxEl) => boxes[boxEl].owner === otherPlayer
 				);
 				/* 새로 enclosed상태가 된 박스들 간의 borderMerge */
-				const selectedMerge = () => {
-					const mergeableSelected: selected = { horizontal: [], vertical: [] };
-					for (const boxIndex of box.horizontal) {
-						const rightBorder = boxToborder(boxIndex, 'right', true, true);
-						const downBorder = boxToborder(boxIndex, 'down', true, true);
-						if (box.horizontal.includes(boxIndex + 1) && rightBorder) {
-							mergeableSelected.vertical.push(rightBorder);
-						}
-						if (box.horizontal.includes(boxIndex + 5) && downBorder) {
-							mergeableSelected.horizontal.push(downBorder);
-						}
+				for (const boxIndex of box.horizontal) {
+					const rightBorder = boxToborder(boxIndex, 'right', true, true);
+					const downBorder = boxToborder(boxIndex, 'down', true, true);
+					/* 자기 자신이 이미 있는지에 대한 검증 필요 */
+					if (
+						box.horizontal.includes(boxIndex + 1) &&
+						rightBorder &&
+						!mergeableSelected.vertical.find(
+							(item) =>
+								item.border === rightBorder.border &&
+								item.side === rightBorder.side
+						)
+					) {
+						console.log('vertical run');
+						mergeableSelected.vertical.push(rightBorder);
 					}
-					return mergeableSelected;
-				};
+					if (
+						box.horizontal.includes(boxIndex + 5) &&
+						downBorder &&
+						!mergeableSelected.horizontal.find(
+							(item) =>
+								item.border === downBorder.border &&
+								item.side === downBorder.side
+						)
+					) {
+						console.log('horizontal run');
+						mergeableSelected.horizontal.push(downBorder);
+					}
+				}
 				if (
 					JSON.stringify(box.horizontal) === JSON.stringify(box.vertical) &&
 					surroundedBoxCount < box.horizontal.length &&
@@ -739,17 +777,16 @@ const BoxCollection = ({
 						deepNewBoxes[item].isSurrounded = true;
 						deepNewBoxes[item].owner = currentPlayer;
 					});
-					console.log(selectedMerge());
 					formattedSelected.horizontal = [
 						...new Set([
 							...formattedSelected.horizontal,
-							...selectedMerge().horizontal,
+							...mergeableSelected.horizontal,
 						]),
 					];
 					formattedSelected.vertical = [
 						...new Set([
 							...formattedSelected.vertical,
-							...selectedMerge().vertical,
+							...mergeableSelected.vertical,
 						]),
 					];
 				}
@@ -791,7 +828,6 @@ const BoxCollection = ({
 			return newPlayers;
 		});
 		setCurrentPlayer(otherPlayer);
-
 		/* why doesn't TypeGuard work when using a func return instead a variable? */
 	};
 
