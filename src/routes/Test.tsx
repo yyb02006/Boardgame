@@ -1,68 +1,60 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useCallback, useState } from 'react';
+import styled from 'styled-components';
 
-const ChildComponent = ({ handleFn }: { handleFn: () => void }) => {
-	console.log('ChildComponent is Rendered!');
+const Layout = styled.section`
+	background-color: var(--bgColor-dark);
+	color: #eaeaea;
+	height: 100vh;
+	width: 100%;
+	font-size: 5rem;
+	font-weight: 800;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	padding: 80px 0 0 0;
+`;
 
-	return (
-		<div>
-			<button
-				style={{
-					width: '100px',
-					height: '100px',
-					top: '100px',
-					position: 'relative',
-				}}
-				onClick={handleFn}
-			>
-				Click
-			</button>
-		</div>
-	);
-};
+const Child = styled.div`
+	max-width: 400px;
+	width: 100%;
+	height: 200px;
+	background-color: blue;
+	margin: 0 40px 0 0;
+	padding: 12px 24px;
+	font-size: 4vw;
+	h3 {
+		font-size: 2rem;
+		font-weight: 600;
+		margin: 0;
+	}
+`;
 
-const Child = React.memo(ChildComponent);
+const Middle = styled.div`
+	height: 200px;
+	width: 200px;
+	background-color: green;
+`;
 
-const ParentComponent = () => {
-	const [clicked, setClicked] = useState(false);
-	console.log('ParentComponent is Rendered!');
-	/* const handleClick = () => {
-		setClicked((p) => !p);
-		console.log('button Clicked');
-	}; */
-	const handleClick = useCallback(() => {
-		setClicked((p) => !p);
-		console.log('Button Clicked');
-	}, []);
-
-	return (
-		<div>
-			<Child handleFn={handleClick}></Child>
-		</div>
-	);
-};
+const BoardLayout = styled.div`
+	position: relative;
+	display: flex;
+	justify-content: space-between;
+	flex-direction: column;
+	height: 100%;
+	background-color: yellow;
+`;
 
 const Test = () => {
-	const [render, setRender] = useState(false);
-	console.log(render);
-
 	return (
-		<article>
-			<ParentComponent />
-			<button
-				style={{
-					width: '100px',
-					height: '100px',
-					top: '100px',
-					position: 'relative',
-				}}
-				onClick={() => {
-					setRender((p) => !p);
-				}}
-			>
-				Render
-			</button>
-		</article>
+		<Layout>
+			BorderGame
+			<BoardLayout>
+				<Child />
+				<Middle />
+				<Child />
+			</BoardLayout>
+		</Layout>
 	);
 };
 
