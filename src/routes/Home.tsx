@@ -1,6 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
-import { isElementInNestedArray, sortByOrder } from '../libs/utils';
+import {
+	compareAndFilterSelecteds,
+	isElementInNestedArray,
+	sortByOrder,
+} from '../libs/utils';
 import { HomeProvider, useHomeContext } from './HomeContext';
 
 const colors = {
@@ -290,16 +294,11 @@ const BoxCollection = ({
 			comparatorSelected.border === targetSelected.border &&
 			comparatorSelected.side === targetSelected.side;
 
-		const findSideSelected: (
+		const findSideSelected = (
 			selectedBorderId: number,
 			selectedSideId: number,
-			sidePos: 'left' | 'right',
-			sideDireciton: direction
-		) => { top: borderState; middle: borderState; bottom: borderState } = (
-			selectedBorderId,
-			selectedSideId,
-			sidePos,
-			selectedDireciton
+			sidePos: HorizontalPos,
+			selectedDireciton: direction
 		) => {
 			return {
 				top: {
@@ -356,54 +355,96 @@ const BoxCollection = ({
 			sidePos: 'left' | 'right',
 			owner: 'current' | 'other' | 'all',
 			selectedDirection: direction = direction
-		) => [
-			...formattedSelected[
-				selectedDirection === 'horizontal' ? 'vertical' : 'horizontal'
-			]
+		) =>
+			[
+				...formattedSelected[
+					selectedDirection === 'horizontal' ? 'vertical' : 'horizontal'
+				]
+					.filter(
+						(item) =>
+							(owner === 'current'
+								? item.owner === currentPlayer
+								: owner === 'other'
+								? item.owner === otherPlayer
+								: true) &&
+							item.border ===
+								sideId +
+									(selectedDirection === 'horizontal'
+										? sidePos === 'left'
+											? 0
+											: 1
+										: sidePos === 'left'
+										? 1
+										: 0) &&
+							(item.side === borderId - 1 || item.side === borderId)
+					)
+					.map((item) => ({
+						...item,
+						direction:
+							selectedDirection === 'horizontal' ? 'vertical' : 'horizontal',
+					})),
+				...formattedSelected[selectedDirection]
+					.filter(
+						(item) =>
+							(owner === 'current'
+								? item.owner === currentPlayer
+								: owner === 'other'
+								? item.owner === otherPlayer
+								: true) &&
+							item.border === borderId &&
+							item.side ===
+								sideId +
+									(selectedDirection === 'horizontal'
+										? sidePos === 'left'
+											? -1
+											: 1
+										: sidePos === 'left'
+										? 1
+										: -1)
+					)
+					.map((item) => ({ ...item, direction: selectedDirection })),
+			] as Array<borderState & { direction: direction }>;
+
+		const findNotExistSelected = (
+			border: number,
+			side: number,
+			direction: direction,
+			horizontalPos: HorizontalPos
+		) => {
+			const otherDirection =
+				direction === 'horizontal' ? 'vertical' : 'horizontal';
+			const existSideSelecteds = findExistSideSelected(
+				border,
+				side,
+				horizontalPos,
+				'all',
+				direction
+			);
+			const sideSelecteds = findSideSelected(
+				border,
+				side,
+				horizontalPos,
+				direction
+			);
+			const mappedSelecteds = Object.entries(sideSelecteds)
 				.filter(
-					(item) =>
-						(owner === 'current'
-							? item.owner === currentPlayer
-							: owner === 'other'
-							? item.owner === otherPlayer
-							: true) &&
-						item.border ===
-							sideId +
-								(selectedDirection === 'horizontal'
-									? sidePos === 'left'
-										? 0
-										: 1
-									: sidePos === 'left'
-									? 1
-									: 0) &&
-						(item.side === borderId - 1 || item.side === borderId)
+					(selected) =>
+						selected[1].border >= 0 &&
+						selected[1].border < 6 &&
+						selected[1].side >= 0 &&
+						selected[1].side < 5
 				)
-				.map((item) => ({
-					...item,
-					direction:
-						selectedDirection === 'horizontal' ? 'vertical' : 'horizontal',
-				})),
-			...formattedSelected[selectedDirection]
-				.filter(
-					(item) =>
-						(owner === 'current'
-							? item.owner === currentPlayer
-							: owner === 'other'
-							? item.owner === otherPlayer
-							: true) &&
-						item.border === borderId &&
-						item.side ===
-							sideId +
-								(selectedDirection === 'horizontal'
-									? sidePos === 'left'
-										? -1
-										: 1
-									: sidePos === 'left'
-									? 1
-									: -1)
-				)
-				.map((item) => ({ ...item, direction: selectedDirection })),
-		];
+				.map((selected) => ({
+					...selected[1],
+					direction: selected[0] === 'middle' ? direction : otherDirection,
+				}));
+			const result = compareAndFilterSelecteds(
+				mappedSelecteds,
+				existSideSelecteds
+			);
+
+			return result;
+		};
 
 		/* ??와 ||는 서로 완전히 같은 목적으로 사용할 수 없음 */
 		const breakOnClickCondition =
@@ -440,11 +481,6 @@ const BoxCollection = ({
 					).length === 2)
 			);
 
-		const unownedSelecteds: unownedSelecteds = {
-			includeDefault: { horizontal: [], vertical: [] },
-			notIncludeDefault: { horizontal: [], vertical: [] },
-		};
-
 		const currentPlayerSelecteds = {
 			horizontal: formattedSelected.horizontal.filter(
 				(item) => item.owner === currentPlayer
@@ -454,12 +490,147 @@ const BoxCollection = ({
 			),
 		};
 
+		const isSelectedBlocked = ({
+			border,
+			side,
+			direction,
+			objectPos,
+		}: isBlockedProps) => {
+			return (
+				findExistSideSelected(
+					border,
+					side,
+					objectPos,
+					'other',
+					direction
+				).filter((border) => border.direction === direction).length === 2
+			);
+		};
+
+		/* console.log(
+			isSelectedBlocked({
+				border: 2,
+				side: 2,
+				direction: 'horizontal',
+				objectPos: 'left',
+			})
+		); */
+
+		const insertDirectionAtSelecteds = (selecteds: selected) => {
+			const results = [
+				...selecteds.horizontal.map((selected) => ({
+					...selected,
+					direction: 'horizontal',
+				})),
+				...selecteds.vertical.map((selected) => ({
+					...selected,
+					direction: 'vertical',
+				})),
+			] as borderStateWithDirection[];
+			return results;
+		};
+
+		/** 재귀함수에서 함수의 재호출 부분을 return하지 않으면 콜스택에서 실행컨텍스트가 하나씩 제거될 때
+		 *
+		 *  return (상위 실행컨텍스트의 실행값);이 되어서 반환값을 다시 다음 실행컨텍스트에 물려줘야 하는데
+		 *
+		 * 	return을 넣지 않으면 해당 실행컨텍스트에서 (상위 실행컨텍스트의 실행값); 을 실행하게 되고,
+		 *
+		 * 	이건 곧 return이 없는 것이니 undefined를 뱉어내게 된다.
+		 *
+		 *  그러면 다음 실행컨텍스트는 상위 실행컨텍스트의 실행값으로 undefined를 받으면서 return이 없어 undefined를 뱉어내게 되어
+		 *
+		 * 	실행 컨텍스트가 모두 해결될 때 최종적으로 undefined를 뱉어내게 된다.
+		 *  */
+		/* 12/23 findUnownedRecursive재귀함수 리팩토링 순수함수이며 1가지의 목적을 가지도록 변경 */
+		const findUnownedRecursive = (
+			selecteds: borderStateWithDirection[]
+		): borderStateWithDirection[] => {
+			const findUnownedSelecteds = selecteds.reduce<borderStateWithDirection[]>(
+				(accumulator, currentSelected) => {
+					const { border, side, direction } = currentSelected;
+					const otherDirection =
+						direction === 'horizontal' ? 'vertical' : 'horizontal';
+					const getUnblockedSelecteds = (
+						border: number,
+						side: number,
+						direction: direction,
+						objectPos: HorizontalPos
+					) =>
+						!isSelectedBlocked({
+							border,
+							side,
+							direction,
+							objectPos,
+						})
+							? findNotExistSelected(border, side, direction, objectPos)
+							: [];
+					const left = getUnblockedSelecteds(
+						border,
+						side,
+						otherDirection,
+						'left'
+					);
+					const right = getUnblockedSelecteds(
+						border,
+						side,
+						otherDirection,
+						'right'
+					);
+					const newSelecteds = [...left, ...right];
+					const result = [
+						...accumulator,
+						...compareAndFilterSelecteds(newSelecteds, accumulator),
+					];
+					return result;
+				},
+				selecteds
+			);
+			if (findUnownedSelecteds.length !== selecteds.length) {
+				return findUnownedRecursive([...findUnownedSelecteds]);
+			} else {
+				return selecteds;
+			}
+		};
+
+		const recursiveResult = compareAndFilterSelecteds(
+			findUnownedRecursive(insertDirectionAtSelecteds(currentPlayerSelecteds)),
+			insertDirectionAtSelecteds(currentPlayerSelecteds)
+		);
+
+		console.log(recursiveResult);
+
+		console.log({
+			horizontal: recursiveResult
+				.filter((item) => item.direction === 'horizontal')
+				.sort((a, b) => {
+					if (a.border !== b.border) {
+						return a.border - b.border;
+					} else {
+						return a.side - b.side;
+					}
+				}),
+			vertical: recursiveResult
+				.filter((item) => item.direction === 'vertical')
+				.sort((a, b) => {
+					if (a.border !== b.border) {
+						return a.border - b.border;
+					} else {
+						return a.side - b.side;
+					}
+				}),
+		});
+
 		/* 하나의 selected 주변에 아무에게도 선택되지 않은 selected를 찾는 함수 */
 		/* 12/21 selected와 이웃한 selected 중 소유권 없는 selected 찾기 완료 */
-		/* 12/22 재귀적 실행 구현, 재귀함수에서 return을 받으려고 하면 첫 실행에서의 함수가 끝난 뒤 undefined값 밖에 못 받는다. */
-		const findUnownedSelecteds = (selecteds: selected) => {
+		/* 12/22 재귀적 실행 구현 */
+		/* 12/23 함수대체  */
+		/* const findUnownedSelecteds = (
+			selecteds: selected,
+			currentPlayerSelecteds: selected
+		) => {
 			const tempSelecteds: selected = { horizontal: [], vertical: [] };
-			for (const selectedKey in selecteds) {
+			for (const selectedKey of ['horizontal', 'vertical']) {
 				if (selectedKey !== 'horizontal' && selectedKey !== 'vertical') return;
 				const otherSelectedKey =
 					selectedKey === 'horizontal' ? 'vertical' : 'horizontal';
@@ -471,8 +642,10 @@ const BoxCollection = ({
 							selected.border < 6 &&
 							selected.side >= 0 &&
 							selected.side < 5;
-						const processIterate = (horizontalDirection: 'left' | 'right') => {
-							const commonExistSelected = (kind: 'all' | 'other' | 'current') =>
+						const getUnownedSelected = (
+							horizontalDirection: 'left' | 'right'
+						) => {
+							const existSideSelected = (kind: 'all' | 'other' | 'current') =>
 								findExistSideSelected(
 									border,
 									side,
@@ -480,63 +653,89 @@ const BoxCollection = ({
 									kind,
 									selectedKey
 								);
-							const verticalCondition = (
-								verticalDirection: 'top' | 'bottom'
+							const sideSelected = findSideSelected(
+								border,
+								side,
+								horizontalDirection,
+								selectedKey
+							);
+							const commonCondition = ({
+								border,
+								key,
+								selecteds,
+							}: {
+								border: borderState;
+								key: direction;
+								selecteds: selected;
+							}) =>
+								!selecteds[key].find((item) =>
+									matchSelectedsLocation(item, border)
+								) &&
+								!tempSelecteds[key].find((item) =>
+									matchSelectedsLocation(item, border)
+								) &&
+								limitSelectedsLocation(border);
+							const checkVerticalSelecteds = (
+								verticalDirection: 'top' | 'bottom',
+								sideSelected: {
+									top: borderState;
+									middle: borderState;
+									bottom: borderState;
+								}
 							) => {
-								const objectSelected = findSideSelected(
-									border,
-									side,
-									horizontalDirection,
-									selectedKey
-								)[verticalDirection];
+								const objectSelected = { ...sideSelected[verticalDirection] };
 								if (
-									!commonExistSelected('all').find(
+									!existSideSelected('all').find(
 										(item) =>
 											item.direction === otherSelectedKey &&
 											matchSelectedsLocation(item, objectSelected)
 									) &&
-									!selecteds[otherSelectedKey].find((item) =>
-										matchSelectedsLocation(item, objectSelected)
-									) &&
-									!tempSelecteds[otherSelectedKey].find((item) =>
-										matchSelectedsLocation(item, objectSelected)
-									) &&
-									limitSelectedsLocation(objectSelected)
+									commonCondition({
+										border: objectSelected,
+										key: otherSelectedKey,
+										selecteds,
+									})
 								) {
-									tempSelecteds[otherSelectedKey].push(objectSelected);
+									return objectSelected;
 								}
 							};
 							if (
-								commonExistSelected('other').filter(
+								existSideSelected('other').filter(
 									(border) => border.direction === otherSelectedKey
 								).length !== 2
 							) {
-								const commonFindSideSelected = findSideSelected(
-									border,
-									side,
-									horizontalDirection,
-									selectedKey
-								).middle;
+								const verticalSelecteds = {
+									topSide: checkVerticalSelecteds('top', sideSelected),
+									bottomSide: checkVerticalSelecteds('bottom', sideSelected),
+								};
 								if (
-									!commonExistSelected('all').find(
+									!existSideSelected('all').find(
 										(border) => border.direction === selectedKey
 									) &&
-									!selecteds[selectedKey].find((item) =>
-										matchSelectedsLocation(item, commonFindSideSelected)
-									) &&
-									!tempSelecteds[selectedKey].find((item) =>
-										matchSelectedsLocation(item, commonFindSideSelected)
-									) &&
-									limitSelectedsLocation(commonFindSideSelected)
+									commonCondition({
+										border: sideSelected.middle,
+										key: selectedKey,
+										selecteds,
+									})
 								) {
-									tempSelecteds[selectedKey].push(commonFindSideSelected);
+									tempSelecteds[selectedKey].push(sideSelected.middle);
 								}
-								verticalCondition('top');
-								verticalCondition('bottom');
+								for (const verticalSelectedsKey in verticalSelecteds) {
+									if (
+										verticalSelectedsKey !== 'topSide' &&
+										verticalSelectedsKey !== 'bottomSide'
+									)
+										return;
+									const verticalSelected =
+										verticalSelecteds[verticalSelectedsKey];
+									if (verticalSelected) {
+										tempSelecteds[otherSelectedKey].push(verticalSelected);
+									}
+								}
 							}
 						};
-						processIterate('left');
-						processIterate('right');
+						getUnownedSelected('left');
+						getUnownedSelected('right');
 					}
 				}
 			}
@@ -548,7 +747,7 @@ const BoxCollection = ({
 					horizontal: [...selecteds.horizontal, ...tempSelecteds.horizontal],
 					vertical: [...selecteds.vertical, ...tempSelecteds.vertical],
 				};
-				findUnownedSelecteds(recursiveSelecteds);
+				findUnownedSelecteds(recursiveSelecteds, currentPlayerSelecteds);
 			} else {
 				const defalutNotIncludeSelectds: selected = {
 					horizontal: selecteds.horizontal.filter(
@@ -567,11 +766,9 @@ const BoxCollection = ({
 				unownedSelecteds.includeDefault = selecteds;
 				unownedSelecteds.notIncludeDefault = defalutNotIncludeSelectds;
 			}
-		};
+		}; */
 
-		findUnownedSelecteds(currentPlayerSelecteds);
-
-		console.log(unownedSelecteds);
+		/* findUnownedSelecteds(currentPlayerSelecteds, currentPlayerSelecteds); */
 
 		if (breakOnClickCondition) return;
 		// console.log('border = ' + borderId, 'side = ' + sideId, boxes, selected);

@@ -1,7 +1,4 @@
-interface selected {
-	vertical: borderState[];
-	horizontal: borderState[];
-}
+type selected = Record<direction, borderState[]>;
 
 type currentPlayer = 'player1' | 'player2';
 
@@ -10,10 +7,7 @@ interface playerInfo {
 	name: string;
 }
 
-interface players {
-	player1: playerInfo;
-	player2: playerInfo;
-}
+type players = Record<currentPlayer, playerInfo>;
 
 type boxes = Array<{
 	id: number;

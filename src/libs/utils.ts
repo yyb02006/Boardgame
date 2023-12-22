@@ -39,3 +39,20 @@ export function sortByOrder(
 		return newArray.sort((a, b) => b - a);
 	}
 }
+
+/** 객체의 border, side, direction 값을 비교해서 comparison에 존재하지 않는 source값만 반환하는 함수 */
+export function compareAndFilterSelecteds(
+	sourceSelecteds: Array<borderState & { direction: direction }>,
+	comparisonSelecteds: Array<borderState & { direction: direction }>
+) {
+	const result = sourceSelecteds.filter(
+		(selected) =>
+			!comparisonSelecteds.find(
+				(item) =>
+					item.border === selected.border &&
+					item.side === selected.side &&
+					item.direction === selected.direction
+			)
+	);
+	return result;
+}

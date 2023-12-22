@@ -1,5 +1,7 @@
 type direction = 'horizontal' | 'vertical';
 
+type HorizontalPos = 'left' | 'right';
+
 type nestedArray<T> = T[][];
 
 interface directionInterface {
@@ -11,14 +13,22 @@ interface closedBoxes {
 	label: 'horizontal' | 'vertical';
 }
 
-interface getEnclosedBoxResult {
-	horizontal: nestedArray<number>;
-	vertical: nestedArray<number>;
+type getEnclosedBoxResult = Record<direction, nestedArray<number>>;
+
+type unownedSelecteds = Record<
+	'includeDefault' | 'notIncludeDefault',
+	selected
+>;
+
+interface isBlockedProps {
+	border: number;
+	side: number;
+	direction: direction;
+	objectPos: HorizontalPos;
 }
 
-interface unownedSelecteds {
-	includeDefault: selected;
-	notIncludeDefault: selected;
+interface borderStateWithDirection extends borderState {
+	direction: direction;
 }
 
 /** Styled Components Types */
