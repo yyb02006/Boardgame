@@ -56,3 +56,25 @@ export function compareAndFilterSelecteds(
 	);
 	return result;
 }
+
+/** direction, currentPlayer, HorizontalPos 타입의 요소를 넣어서 반대값을 반환받는 함수 */
+export function getOppositeElement(element: currentPlayer): currentPlayer;
+export function getOppositeElement(element: HorizontalPos): HorizontalPos;
+export function getOppositeElement(element: direction): direction;
+export function getOppositeElement(
+	element: direction | HorizontalPos | currentPlayer
+) {
+	switch (element) {
+		case 'horizontal':
+		case 'vertical':
+			return element === 'horizontal' ? 'vertical' : 'horizontal';
+		case 'left':
+		case 'right':
+			return element === 'left' ? 'right' : 'left';
+		case 'player1':
+		case 'player2':
+			return element === 'player1' ? 'player2' : 'player1';
+		default:
+			throw new Error('Unexpected element type');
+	}
+}

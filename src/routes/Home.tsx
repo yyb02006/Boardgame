@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import {
 	compareAndFilterSelecteds,
+	getOppositeElement,
 	isElementInNestedArray,
 	sortByOrder,
 } from '../libs/utils';
@@ -266,12 +267,8 @@ const BoxCollection = ({
 		players,
 		setPlayers,
 	} = useHomeContext();
-	const getOppositeDirection = (currentDirection: direction) =>
-		currentDirection === 'horizontal' ? 'vertical' : 'horizontal';
-	const getOpponentPlayer = (currentPlayer: currentPlayer) =>
-		currentPlayer === 'player1' ? 'player2' : 'player1';
-	const opponentPlayer = getOpponentPlayer(currentPlayer);
-	const oppositeDirection = getOppositeDirection(direction);
+	const opponentPlayer = getOppositeElement(currentPlayer);
+	const oppositeDirection = getOppositeElement(direction);
 	const onBoxClick = (sideId: number) => {
 		const formattedSelected: selected = !selected[direction].find(
 			(item) => item.border === borderId && item.side === sideId
@@ -455,7 +452,7 @@ const BoxCollection = ({
 			direction,
 			objectPos,
 		}: isBlockedProps) => {
-			const internalOppositeDirection = getOppositeDirection(direction);
+			const internalOppositeDirection = getOppositeElement(direction);
 			return (
 				findExistSideSelected(
 					border,
@@ -467,6 +464,20 @@ const BoxCollection = ({
 					.length === 2
 			);
 		};
+
+		const isNotClickableWhenBlocked = ({
+			border,
+			side,
+			direction,
+			objectPos,
+		}: isBlockedProps) =>
+			isSelectedBlocked({
+				border: borderId,
+				side: sideId,
+				direction,
+				objectPos: 'left',
+			}) &&
+			findExistSideSelected(borderId, sideId, 'right', 'current').length === 0;
 
 		/* ??와 ||는 서로 완전히 같은 목적으로 사용할 수 없음 */
 		const breakOnClickCondition =

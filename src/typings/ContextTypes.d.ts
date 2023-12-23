@@ -2,6 +2,8 @@ type selected = Record<direction, borderState[]>;
 
 type currentPlayer = 'player1' | 'player2';
 
+type Filter<T, U> = T extends U ? T : never;
+
 interface playerInfo {
 	boxCount: number;
 	name: string;
