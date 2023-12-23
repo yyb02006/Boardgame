@@ -299,74 +299,70 @@ const BoxCollection = ({
 			selectedBorderId: number,
 			selectedSideId: number,
 			sidePos: HorizontalPos,
-			selectedDireciton: Direction
+			selectedDireciton: Direction,
+			currentPlayer: PlayerElement
 		) => {
-			return {
-				top: {
-					border:
-						selectedSideId +
-						(selectedDireciton === 'horizontal'
-							? sidePos === 'left'
-								? 0
-								: 1
-							: sidePos === 'left'
-							? 1
-							: 0),
-					side: selectedBorderId - 1,
-					isSelected: true,
-					owner: currentPlayer,
-					isMergeable: false,
-				},
-				middle: {
-					border: selectedBorderId,
-					side:
-						selectedSideId +
-						(selectedDireciton === 'horizontal'
-							? sidePos === 'left'
+			const createBorderOrSide = ({
+				borderId,
+				sideId,
+				sidePos,
+				direction,
+				heightPos,
+			}: CreateBorderOrSideProps) => {
+				const mainBorder =
+					sideId +
+					(direction === 'horizontal'
+						? sidePos === 'left'
+							? heightPos === 'middle'
 								? -1
-								: 1
-							: sidePos === 'left'
-							? 1
-							: -1),
+								: 0
+							: 1
+						: sidePos === 'left'
+						? 1
+						: heightPos === 'middle'
+						? -1
+						: 0);
+				const subBorder = heightPos === 'top' ? borderId - 1 : borderId;
+				return {
+					border: heightPos === 'middle' ? subBorder : mainBorder,
+					side: heightPos === 'middle' ? mainBorder : subBorder,
 					isSelected: true,
 					owner: currentPlayer,
 					isMergeable: false,
-				},
-				bottom: {
-					border:
-						selectedSideId +
-						(selectedDireciton === 'horizontal'
-							? sidePos === 'left'
-								? 0
-								: 1
-							: sidePos === 'left'
-							? 1
-							: 0),
-					side: selectedBorderId,
-					isSelected: true,
-					owner: currentPlayer,
-					isMergeable: false,
-				},
+				};
+			};
+			const commonParams = {
+				borderId: selectedBorderId,
+				sideId: selectedSideId,
+				sidePos,
+				direction: selectedDireciton,
+			};
+			return {
+				top: createBorderOrSide({ ...commonParams, heightPos: 'top' }),
+				middle: createBorderOrSide({ ...commonParams, heightPos: 'middle' }),
+				bottom: createBorderOrSide({ ...commonParams, heightPos: 'bottom' }),
 			};
 		};
 
-		const findExistSideSelected = (
-			borderId: number,
-			sideId: number,
-			sidePos: 'left' | 'right',
-			owner: 'current' | 'other' | 'all',
-			selectedDirection: Direction = direction
-		) =>
-			[
-				...formattedSelected[
-					selectedDirection === 'horizontal' ? 'vertical' : 'horizontal'
-				]
+		const findExistSideSelected = ({
+			borderId,
+			sideId,
+			selectedDirection,
+			sidePos,
+			sourcePlayer,
+			owner,
+			sourceSelecteds,
+		}: FindExistSideSelectedProps) => {
+			const localOppositDirection = getOppositeElement(selectedDirection);
+			const localOppositPlayer = getOppositeElement(sourcePlayer);
+			return [
+				...sourceSelecteds[localOppositDirection]
 					.filter(
 						(item) =>
 							(owner === 'current'
-								? item.owner === currentPlayer
+								? item.owner === sourcePlayer
 								: owner === 'other'
-								? item.owner === opponentPlayer
+								? item.owner === localOppositPlayer
 								: true) &&
 							item.border ===
 								sideId +
@@ -381,16 +377,15 @@ const BoxCollection = ({
 					)
 					.map((item) => ({
 						...item,
-						direction:
-							selectedDirection === 'horizontal' ? 'vertical' : 'horizontal',
+						direction: localOppositDirection,
 					})),
-				...formattedSelected[selectedDirection]
+				...sourceSelecteds[selectedDirection]
 					.filter(
 						(item) =>
 							(owner === 'current'
-								? item.owner === currentPlayer
+								? item.owner === sourcePlayer
 								: owner === 'other'
-								? item.owner === opponentPlayer
+								? item.owner === localOppositPlayer
 								: true) &&
 							item.border === borderId &&
 							item.side ===
@@ -405,27 +400,31 @@ const BoxCollection = ({
 					)
 					.map((item) => ({ ...item, direction: selectedDirection })),
 			] as Array<BorderState & { direction: Direction }>;
+		};
 
 		const findNotExistSelected = (
 			border: number,
 			side: number,
 			direction: Direction,
-			horizontalPos: HorizontalPos
+			horizontalPos: HorizontalPos,
+			sourceSelecteds: Selected,
+			currenPlayer: PlayerElement
 		) => {
-			const otherDirection =
-				direction === 'horizontal' ? 'vertical' : 'horizontal';
-			const existSideSelecteds = findExistSideSelected(
-				border,
-				side,
-				horizontalPos,
-				'all',
-				direction
-			);
+			const existSideSelecteds = findExistSideSelected({
+				borderId: border,
+				sideId: side,
+				sidePos: horizontalPos,
+				owner: 'all',
+				selectedDirection: direction,
+				sourceSelecteds,
+				sourcePlayer: currenPlayer,
+			});
 			const sideSelecteds = findSideSelected(
 				border,
 				side,
 				horizontalPos,
-				direction
+				direction,
+				currenPlayer
 			);
 			const mappedSelecteds = Object.entries(sideSelecteds)
 				.filter(
@@ -437,7 +436,10 @@ const BoxCollection = ({
 				)
 				.map((selected) => ({
 					...selected[1],
-					direction: selected[0] === 'middle' ? direction : otherDirection,
+					direction:
+						selected[0] === 'middle'
+							? direction
+							: getOppositeElement(direction),
 				}));
 			const result = compareAndFilterSelecteds(
 				mappedSelecteds,
@@ -452,15 +454,17 @@ const BoxCollection = ({
 			direction,
 			objectPos,
 		}: IsBlockedProps) => {
-			const internalOppositeDirection = getOppositeElement(direction);
+			const localOppositeDirection = getOppositeElement(direction);
 			return (
-				findExistSideSelected(
-					border,
-					side,
-					objectPos,
-					'other',
-					direction
-				).filter((border) => border.direction === internalOppositeDirection)
+				findExistSideSelected({
+					borderId: border,
+					sideId: side,
+					sidePos: objectPos,
+					owner: 'other',
+					selectedDirection: direction,
+					sourceSelecteds: formattedSelected,
+					sourcePlayer: currentPlayer,
+				}).filter((border) => border.direction === localOppositeDirection)
 					.length === 2
 			);
 		};
@@ -470,62 +474,111 @@ const BoxCollection = ({
 			side,
 			direction,
 			objectPos,
-		}: IsBlockedProps) =>
+			sourceSelecteds,
+			currentPlayer,
+		}: IsNotClickableWhenBlockedProps) =>
 			isSelectedBlocked({
 				border,
 				side,
 				direction,
 				objectPos,
 			}) &&
-			findExistSideSelected(
-				border,
-				side,
-				getOppositeElement(objectPos),
-				'current'
-			).length === 0;
+			findExistSideSelected({
+				borderId: border,
+				sideId: side,
+				sidePos: getOppositeElement(objectPos),
+				owner: 'current',
+				selectedDirection: direction,
+				sourceSelecteds,
+				sourcePlayer: currentPlayer,
+			}).length === 0;
 
-		/* ??와 ||는 서로 완전히 같은 목적으로 사용할 수 없음 */
-		const breakOnClickCondition =
-			/* 같은 자리에 이미 클릭된 border가 있을 경우  */
-			!!selected[direction].find(
-				(item) => item.border === borderId && item.side === sideId
-			) ||
-			/* 다른 곳에 있는 border에 이어지는 border만 클릭할 수 있음(가장 첫번째 selected 예외) */
-			!!(
-				findExistSideSelected(borderId, sideId, 'left', 'current').length ===
-					0 &&
-				findExistSideSelected(borderId, sideId, 'right', 'current').length ===
-					0 &&
-				(selected.horizontal.find((border) => border.owner === currentPlayer) ??
-					selected.vertical.find((border) => border.owner === currentPlayer))
-			) ||
-			/* 다른 border 2개로 막혀있는 곳 사이를 뚫고 지나갈 수 없음 */
-			!!(
+		const shouldAbort = ({
+			selected,
+			borderId,
+			sideId,
+			direction,
+			sourceSelecteds,
+			currentPlayer,
+		}: ShouldAbortProps) => {
+			/* Omit === 타입빼기 */
+			const commonFindExistSideSelectedProps: Omit<
+				FindExistSideSelectedProps,
+				'sidePos'
+			> = {
+				borderId,
+				sideId,
+				owner: 'current',
+				selectedDirection: direction,
+				sourceSelecteds,
+				sourcePlayer: currentPlayer,
+			};
+			const commonIsNotClickableWhenBlockedProps: Omit<
+				IsNotClickableWhenBlockedProps,
+				'objectPos'
+			> = {
+				border: borderId,
+				side: sideId,
+				direction,
+				sourceSelecteds,
+				currentPlayer,
+			};
+			const commonIsSelectedBlockedProps: Omit<IsBlockedProps, 'objectPos'> = {
+				border: borderId,
+				side: sideId,
+				direction,
+			};
+			return (
+				/* 같은 자리에 이미 클릭된 border가 있을 경우  */
+				!!selected[direction].find(
+					(item) => item.border === borderId && item.side === sideId
+				) ||
+				/* 다른 곳에 있는 border에 이어지는 border만 클릭할 수 있음(가장 첫번째 selected 예외) */
+				!!(
+					findExistSideSelected({
+						...commonFindExistSideSelectedProps,
+						sidePos: 'left',
+					}).length === 0 &&
+					findExistSideSelected({
+						...commonFindExistSideSelectedProps,
+						sidePos: 'right',
+					}).length === 0 &&
+					(selected.horizontal.find(
+						(border) => border.owner === currentPlayer
+					) ??
+						selected.vertical.find((border) => border.owner === currentPlayer))
+				) ||
+				/* 다른 border 2개로 막혀있는 곳 사이를 뚫고 지나갈 수 없음 */
 				isNotClickableWhenBlocked({
-					border: borderId,
-					side: sideId,
-					direction,
+					...commonIsNotClickableWhenBlockedProps,
 					objectPos: 'left',
 				}) ||
 				isNotClickableWhenBlocked({
-					border: borderId,
-					side: sideId,
-					direction,
+					...commonIsNotClickableWhenBlockedProps,
 					objectPos: 'right',
 				}) ||
 				(isSelectedBlocked({
-					border: borderId,
-					side: sideId,
-					direction,
+					...commonIsSelectedBlockedProps,
 					objectPos: 'left',
 				}) &&
 					isSelectedBlocked({
-						border: borderId,
-						side: sideId,
-						direction,
+						...commonIsSelectedBlockedProps,
 						objectPos: 'right',
 					}))
 			);
+		};
+
+		if (
+			shouldAbort({
+				borderId,
+				sideId,
+				selected,
+				direction,
+				currentPlayer,
+				sourceSelecteds: formattedSelected,
+			})
+		)
+			return;
 
 		const currentPlayerSelecteds = {
 			horizontal: formattedSelected.horizontal.filter(
@@ -564,45 +617,61 @@ const BoxCollection = ({
 		 *  */
 		/* 12/23 findUnownedRecursive재귀함수 리팩토링 순수함수이며 1가지의 목적을 가지도록 변경 */
 		const findUnownedRecursive = (
-			selecteds: BorderStateWithDirection[]
+			sourceSelecteds: BorderStateWithDirection[],
+			originalSelecteds: Selected,
+			currentPlayer: PlayerElement
 		): BorderStateWithDirection[] => {
-			const findUnownedSelecteds = selecteds.reduce<BorderStateWithDirection[]>(
-				(accumulator, currentSelected) => {
-					const { border, side, direction } = currentSelected;
-					const getUnblockedSelecteds = (
-						border: number,
-						side: number,
-						direction: Direction,
-						objectPos: HorizontalPos
-					) =>
-						!isSelectedBlocked({
-							border,
-							side,
-							direction,
-							objectPos,
-						})
-							? findNotExistSelected(border, side, direction, objectPos)
-							: [];
-					const left = getUnblockedSelecteds(border, side, direction, 'left');
-					const right = getUnblockedSelecteds(border, side, direction, 'right');
-					const newSelecteds = [...left, ...right];
-					const result = [
-						...accumulator,
-						...compareAndFilterSelecteds(newSelecteds, accumulator),
-					];
-					return result;
-				},
-				selecteds
-			);
-			if (findUnownedSelecteds.length !== selecteds.length) {
-				return findUnownedRecursive([...findUnownedSelecteds]);
+			const findUnownedSelecteds = sourceSelecteds.reduce<
+				BorderStateWithDirection[]
+			>((accumulator, currentSelected) => {
+				const { border, side, direction } = currentSelected;
+				const getUnblockedSelecteds = (
+					border: number,
+					side: number,
+					direction: Direction,
+					objectPos: HorizontalPos
+				) =>
+					!isSelectedBlocked({
+						border,
+						side,
+						direction,
+						objectPos,
+					})
+						? findNotExistSelected(
+								border,
+								side,
+								direction,
+								objectPos,
+								originalSelecteds,
+								currentPlayer
+						  )
+						: [];
+				const left = getUnblockedSelecteds(border, side, direction, 'left');
+				const right = getUnblockedSelecteds(border, side, direction, 'right');
+				const newSelecteds = [...left, ...right];
+				const result = [
+					...accumulator,
+					...compareAndFilterSelecteds(newSelecteds, accumulator),
+				];
+				return result;
+			}, sourceSelecteds);
+			if (findUnownedSelecteds.length !== sourceSelecteds.length) {
+				return findUnownedRecursive(
+					[...findUnownedSelecteds],
+					originalSelecteds,
+					currentPlayer
+				);
 			} else {
-				return selecteds;
+				return sourceSelecteds;
 			}
 		};
 
 		const UnownedSelecteds = compareAndFilterSelecteds(
-			findUnownedRecursive(insertDirectionAtSelecteds(currentPlayerSelecteds)),
+			findUnownedRecursive(
+				insertDirectionAtSelecteds(currentPlayerSelecteds),
+				formattedSelected,
+				currentPlayer
+			),
 			insertDirectionAtSelecteds(currentPlayerSelecteds)
 		);
 
@@ -635,7 +704,6 @@ const BoxCollection = ({
 
 		console.log(formattedUnownedSelecteds);
 
-		if (breakOnClickCondition) return;
 		const borderToBox = (
 			direction: Direction,
 			isUpPos: boolean,
@@ -787,10 +855,25 @@ const BoxCollection = ({
 		 * */
 		const deepNewBoxes: Boxes = boxes.map((item) => ({ ...item }));
 
+		const commonEnclosedProps: Omit<FindExistSideSelectedProps, 'sidePos'> = {
+			borderId,
+			sideId,
+			owner: 'current',
+			selectedDirection: direction,
+			sourceSelecteds: formattedSelected,
+			sourcePlayer: currentPlayer,
+		};
+
 		/* 임의의 구역이 enclosed가 될 시 */
 		if (
-			findExistSideSelected(borderId, sideId, 'left', 'current').length > 0 &&
-			findExistSideSelected(borderId, sideId, 'right', 'current').length > 0
+			findExistSideSelected({
+				...commonEnclosedProps,
+				sidePos: 'left',
+			}).length > 0 &&
+			findExistSideSelected({
+				...commonEnclosedProps,
+				sidePos: 'right',
+			}).length > 0
 		) {
 			const enclosedBoxes = findClosedBoxByDirection('horizontal').map((item) =>
 				getEnclosedBox(item, oppositeDirection)

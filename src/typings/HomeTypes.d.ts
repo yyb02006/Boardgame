@@ -13,12 +13,44 @@ interface ClosedBoxes {
 	label: 'horizontal' | 'vertical';
 }
 
+interface BorderAndSide {
+	borderId: number;
+	sideId: number;
+}
+
 type GetEnclosedBoxResult = Record<Direction, NestedArray<number>>;
+
+interface BorderStateWithDirection extends BorderState {
+	direction: Direction;
+}
 
 type UnownedSelecteds = Record<
 	'includeDefault' | 'notIncludeDefault',
 	Selected
 >;
+
+/** Function Props Types */
+
+interface FindExistSideSelectedProps extends BorderAndSide {
+	sidePos: 'left' | 'right';
+	owner: 'current' | 'other' | 'all';
+	selectedDirection: Direction;
+	sourceSelecteds: Selected;
+	sourcePlayer: PlayerElement;
+}
+
+interface ShouldAbortProps extends BorderAndSide {
+	selected: Selected;
+	direction: Direction;
+	sourceSelecteds: Selected;
+	currentPlayer: PlayerElement;
+}
+
+interface CreateBorderOrSideProps extends BorderAndSide {
+	sidePos: HorizontalPos;
+	direction: Direction;
+	heightPos: 'middle' | 'top' | 'bottom';
+}
 
 interface IsBlockedProps {
 	border: number;
@@ -27,8 +59,9 @@ interface IsBlockedProps {
 	objectPos: HorizontalPos;
 }
 
-interface BorderStateWithDirection extends BorderState {
-	direction: Direction;
+interface IsNotClickableWhenBlockedProps extends IsBlockedProps {
+	sourceSelecteds: Selected;
+	currentPlayer: PlayerElement;
 }
 
 /** Styled Components Types */
