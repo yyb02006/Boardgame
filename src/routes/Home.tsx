@@ -472,12 +472,17 @@ const BoxCollection = ({
 			objectPos,
 		}: IsBlockedProps) =>
 			isSelectedBlocked({
-				border: borderId,
-				side: sideId,
+				border,
+				side,
 				direction,
-				objectPos: 'left',
+				objectPos,
 			}) &&
-			findExistSideSelected(borderId, sideId, 'right', 'current').length === 0;
+			findExistSideSelected(
+				border,
+				side,
+				getOppositeElement(objectPos),
+				'current'
+			).length === 0;
 
 		/* ??와 ||는 서로 완전히 같은 목적으로 사용할 수 없음 */
 		const breakOnClickCondition =
@@ -496,25 +501,30 @@ const BoxCollection = ({
 			) ||
 			/* 다른 border 2개로 막혀있는 곳 사이를 뚫고 지나갈 수 없음 */
 			!!(
+				isNotClickableWhenBlocked({
+					border: borderId,
+					side: sideId,
+					direction,
+					objectPos: 'left',
+				}) ||
+				isNotClickableWhenBlocked({
+					border: borderId,
+					side: sideId,
+					direction,
+					objectPos: 'right',
+				}) ||
 				(isSelectedBlocked({
 					border: borderId,
 					side: sideId,
 					direction,
 					objectPos: 'left',
 				}) &&
-					findExistSideSelected(borderId, sideId, 'right', 'current').length ===
-						0) ||
-				(findExistSideSelected(borderId, sideId, 'right', 'other').filter(
-					(border) => border.direction === oppositeDirection
-				).length === 2 &&
-					findExistSideSelected(borderId, sideId, 'left', 'current').length ===
-						0) ||
-				(findExistSideSelected(borderId, sideId, 'left', 'other').filter(
-					(border) => border.direction === oppositeDirection
-				).length === 2 &&
-					findExistSideSelected(borderId, sideId, 'right', 'other').filter(
-						(border) => border.direction === oppositeDirection
-					).length === 2)
+					isSelectedBlocked({
+						border: borderId,
+						side: sideId,
+						direction,
+						objectPos: 'right',
+					}))
 			);
 
 		const currentPlayerSelecteds = {
