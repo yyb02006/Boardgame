@@ -31,6 +31,23 @@ type UnownedSelecteds = Record<
 
 /** Function Props Types */
 
+interface GetUnblockedSelectedsProp {
+	border: number;
+	side: number;
+	direction: Direction;
+	objectPos: HorizontalPos;
+	player: PlayerElement;
+}
+
+interface BoxToBorderProps {
+	boxIndex: number;
+	direction: 'left' | 'right' | 'up' | 'down';
+	isSelected: boolean;
+	isMergeable: boolean;
+	owner: PlayerElement;
+	sourceSelecteds: Selected;
+}
+
 interface FindExistSideSelectedProps extends BorderAndSide {
 	sidePos: 'left' | 'right';
 	owner: 'current' | 'other' | 'all';
@@ -97,6 +114,7 @@ interface BoxHoverProps extends DirectionInterface {
 	$currentPlayer: PlayerElement;
 	$owner: PlayerElement;
 	$isMergeable: boolean;
+	$isOwnable: boolean;
 }
 
 /** Routes Components Types */

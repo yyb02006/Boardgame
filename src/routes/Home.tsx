@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
 import {
 	compareAndFilterSelecteds,
 	getOppositeElement,
@@ -21,8 +21,18 @@ const colors = {
 		activeBox: '#73dd85',
 		emphaticColor: '#a1ff09',
 	},
-	common: { noneActiveBorder: '#808080', activeBorder: '#e48100' },
+	common: {
+		noneActiveBorder: '#808080',
+		activeBorder: '#f07400',
+		ownableBorder: '#bda93c',
+	},
 };
+
+const colorChange = (player: 'player1' | 'player2' | 'common') => keyframes`
+	0%{border-color: ${colors[player].noneActiveBorder}}
+	50%{border-color: ${colors.common.ownableBorder}}
+	100%{border-color: ${colors[player].noneActiveBorder}}
+`;
 
 const Layout = styled.section`
 	background-color: var(--bgColor-dark);
@@ -206,10 +216,17 @@ const BoxHover = styled.div<BoxHoverProps>`
 				: colors.player2.noneActiveBox;
 		} else if (props.$isMergeable) {
 			return colors[props.$owner].noneActiveBorder;
+		} else if (props.$isOwnable) {
+			return colors.common.ownableBorder;
 		} else {
 			return colors[props.$currentPlayer].noneActiveBorder;
 		}
 	}};
+	${(props) =>
+		props.$isOwnable &&
+		css`
+			animation: ${colorChange(props.$currentPlayer)} 3s infinite;
+		`}
 	z-index: ${(props) => (props.$isSelected ? 2 : 1)};
 	&:hover {
 		background-color: ${(props) =>
@@ -283,6 +300,7 @@ const BoxCollection = ({
 							isSelected: true,
 							owner: currentPlayer,
 							isMergeable: false,
+							ownable: { player1: false, player2: false },
 						} /* satisfies === 중복 검사 */ satisfies BorderState,
 					],
 			  }
@@ -308,7 +326,7 @@ const BoxCollection = ({
 				sidePos,
 				direction,
 				heightPos,
-			}: CreateBorderOrSideProps) => {
+			}: CreateBorderOrSideProps): BorderState => {
 				const mainBorder =
 					sideId +
 					(direction === 'horizontal'
@@ -326,9 +344,10 @@ const BoxCollection = ({
 				return {
 					border: heightPos === 'middle' ? subBorder : mainBorder,
 					side: heightPos === 'middle' ? mainBorder : subBorder,
-					isSelected: true,
+					isSelected: false,
 					owner: currentPlayer,
 					isMergeable: false,
+					ownable: { player1: false, player2: false },
 				};
 			};
 			const commonParams = {
@@ -580,14 +599,14 @@ const BoxCollection = ({
 		)
 			return;
 
-		const currentPlayerSelecteds = {
+		const currentPlayerSelecteds = (player: PlayerElement) => ({
 			horizontal: formattedSelected.horizontal.filter(
-				(item) => item.owner === currentPlayer
+				(item) => item.owner === player
 			),
 			vertical: formattedSelected.vertical.filter(
-				(item) => item.owner === currentPlayer
+				(item) => item.owner === player
 			),
-		};
+		});
 
 		const insertDirectionAtSelecteds = (selecteds: Selected) => {
 			const results = [
@@ -619,18 +638,20 @@ const BoxCollection = ({
 		const findUnownedRecursive = (
 			sourceSelecteds: BorderStateWithDirection[],
 			originalSelecteds: Selected,
-			currentPlayer: PlayerElement
+			currentPlayer: PlayerElement,
+			recursive: boolean
 		): BorderStateWithDirection[] => {
 			const findUnownedSelecteds = sourceSelecteds.reduce<
 				BorderStateWithDirection[]
 			>((accumulator, currentSelected) => {
 				const { border, side, direction } = currentSelected;
-				const getUnblockedSelecteds = (
-					border: number,
-					side: number,
-					direction: Direction,
-					objectPos: HorizontalPos
-				) =>
+				const getUnblockedSelecteds = ({
+					border,
+					side,
+					direction,
+					objectPos,
+					player,
+				}: GetUnblockedSelectedsProp) =>
 					!isSelectedBlocked({
 						border,
 						side,
@@ -644,10 +665,23 @@ const BoxCollection = ({
 								objectPos,
 								originalSelecteds,
 								currentPlayer
-						  )
+						  ).map((item) => ({
+								...item,
+								ownable: { ...item.ownable, [player]: true },
+						  }))
 						: [];
-				const left = getUnblockedSelecteds(border, side, direction, 'left');
-				const right = getUnblockedSelecteds(border, side, direction, 'right');
+				const commonGetUnblockedProps: Omit<
+					GetUnblockedSelectedsProp,
+					'objectPos'
+				> = { border, side, direction, player: currentPlayer };
+				const left = getUnblockedSelecteds({
+					...commonGetUnblockedProps,
+					objectPos: 'left',
+				});
+				const right = getUnblockedSelecteds({
+					...commonGetUnblockedProps,
+					objectPos: 'right',
+				});
 				const newSelecteds = [...left, ...right];
 				const result = [
 					...accumulator,
@@ -655,38 +689,78 @@ const BoxCollection = ({
 				];
 				return result;
 			}, sourceSelecteds);
-			if (findUnownedSelecteds.length !== sourceSelecteds.length) {
+			if (findUnownedSelecteds.length !== sourceSelecteds.length && recursive) {
 				return findUnownedRecursive(
 					[...findUnownedSelecteds],
 					originalSelecteds,
-					currentPlayer
+					currentPlayer,
+					recursive
 				);
 			} else {
-				return sourceSelecteds;
+				return findUnownedSelecteds;
 			}
 		};
 
-		const UnownedSelecteds = compareAndFilterSelecteds(
-			findUnownedRecursive(
-				insertDirectionAtSelecteds(currentPlayerSelecteds),
-				formattedSelected,
-				currentPlayer
+		const unownedSelecteds = {
+			player1: compareAndFilterSelecteds(
+				findUnownedRecursive(
+					insertDirectionAtSelecteds(currentPlayerSelecteds('player1')),
+					formattedSelected,
+					'player1',
+					false
+				),
+				insertDirectionAtSelecteds(currentPlayerSelecteds('player1'))
 			),
-			insertDirectionAtSelecteds(currentPlayerSelecteds)
-		);
+			player2: compareAndFilterSelecteds(
+				findUnownedRecursive(
+					insertDirectionAtSelecteds(currentPlayerSelecteds('player2')),
+					formattedSelected,
+					'player2',
+					false
+				),
+				insertDirectionAtSelecteds(currentPlayerSelecteds('player2'))
+			),
+		};
+
+		const recursiveUnownedSelecteds = {
+			player1: compareAndFilterSelecteds(
+				findUnownedRecursive(
+					insertDirectionAtSelecteds(currentPlayerSelecteds('player1')),
+					formattedSelected,
+					'player1',
+					true
+				),
+				insertDirectionAtSelecteds(currentPlayerSelecteds('player1'))
+			),
+			player2: compareAndFilterSelecteds(
+				findUnownedRecursive(
+					insertDirectionAtSelecteds(currentPlayerSelecteds('player2')),
+					formattedSelected,
+					'player2',
+					true
+				),
+				insertDirectionAtSelecteds(currentPlayerSelecteds('player2'))
+			),
+		};
 
 		const formatUnownedSelecteds = (
 			direction: Direction,
-			UnownedSelecteds: BorderStateWithDirection[]
+			unownedSelecteds: BorderStateWithDirection[],
+			currentPlayer: PlayerElement
 		): BorderState[] =>
-			UnownedSelecteds.filter((item) => item.direction === direction)
-				.map((item) => ({
-					border: item.border,
-					side: item.side,
-					owner: item.owner,
-					isSelected: item.isSelected,
-					isMergeable: item.isMergeable,
-				}))
+			unownedSelecteds
+				.filter((item) => item.direction === direction)
+				.map(
+					(item) =>
+						({
+							border: item.border,
+							side: item.side,
+							owner: item.owner,
+							isSelected: item.isSelected,
+							isMergeable: item.isMergeable,
+							ownable: { ...item.ownable, [currentPlayer]: true },
+						}) satisfies BorderState
+				)
 				.sort((a, b) => {
 					if (a.border !== b.border) {
 						return a.border - b.border;
@@ -695,12 +769,34 @@ const BoxCollection = ({
 					}
 				});
 
-		const formattedUnownedSelecteds: Selected = {
-			horizontal: formatUnownedSelecteds('horizontal', UnownedSelecteds),
-			vertical: formatUnownedSelecteds('vertical', UnownedSelecteds),
+		const formattedUnownedSelecteds: Record<PlayerElement, Selected> = {
+			player1: {
+				horizontal: formatUnownedSelecteds(
+					'horizontal',
+					unownedSelecteds.player1,
+					'player1'
+				),
+				vertical: formatUnownedSelecteds(
+					'vertical',
+					unownedSelecteds.player1,
+					'player1'
+				),
+			},
+			player2: {
+				horizontal: formatUnownedSelecteds(
+					'horizontal',
+					unownedSelecteds.player2,
+					'player2'
+				),
+				vertical: formatUnownedSelecteds(
+					'vertical',
+					unownedSelecteds.player2,
+					'player2'
+				),
+			},
 		};
 
-		console.log(UnownedSelecteds);
+		console.log(unownedSelecteds);
 
 		console.log(formattedUnownedSelecteds);
 
@@ -722,24 +818,25 @@ const BoxCollection = ({
 			}
 		};
 
-		const boxToborder = (
-			boxIndex: number,
-			direction: 'left' | 'right' | 'up' | 'down',
-			isSelected: boolean = false,
-			isMergeable: boolean = false,
-			owner: PlayerElement = currentPlayer
-		) => {
+		const boxToborder = ({
+			boxIndex,
+			direction,
+			isSelected,
+			isMergeable,
+			owner,
+			sourceSelecteds,
+		}: BoxToBorderProps) => {
 			const resultSelected: (opt: number) => BorderState = (opt) => {
 				const remainder = boxIndex % 5;
 				const quotient = Math.floor(boxIndex / 5);
 				const isHorizontal = direction === 'left' || direction === 'right';
 				const border = (isHorizontal ? remainder : quotient) + opt;
 				const side = isHorizontal ? quotient : remainder;
-				const existSelected = selected[
+				const existSelected = sourceSelecteds[
 					isHorizontal ? 'vertical' : 'horizontal'
 				].find((item) => item.border === border && item.side === side);
 				if (existSelected) {
-					existSelected.owner = currentPlayer;
+					existSelected.owner = owner;
 					return existSelected;
 				} else {
 					return {
@@ -748,6 +845,7 @@ const BoxCollection = ({
 						isSelected,
 						owner,
 						isMergeable,
+						ownable: { player1: false, player2: false },
 					} satisfies BorderState;
 				}
 			};
@@ -889,8 +987,21 @@ const BoxCollection = ({
 				);
 				/* 새로 enclosed상태가 된 박스들 간의 borderMerge */
 				for (const boxIndex of box.horizontal) {
-					const rightBorder = boxToborder(boxIndex, 'right', true, true);
-					const downBorder = boxToborder(boxIndex, 'down', true, true);
+					const commonBoxToBorderProps: Omit<BoxToBorderProps, 'direction'> = {
+						boxIndex,
+						isSelected: true,
+						isMergeable: true,
+						owner: currentPlayer,
+						sourceSelecteds: selected,
+					};
+					const rightBorder = boxToborder({
+						...commonBoxToBorderProps,
+						direction: 'right',
+					});
+					const downBorder = boxToborder({
+						...commonBoxToBorderProps,
+						direction: 'down',
+					});
 					/* 자기 자신이 이미 있는지에 대한 검증 필요 */
 					if (
 						box.horizontal.includes(boxIndex + 1) &&
@@ -941,8 +1052,12 @@ const BoxCollection = ({
 		}
 
 		/* 이미 존재하는 박스와 새로 연결되는 박스들 간의 borderMerge */
-		const isMergeableSelected = (direction: Direction) =>
-			formattedSelected[direction].map((item) => {
+		const isMergeableSelected = (
+			direction: Direction,
+			sourceSelecteds: Selected,
+			player: PlayerElement
+		) => {
+			const resultSelecteds = sourceSelecteds[direction].map((item) => {
 				const upBox = borderToBox(direction, true, item.border, item.side);
 				const downBox = borderToBox(direction, false, item.border, item.side);
 				if (
@@ -952,26 +1067,50 @@ const BoxCollection = ({
 					downBox !== false &&
 					deepNewBoxes[upBox].isSurrounded &&
 					deepNewBoxes[downBox].isSurrounded &&
-					deepNewBoxes[upBox].owner === currentPlayer &&
-					deepNewBoxes[downBox].owner === currentPlayer
+					deepNewBoxes[upBox].owner === player &&
+					deepNewBoxes[downBox].owner === player
 				) {
 					return { ...item, isMergeable: true };
 				}
 				return item;
 			});
+			return resultSelecteds;
+		};
 
 		const resultSelected = {
-			horizontal: isMergeableSelected('horizontal'),
-			vertical: isMergeableSelected('vertical'),
+			horizontal: isMergeableSelected(
+				'horizontal',
+				formattedSelected,
+				currentPlayer
+			),
+			vertical: isMergeableSelected(
+				'vertical',
+				formattedSelected,
+				currentPlayer
+			),
 		};
+		console.log(unownedSelecteds);
 
 		setSelected(resultSelected);
 		setBoxes(deepNewBoxes);
 		setPlayers((p) => {
-			const newPlayers = { ...p };
-			newPlayers[currentPlayer].boxCount = deepNewBoxes.filter(
-				(item) => item.isSurrounded
-			).length;
+			const newPlayers: Players = {
+				player1: {
+					...p.player1,
+					boxCount: deepNewBoxes.filter(
+						(item) => item.owner === 'player1' && item.isSurrounded
+					).length,
+					ownableSelecteds: formattedUnownedSelecteds.player1,
+				},
+				player2: {
+					...p.player2,
+					boxCount: deepNewBoxes.filter(
+						(item) => item.owner === 'player2' && item.isSurrounded
+					).length,
+					ownableSelecteds: formattedUnownedSelecteds.player2,
+				} satisfies PlayerInfo,
+			};
+			console.log(newPlayers);
 			return newPlayers;
 		});
 		setCurrentPlayer(opponentPlayer);
@@ -986,6 +1125,14 @@ const BoxCollection = ({
 					const foundSelected = selected[direction].find(
 						(item) => item.border === borderId && item.side === sideId
 					);
+					const foundOwnable = players[currentPlayer].ownableSelecteds[
+						direction
+					].find((item) => item.border === borderId && item.side === sideId);
+					/* console.log(
+						selected.horizontal.length +
+							selected.vertical.length +
+							players[getOppositeElement(currentPlayer)].ownableSelecteds.length
+					); */
 					return (
 						<BoxWrapper key={sideId} direction={direction} $isLast={isLast}>
 							<BoxHover
@@ -997,6 +1144,7 @@ const BoxCollection = ({
 								$currentPlayer={currentPlayer}
 								$owner={foundSelected ? foundSelected.owner : currentPlayer}
 								$isMergeable={foundSelected ? foundSelected.isMergeable : false}
+								$isOwnable={!!foundOwnable}
 							>
 								<FakeHover />
 								<BoxSide />

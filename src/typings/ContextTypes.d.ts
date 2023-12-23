@@ -2,9 +2,12 @@ type Selected = Record<Direction, BorderState[]>;
 
 type PlayerElement = 'player1' | 'player2';
 
+type Ownable = Record<PlayerElement, boolean>;
+
 interface PlayerInfo {
 	boxCount: number;
 	name: string;
+	ownableSelecteds: Selected;
 }
 
 type Players = Record<PlayerElement, PlayerInfo>;
@@ -33,4 +36,5 @@ interface BorderState {
 	isSelected: boolean;
 	owner: PlayerElement;
 	isMergeable: boolean;
+	ownable: Ownable;
 }

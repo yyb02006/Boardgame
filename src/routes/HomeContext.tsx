@@ -5,8 +5,16 @@ const AppContext = createContext<HomeContextType | undefined>(undefined);
 function HomeProvider({ children }: { children: React.ReactNode }) {
 	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>('player1');
 	const [players, setPlayers] = useState<Players>({
-		player1: { boxCount: 0, name: 'player1' },
-		player2: { boxCount: 0, name: 'player2' },
+		player1: {
+			boxCount: 0,
+			name: 'player1',
+			ownableSelecteds: { horizontal: [], vertical: [] },
+		},
+		player2: {
+			boxCount: 0,
+			name: 'player2',
+			ownableSelecteds: { horizontal: [], vertical: [] },
+		},
 	});
 	const [selected, setSelected] = useState<Selected>({
 		vertical: [],
