@@ -1,38 +1,36 @@
-type selected = Record<direction, borderState[]>;
+type Selected = Record<Direction, BorderState[]>;
 
-type currentPlayer = 'player1' | 'player2';
+type PlayerElement = 'player1' | 'player2';
 
-type Filter<T, U> = T extends U ? T : never;
-
-interface playerInfo {
+interface PlayerInfo {
 	boxCount: number;
 	name: string;
 }
 
-type players = Record<currentPlayer, playerInfo>;
+type Players = Record<PlayerElement, PlayerInfo>;
 
-type boxes = Array<{
+type Boxes = Array<{
 	id: number;
 	isPartialSurrounded: boolean;
 	isSurrounded: boolean;
-	owner: currentPlayer | undefined;
+	owner: PlayerElement | undefined;
 }>;
 
 interface HomeContextType {
-	currentPlayer: currentPlayer;
-	setCurrentPlayer: React.Dispatch<React.SetStateAction<currentPlayer>>;
-	players: players;
-	setPlayers: React.Dispatch<React.SetStateAction<players>>;
-	selected: selected;
-	setSelected: React.Dispatch<React.SetStateAction<selected>>;
-	boxes: boxes;
+	currentPlayer: PlayerElement;
+	setCurrentPlayer: React.Dispatch<React.SetStateAction<PlayerElement>>;
+	players: Players;
+	setPlayers: React.Dispatch<React.SetStateAction<Players>>;
+	selected: Selected;
+	setSelected: React.Dispatch<React.SetStateAction<Selected>>;
+	boxes: Boxes;
 	setBoxes: React.Dispatch<React.SetStateAction<boxes>>;
 }
 
-interface borderState {
+interface BorderState {
 	border: number;
 	side: number;
 	isSelected: boolean;
-	owner: currentPlayer;
+	owner: PlayerElement;
 	isMergeable: boolean;
 }

@@ -146,7 +146,7 @@ const BoardBordersContainer = styled.div<BoardBordersContainerProps>`
 	justify-content: space-between;
 `;
 
-const BoxStyle = styled.div<directionInterface>`
+const BoxStyle = styled.div<DirectionInterface>`
 	position: relative;
 	width: ${(props) => (props.direction === 'horizontal' ? '100%' : '20%')};
 	height: ${(props) => (props.direction === 'horizontal' ? '20%' : '100%')};
@@ -256,7 +256,7 @@ const BoxCollection = ({
 	direction,
 	borderId,
 	isLast = false,
-}: boxCollectionProps) => {
+}: BoxCollectionProps) => {
 	const {
 		boxes,
 		setBoxes,
@@ -270,7 +270,7 @@ const BoxCollection = ({
 	const opponentPlayer = getOppositeElement(currentPlayer);
 	const oppositeDirection = getOppositeElement(direction);
 	const onBoxClick = (sideId: number) => {
-		const formattedSelected: selected = !selected[direction].find(
+		const formattedSelected: Selected = !selected[direction].find(
 			(item) => item.border === borderId && item.side === sideId
 		)
 			? {
@@ -283,14 +283,14 @@ const BoxCollection = ({
 							isSelected: true,
 							owner: currentPlayer,
 							isMergeable: false,
-						} /* satisfies === 중복 검사 */ satisfies borderState,
+						} /* satisfies === 중복 검사 */ satisfies BorderState,
 					],
 			  }
 			: selected;
 
 		const matchSelectedsLocation = (
-			comparatorSelected: borderState,
-			targetSelected: borderState
+			comparatorSelected: BorderState,
+			targetSelected: BorderState
 		) =>
 			comparatorSelected.border === targetSelected.border &&
 			comparatorSelected.side === targetSelected.side;
@@ -299,7 +299,7 @@ const BoxCollection = ({
 			selectedBorderId: number,
 			selectedSideId: number,
 			sidePos: HorizontalPos,
-			selectedDireciton: direction
+			selectedDireciton: Direction
 		) => {
 			return {
 				top: {
@@ -355,7 +355,7 @@ const BoxCollection = ({
 			sideId: number,
 			sidePos: 'left' | 'right',
 			owner: 'current' | 'other' | 'all',
-			selectedDirection: direction = direction
+			selectedDirection: Direction = direction
 		) =>
 			[
 				...formattedSelected[
@@ -404,12 +404,12 @@ const BoxCollection = ({
 										: -1)
 					)
 					.map((item) => ({ ...item, direction: selectedDirection })),
-			] as Array<borderState & { direction: direction }>;
+			] as Array<BorderState & { direction: Direction }>;
 
 		const findNotExistSelected = (
 			border: number,
 			side: number,
-			direction: direction,
+			direction: Direction,
 			horizontalPos: HorizontalPos
 		) => {
 			const otherDirection =
@@ -451,7 +451,7 @@ const BoxCollection = ({
 			side,
 			direction,
 			objectPos,
-		}: isBlockedProps) => {
+		}: IsBlockedProps) => {
 			const internalOppositeDirection = getOppositeElement(direction);
 			return (
 				findExistSideSelected(
@@ -470,7 +470,7 @@ const BoxCollection = ({
 			side,
 			direction,
 			objectPos,
-		}: isBlockedProps) =>
+		}: IsBlockedProps) =>
 			isSelectedBlocked({
 				border: borderId,
 				side: sideId,
@@ -526,7 +526,7 @@ const BoxCollection = ({
 			),
 		};
 
-		const insertDirectionAtSelecteds = (selecteds: selected) => {
+		const insertDirectionAtSelecteds = (selecteds: Selected) => {
 			const results = [
 				...selecteds.horizontal.map((selected) => ({
 					...selected,
@@ -536,7 +536,7 @@ const BoxCollection = ({
 					...selected,
 					direction: 'vertical',
 				})),
-			] as borderStateWithDirection[];
+			] as BorderStateWithDirection[];
 			return results;
 		};
 
@@ -554,15 +554,15 @@ const BoxCollection = ({
 		 *  */
 		/* 12/23 findUnownedRecursive재귀함수 리팩토링 순수함수이며 1가지의 목적을 가지도록 변경 */
 		const findUnownedRecursive = (
-			selecteds: borderStateWithDirection[]
-		): borderStateWithDirection[] => {
-			const findUnownedSelecteds = selecteds.reduce<borderStateWithDirection[]>(
+			selecteds: BorderStateWithDirection[]
+		): BorderStateWithDirection[] => {
+			const findUnownedSelecteds = selecteds.reduce<BorderStateWithDirection[]>(
 				(accumulator, currentSelected) => {
 					const { border, side, direction } = currentSelected;
 					const getUnblockedSelecteds = (
 						border: number,
 						side: number,
-						direction: direction,
+						direction: Direction,
 						objectPos: HorizontalPos
 					) =>
 						!isSelectedBlocked({
@@ -597,9 +597,9 @@ const BoxCollection = ({
 		);
 
 		const formatUnownedSelecteds = (
-			direction: direction,
-			UnownedSelecteds: borderStateWithDirection[]
-		): borderState[] =>
+			direction: Direction,
+			UnownedSelecteds: BorderStateWithDirection[]
+		): BorderState[] =>
 			UnownedSelecteds.filter((item) => item.direction === direction)
 				.map((item) => ({
 					border: item.border,
@@ -616,7 +616,7 @@ const BoxCollection = ({
 					}
 				});
 
-		const formattedUnownedSelecteds: selected = {
+		const formattedUnownedSelecteds: Selected = {
 			horizontal: formatUnownedSelecteds('horizontal', UnownedSelecteds),
 			vertical: formatUnownedSelecteds('vertical', UnownedSelecteds),
 		};
@@ -627,7 +627,7 @@ const BoxCollection = ({
 
 		if (breakOnClickCondition) return;
 		const borderToBox = (
-			direction: direction,
+			direction: Direction,
 			isUpPos: boolean,
 			border: number = borderId,
 			side: number = sideId,
@@ -649,9 +649,9 @@ const BoxCollection = ({
 			direction: 'left' | 'right' | 'up' | 'down',
 			isSelected: boolean = false,
 			isMergeable: boolean = false,
-			owner: currentPlayer = currentPlayer
+			owner: PlayerElement = currentPlayer
 		) => {
-			const resultSelected: (opt: number) => borderState = (opt) => {
+			const resultSelected: (opt: number) => BorderState = (opt) => {
 				const remainder = boxIndex % 5;
 				const quotient = Math.floor(boxIndex / 5);
 				const isHorizontal = direction === 'left' || direction === 'right';
@@ -670,7 +670,7 @@ const BoxCollection = ({
 						isSelected,
 						owner,
 						isMergeable,
-					} satisfies borderState;
+					} satisfies BorderState;
 				}
 			};
 			switch (true) {
@@ -681,7 +681,7 @@ const BoxCollection = ({
 			}
 		};
 
-		const findClosedBoxByDirection = (direction: direction) => {
+		const findClosedBoxByDirection = (direction: Direction) => {
 			const isHorizontal = direction === 'horizontal';
 			return Array.from({ length: 5 }, (_, id) => {
 				const borders = formattedSelected[direction]
@@ -715,17 +715,17 @@ const BoxCollection = ({
 		 * ps. 시발거
 		 *  */
 
-		const getEnclosedBox = (closedBox: number[], initDirection: direction) => {
-			const horizontalClosedBoxes: closedBoxes = {
+		const getEnclosedBox = (closedBox: number[], initDirection: Direction) => {
+			const horizontalClosedBoxes: ClosedBoxes = {
 				arr: findClosedBoxByDirection('horizontal'),
 				label: 'horizontal',
 			};
-			const verticalClosedBoxes: closedBoxes = {
+			const verticalClosedBoxes: ClosedBoxes = {
 				arr: findClosedBoxByDirection('vertical'),
 				label: 'vertical',
 			};
 
-			const result: getEnclosedBoxResult = {
+			const result: GetEnclosedBoxResult = {
 				horizontal: [],
 				vertical: [],
 			};
@@ -733,8 +733,8 @@ const BoxCollection = ({
 			const addEnclosedBoxesRecursive = (
 				closedBox: number[],
 				boxesObject: {
-					arr: nestedArray<number>;
-					label: direction;
+					arr: NestedArray<number>;
+					label: Direction;
 				}
 			) => {
 				const resultIsIncluded = isElementInNestedArray(
@@ -775,7 +775,7 @@ const BoxCollection = ({
 		 *
 		 *  이러한 방식의 깊은 복사는 undefined를 제거해버림
 		 * */
-		const deepNewBoxes: boxes = boxes.map((item) => ({ ...item }));
+		const deepNewBoxes: Boxes = boxes.map((item) => ({ ...item }));
 
 		/* 임의의 구역이 enclosed가 될 시 */
 		if (
@@ -785,7 +785,7 @@ const BoxCollection = ({
 			const enclosedBoxes = findClosedBoxByDirection('horizontal').map((item) =>
 				getEnclosedBox(item, oppositeDirection)
 			);
-			const mergeableSelected: selected = { horizontal: [], vertical: [] };
+			const mergeableSelected: Selected = { horizontal: [], vertical: [] };
 			for (const box of enclosedBoxes) {
 				const surroundedBoxCount = box.horizontal.reduce(
 					(count, id) => (boxes[id].isSurrounded ? count + 1 : count),
@@ -848,7 +848,7 @@ const BoxCollection = ({
 		}
 
 		/* 이미 존재하는 박스와 새로 연결되는 박스들 간의 borderMerge */
-		const isMergeableSelected = (direction: direction) =>
+		const isMergeableSelected = (direction: Direction) =>
 			formattedSelected[direction].map((item) => {
 				const upBox = borderToBox(direction, true, item.border, item.side);
 				const downBox = borderToBox(direction, false, item.border, item.side);
@@ -915,7 +915,7 @@ const BoxCollection = ({
 	);
 };
 
-const BorderBox = ({ direction }: borderBoxProps) => {
+const BorderBox = ({ direction }: BorderBoxProps) => {
 	return (
 		<>
 			{Array(5)
@@ -936,7 +936,7 @@ const BorderBox = ({ direction }: borderBoxProps) => {
 	);
 };
 
-const PlayerCard = ({ player }: { player: currentPlayer }) => {
+const PlayerCard = ({ player }: { player: PlayerElement }) => {
 	const { players, boxes } = useHomeContext();
 	return (
 		<PlayerCardStyle $player={player}>

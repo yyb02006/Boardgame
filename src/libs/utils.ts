@@ -42,8 +42,8 @@ export function sortByOrder(
 
 /** 객체의 border, side, direction 값을 비교해서 comparison에 존재하지 않는 source값만 반환하는 함수 */
 export function compareAndFilterSelecteds(
-	sourceSelecteds: Array<borderState & { direction: direction }>,
-	comparisonSelecteds: Array<borderState & { direction: direction }>
+	sourceSelecteds: Array<BorderState & { direction: Direction }>,
+	comparisonSelecteds: Array<BorderState & { direction: Direction }>
 ) {
 	const result = sourceSelecteds.filter(
 		(selected) =>
@@ -58,11 +58,11 @@ export function compareAndFilterSelecteds(
 }
 
 /** direction, currentPlayer, HorizontalPos 타입의 요소를 넣어서 반대값을 반환받는 함수 */
-export function getOppositeElement(element: currentPlayer): currentPlayer;
+export function getOppositeElement(element: PlayerElement): PlayerElement;
 export function getOppositeElement(element: HorizontalPos): HorizontalPos;
-export function getOppositeElement(element: direction): direction;
+export function getOppositeElement(element: Direction): Direction;
 export function getOppositeElement(
-	element: direction | HorizontalPos | currentPlayer
+	element: Direction | HorizontalPos | PlayerElement
 ) {
 	switch (element) {
 		case 'horizontal':

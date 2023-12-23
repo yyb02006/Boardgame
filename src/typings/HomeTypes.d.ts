@@ -1,79 +1,79 @@
-type direction = 'horizontal' | 'vertical';
+type Direction = 'horizontal' | 'vertical';
 
 type HorizontalPos = 'left' | 'right';
 
-type nestedArray<T> = T[][];
+type NestedArray<T> = T[][];
 
-interface directionInterface {
-	direction: direction;
+interface DirectionInterface {
+	direction: Direction;
 }
 
-interface closedBoxes {
-	arr: nestedArray<number>;
+interface ClosedBoxes {
+	arr: NestedArray<number>;
 	label: 'horizontal' | 'vertical';
 }
 
-type getEnclosedBoxResult = Record<direction, nestedArray<number>>;
+type GetEnclosedBoxResult = Record<Direction, NestedArray<number>>;
 
-type unownedSelecteds = Record<
+type UnownedSelecteds = Record<
 	'includeDefault' | 'notIncludeDefault',
-	selected
+	Selected
 >;
 
-interface isBlockedProps {
+interface IsBlockedProps {
 	border: number;
 	side: number;
-	direction: direction;
+	direction: Direction;
 	objectPos: HorizontalPos;
 }
 
-interface borderStateWithDirection extends borderState {
-	direction: direction;
+interface BorderStateWithDirection extends BorderState {
+	direction: Direction;
 }
 
 /** Styled Components Types */
 
 interface PlayerProps {
-	$currentPlayer: currentPlayer;
+	$currentPlayer: PlayerElement;
 }
 
 interface PlayerCardStyleProps {
-	$player: currentPlayer;
+	$player: PlayerElement;
 }
 
 interface BoardItemsContainerProps {
-	$currentPlayer: currentPlayer;
+	$currentPlayer: PlayerElement;
 }
 
 interface BoxesProps {
 	$isSurrounded: boolean;
-	$currentPlayer: currentPlayer;
-	$owner: currentPlayer | undefined;
+	$currentPlayer: PlayerElement;
+	$owner: PlayerElement | undefined;
 }
 
 interface BoardBordersContainerProps {
 	$borderDirection: string;
 }
 
-interface BoxWrapperProps extends directionInterface {
+interface BoxWrapperProps extends DirectionInterface {
 	$isLast: boolean;
 }
 
-interface BoxHoverProps extends directionInterface {
+interface BoxHoverProps extends DirectionInterface {
 	$isSelected: boolean;
-	$currentPlayer: currentPlayer;
-	$owner: currentPlayer;
+	$currentPlayer: PlayerElement;
+	$owner: PlayerElement;
 	$isMergeable: boolean;
 }
 
 /** Routes Components Types */
 
-interface boxCollectionProps {
-	direction: direction;
+interface BoxCollectionProps {
+	direction: Direction;
 	borderId: number;
 	isLast?: boolean;
 }
 
-interface borderBoxProps {
-	direction: direction;
+interface BorderBoxProps {
+	direction: Direction;
 }
