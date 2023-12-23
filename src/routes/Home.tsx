@@ -266,8 +266,12 @@ const BoxCollection = ({
 		players,
 		setPlayers,
 	} = useHomeContext();
-	const otherPlayer = currentPlayer === 'player1' ? 'player2' : 'player1';
-	const otherDirection = direction === 'horizontal' ? 'vertical' : 'horizontal';
+	const getOppositeDirection = (currentDirection: direction) =>
+		currentDirection === 'horizontal' ? 'vertical' : 'horizontal';
+	const getOpponentPlayer = (currentPlayer: currentPlayer) =>
+		currentPlayer === 'player1' ? 'player2' : 'player1';
+	const opponentPlayer = getOpponentPlayer(currentPlayer);
+	const oppositeDirection = getOppositeDirection(direction);
 	const onBoxClick = (sideId: number) => {
 		const formattedSelected: selected = !selected[direction].find(
 			(item) => item.border === borderId && item.side === sideId
@@ -365,7 +369,7 @@ const BoxCollection = ({
 							(owner === 'current'
 								? item.owner === currentPlayer
 								: owner === 'other'
-								? item.owner === otherPlayer
+								? item.owner === opponentPlayer
 								: true) &&
 							item.border ===
 								sideId +
@@ -389,7 +393,7 @@ const BoxCollection = ({
 							(owner === 'current'
 								? item.owner === currentPlayer
 								: owner === 'other'
-								? item.owner === otherPlayer
+								? item.owner === opponentPlayer
 								: true) &&
 							item.border === borderId &&
 							item.side ===
@@ -442,8 +446,26 @@ const BoxCollection = ({
 				mappedSelecteds,
 				existSideSelecteds
 			);
-
 			return result;
+		};
+
+		const isSelectedBlocked = ({
+			border,
+			side,
+			direction,
+			objectPos,
+		}: isBlockedProps) => {
+			const internalOppositeDirection = getOppositeDirection(direction);
+			return (
+				findExistSideSelected(
+					border,
+					side,
+					objectPos,
+					'other',
+					direction
+				).filter((border) => border.direction === internalOppositeDirection)
+					.length === 2
+			);
 		};
 
 		/* ??와 ||는 서로 완전히 같은 목적으로 사용할 수 없음 */
@@ -463,21 +485,24 @@ const BoxCollection = ({
 			) ||
 			/* 다른 border 2개로 막혀있는 곳 사이를 뚫고 지나갈 수 없음 */
 			!!(
-				(findExistSideSelected(borderId, sideId, 'left', 'other').filter(
-					(border) => border.direction === otherDirection
-				).length === 2 &&
+				(isSelectedBlocked({
+					border: borderId,
+					side: sideId,
+					direction,
+					objectPos: 'left',
+				}) &&
 					findExistSideSelected(borderId, sideId, 'right', 'current').length ===
 						0) ||
 				(findExistSideSelected(borderId, sideId, 'right', 'other').filter(
-					(border) => border.direction === otherDirection
+					(border) => border.direction === oppositeDirection
 				).length === 2 &&
 					findExistSideSelected(borderId, sideId, 'left', 'current').length ===
 						0) ||
 				(findExistSideSelected(borderId, sideId, 'left', 'other').filter(
-					(border) => border.direction === otherDirection
+					(border) => border.direction === oppositeDirection
 				).length === 2 &&
 					findExistSideSelected(borderId, sideId, 'right', 'other').filter(
-						(border) => border.direction === otherDirection
+						(border) => border.direction === oppositeDirection
 					).length === 2)
 			);
 
@@ -488,23 +513,6 @@ const BoxCollection = ({
 			vertical: formattedSelected.vertical.filter(
 				(item) => item.owner === currentPlayer
 			),
-		};
-
-		const isSelectedBlocked = ({
-			border,
-			side,
-			direction,
-			objectPos,
-		}: isBlockedProps) => {
-			return (
-				findExistSideSelected(
-					border,
-					side,
-					objectPos,
-					'other',
-					direction
-				).filter((border) => border.direction === direction).length === 2
-			);
 		};
 
 		const insertDirectionAtSelecteds = (selecteds: selected) => {
@@ -540,8 +548,6 @@ const BoxCollection = ({
 			const findUnownedSelecteds = selecteds.reduce<borderStateWithDirection[]>(
 				(accumulator, currentSelected) => {
 					const { border, side, direction } = currentSelected;
-					const otherDirection =
-						direction === 'horizontal' ? 'vertical' : 'horizontal';
 					const getUnblockedSelecteds = (
 						border: number,
 						side: number,
@@ -556,18 +562,8 @@ const BoxCollection = ({
 						})
 							? findNotExistSelected(border, side, direction, objectPos)
 							: [];
-					const left = getUnblockedSelecteds(
-						border,
-						side,
-						otherDirection,
-						'left'
-					);
-					const right = getUnblockedSelecteds(
-						border,
-						side,
-						otherDirection,
-						'right'
-					);
+					const left = getUnblockedSelecteds(border, side, direction, 'left');
+					const right = getUnblockedSelecteds(border, side, direction, 'right');
 					const newSelecteds = [...left, ...right];
 					const result = [
 						...accumulator,
@@ -776,7 +772,7 @@ const BoxCollection = ({
 			findExistSideSelected(borderId, sideId, 'right', 'current').length > 0
 		) {
 			const enclosedBoxes = findClosedBoxByDirection('horizontal').map((item) =>
-				getEnclosedBox(item, otherDirection)
+				getEnclosedBox(item, oppositeDirection)
 			);
 			const mergeableSelected: selected = { horizontal: [], vertical: [] };
 			for (const box of enclosedBoxes) {
@@ -785,7 +781,7 @@ const BoxCollection = ({
 					0
 				);
 				const isBoxesIncludeOtherPlayers = box.horizontal.find(
-					(boxEl) => boxes[boxEl].owner === otherPlayer
+					(boxEl) => boxes[boxEl].owner === opponentPlayer
 				);
 				/* 새로 enclosed상태가 된 박스들 간의 borderMerge */
 				for (const boxIndex of box.horizontal) {
@@ -874,7 +870,7 @@ const BoxCollection = ({
 			).length;
 			return newPlayers;
 		});
-		setCurrentPlayer(otherPlayer);
+		setCurrentPlayer(opponentPlayer);
 		/* why doesn't TypeGuard work when using a func return instead a variable? */
 	};
 
