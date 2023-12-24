@@ -31,6 +31,19 @@ type UnownedSelecteds = Record<
 
 /** Function Props Types */
 
+interface FormatUnownedSelecteds {
+	direction: Direction;
+	unownedSelecteds: BorderStateWithDirection[];
+	currentPlayer: PlayerElement;
+}
+
+interface FindUnownedRecursive {
+	sourceSelecteds: BorderStateWithDirection[];
+	originalSelecteds: Selected;
+	currentPlayer: PlayerElement;
+	recursive: boolean;
+}
+
 interface GetUnblockedSelectedsProp {
 	border: number;
 	side: number;

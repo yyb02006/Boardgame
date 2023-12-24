@@ -637,12 +637,12 @@ const BoxCollection = ({
 		 * 	실행 컨텍스트가 모두 해결될 때 최종적으로 undefined를 뱉어내게 된다.
 		 *  */
 		/* 12/23 findUnownedRecursive재귀함수 리팩토링 순수함수이며 1가지의 목적을 가지도록 변경 */
-		const findUnownedRecursive = (
-			sourceSelecteds: BorderStateWithDirection[],
-			originalSelecteds: Selected,
-			currentPlayer: PlayerElement,
-			recursive: boolean
-		): BorderStateWithDirection[] => {
+		const findUnownedRecursive = ({
+			sourceSelecteds,
+			originalSelecteds,
+			currentPlayer,
+			recursive,
+		}: FindUnownedRecursive): BorderStateWithDirection[] => {
 			const findUnownedSelecteds = sourceSelecteds.reduce<
 				BorderStateWithDirection[]
 			>((accumulator, currentSelected) => {
@@ -692,64 +692,22 @@ const BoxCollection = ({
 				return result;
 			}, sourceSelecteds);
 			if (findUnownedSelecteds.length !== sourceSelecteds.length && recursive) {
-				return findUnownedRecursive(
-					[...findUnownedSelecteds],
+				return findUnownedRecursive({
+					sourceSelecteds: [...findUnownedSelecteds],
 					originalSelecteds,
 					currentPlayer,
-					recursive
-				);
+					recursive,
+				});
 			} else {
 				return findUnownedSelecteds;
 			}
 		};
 
-		const unownedSelecteds = {
-			player1: compareAndFilterSelecteds(
-				findUnownedRecursive(
-					insertDirectionAtSelecteds(currentPlayerSelecteds('player1')),
-					formattedSelected,
-					'player1',
-					false
-				),
-				insertDirectionAtSelecteds(currentPlayerSelecteds('player1'))
-			),
-			player2: compareAndFilterSelecteds(
-				findUnownedRecursive(
-					insertDirectionAtSelecteds(currentPlayerSelecteds('player2')),
-					formattedSelected,
-					'player2',
-					false
-				),
-				insertDirectionAtSelecteds(currentPlayerSelecteds('player2'))
-			),
-		};
-
-		const recursiveUnownedSelecteds = {
-			player1: compareAndFilterSelecteds(
-				findUnownedRecursive(
-					insertDirectionAtSelecteds(currentPlayerSelecteds('player1')),
-					formattedSelected,
-					'player1',
-					true
-				),
-				insertDirectionAtSelecteds(currentPlayerSelecteds('player1'))
-			),
-			player2: compareAndFilterSelecteds(
-				findUnownedRecursive(
-					insertDirectionAtSelecteds(currentPlayerSelecteds('player2')),
-					formattedSelected,
-					'player2',
-					true
-				),
-				insertDirectionAtSelecteds(currentPlayerSelecteds('player2'))
-			),
-		};
-
-		const formatUnownedSelecteds = (
-			direction: Direction,
-			unownedSelecteds: BorderStateWithDirection[],
-			currentPlayer: PlayerElement
-		): BorderState[] =>
+		const formatUnownedSelecteds = ({
+			direction,
+			unownedSelecteds,
+			currentPlayer,
+		}: FormatUnownedSelecteds): BorderState[] =>
 			unownedSelecteds
 				.filter((item) => item.direction === direction)
 				.map(
@@ -771,36 +729,81 @@ const BoxCollection = ({
 					}
 				});
 
-		const formattedUnownedSelecteds: Record<PlayerElement, Selected> = {
-			player1: {
-				horizontal: formatUnownedSelecteds(
-					'horizontal',
-					unownedSelecteds.player1,
-					'player1'
+		const createUnownedSelecteds = (
+			isRecursive: boolean,
+			originalSelecteds: Selected
+		) => {
+			const createCommonProps = (
+				commonPlayer: PlayerElement,
+				commonIsRecursive: boolean
+			): FindUnownedRecursive => ({
+				sourceSelecteds: insertDirectionAtSelecteds(
+					currentPlayerSelecteds(commonPlayer)
 				),
-				vertical: formatUnownedSelecteds(
-					'vertical',
-					unownedSelecteds.player1,
-					'player1'
+				originalSelecteds,
+				currentPlayer: commonPlayer,
+				recursive: commonIsRecursive,
+			});
+			return {
+				player1: compareAndFilterSelecteds(
+					findUnownedRecursive(createCommonProps('player1', isRecursive)),
+					insertDirectionAtSelecteds(currentPlayerSelecteds('player1'))
 				),
-			},
-			player2: {
-				horizontal: formatUnownedSelecteds(
-					'horizontal',
-					unownedSelecteds.player2,
-					'player2'
+				player2: compareAndFilterSelecteds(
+					findUnownedRecursive(createCommonProps('player2', isRecursive)),
+					insertDirectionAtSelecteds(currentPlayerSelecteds('player2'))
 				),
-				vertical: formatUnownedSelecteds(
-					'vertical',
-					unownedSelecteds.player2,
-					'player2'
-				),
-			},
+			};
 		};
 
-		console.log(unownedSelecteds);
+		const createFormattedUnownedSelecteds = (
+			originalSelecteds: Selected
+		): Record<PlayerElement, Selected> => {
+			const createCommonProps = (
+				commonDirection: Direction,
+				commonPlayer: PlayerElement
+			): FormatUnownedSelecteds => {
+				const unownedSelecteds = createUnownedSelecteds(
+					false,
+					originalSelecteds
+				);
+				return {
+					direction: commonDirection,
+					unownedSelecteds: unownedSelecteds[commonPlayer],
+					currentPlayer: commonPlayer,
+				};
+			};
+			return {
+				player1: {
+					horizontal: formatUnownedSelecteds(
+						createCommonProps('horizontal', 'player1')
+					),
+					vertical: formatUnownedSelecteds(
+						createCommonProps('vertical', 'player1')
+					),
+				},
+				player2: {
+					horizontal: formatUnownedSelecteds(
+						createCommonProps('horizontal', 'player2')
+					),
+					vertical: formatUnownedSelecteds(
+						createCommonProps('vertical', 'player2')
+					),
+				},
+			};
+		};
 
-		console.log(formattedUnownedSelecteds);
+		const recursiveUnownedSelecteds = createUnownedSelecteds(
+			true,
+			formattedSelected
+		);
+
+		const formattedUnownedSelecteds =
+			createFormattedUnownedSelecteds(formattedSelected);
+
+		console.log(createUnownedSelecteds(false, formattedSelected));
+
+		console.log(createFormattedUnownedSelecteds(formattedSelected));
 
 		const borderToBox = (
 			direction: Direction,
