@@ -899,24 +899,19 @@ const BoxCollection = ({
 		 * ps. 시발거
 		 *  */
 		/* getEnclosedBox 함수 클로저함수로 리팩토링 */
-		const dummy = {
-			horizontal: [[1, 2], [3], [4, 5], [6], [7]],
-			vertical: [[1], [2, 3, 4], [5], [6, 7]],
-		};
-
 		const createFindEnclosedClosure = (
 			initBoxes: number[],
-			closedBoxesArray: Record<Direction, number[][]>
+			closedBoxesArray: Record<Direction, number[][]>,
+			currentDirection: Direction = 'horizontal'
 		) => {
 			const accumulator: Record<Direction, number[][]> = {
 				horizontal: [],
 				vertical: [],
 			};
 			let sourceBoxes = [initBoxes];
-			const getEnclosedBoxesRecursive = (
-				currentDirection: Direction = 'horizontal'
-			): number[] | false => {
-				const localOppositeDirection = getOppositeElement(currentDirection);
+			let bordersDirection = currentDirection;
+			const getEnclosedBoxesRecursive = (): number[] | false => {
+				const localOppositeDirection = getOppositeElement(bordersDirection);
 				sourceBoxes = sourceBoxes
 					.reduce<number[][]>((accumulator, currentbox) => {
 						const test = findCommonElementInNestedArray(
@@ -939,8 +934,10 @@ const BoxCollection = ({
 						...accumulator[localOppositeDirection],
 						...sourceBoxes,
 					];
-					return getEnclosedBoxesRecursive(localOppositeDirection);
+					bordersDirection = oppositeDirection;
+					return getEnclosedBoxesRecursive();
 				} else if (
+					accumulator.horizontal.length > 0 &&
 					isNumArrayEqual(
 						accumulator.horizontal.flat(),
 						accumulator.vertical.flat()
@@ -953,8 +950,6 @@ const BoxCollection = ({
 			};
 			return getEnclosedBoxesRecursive;
 		};
-
-		console.log(createFindEnclosedClosure([1, 2], dummy)('horizontal'));
 
 		const getEnclosedBox = (closedBox: number[], initDirection: Direction) => {
 			const horizontalClosedBoxes: ClosedBoxes = {
@@ -1045,10 +1040,16 @@ const BoxCollection = ({
 
 			const test = findClosedBoxByDirection('horizontal').reduce<number[][]>(
 				(accumulator, currentSelected) => {
-					const value = createFindEnclosedClosure(currentSelected, {
-						horizontal: findClosedBoxByDirection('horizontal'),
-						vertical: findClosedBoxByDirection('vertical'),
-					})('horizontal');
+					const value = createFindEnclosedClosure(
+						currentSelected,
+						{
+							horizontal: findClosedBoxByDirection('horizontal'),
+							vertical: findClosedBoxByDirection('vertical'),
+						},
+						'horizontal'
+					)();
+					console.log(value);
+
 					return value &&
 						!accumulator.some((box) => isNumArrayEqual(value, box))
 						? [...accumulator, value]
@@ -1057,7 +1058,12 @@ const BoxCollection = ({
 				[]
 			);
 
-			console.log(test, enclosedBoxes, findClosedBoxByDirection('horizontal'));
+			console.log(
+				test,
+				enclosedBoxes,
+				findClosedBoxByDirection('horizontal'),
+				findClosedBoxByDirection('vertical')
+			);
 
 			const mergeableSelected: Selected = { horizontal: [], vertical: [] };
 			for (const box of enclosedBoxes) {
