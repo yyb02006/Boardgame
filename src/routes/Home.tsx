@@ -3,7 +3,7 @@ import styled, { css, keyframes } from 'styled-components';
 import {
 	compareAndFilterSelecteds,
 	getOppositeElement,
-	isElementInNestedArray,
+	findCommonElementInNestedArray,
 	sortByOrder,
 } from '../libs/utils';
 import { HomeProvider, useHomeContext } from './HomeContext';
@@ -890,6 +890,7 @@ const BoxCollection = ({
 		 *
 		 * ps. 시발거
 		 *  */
+		const newEnclosedBoxesRecursive = () => {};
 
 		const getEnclosedBox = (closedBox: number[], initDirection: Direction) => {
 			const horizontalClosedBoxes: ClosedBoxes = {
@@ -913,7 +914,7 @@ const BoxCollection = ({
 					label: Direction;
 				}
 			) => {
-				const resultIsIncluded = isElementInNestedArray(
+				const resultIsIncluded = findCommonElementInNestedArray(
 					closedBox,
 					boxesObject.arr
 				);
@@ -962,6 +963,7 @@ const BoxCollection = ({
 			sourcePlayer: currentPlayer,
 		};
 
+		const mergeBoxesWhenEnclosed = () => {};
 		/* 임의의 구역이 enclosed가 될 시 */
 		if (
 			findExistSideSelected({
@@ -1089,7 +1091,6 @@ const BoxCollection = ({
 				currentPlayer
 			),
 		};
-		console.log(unownedSelecteds);
 
 		setSelected(resultSelected);
 		setBoxes(deepNewBoxes);
@@ -1110,7 +1111,6 @@ const BoxCollection = ({
 					ownableSelecteds: formattedUnownedSelecteds.player2,
 				} satisfies PlayerInfo,
 			};
-			console.log(newPlayers);
 			return newPlayers;
 		});
 		setCurrentPlayer(opponentPlayer);

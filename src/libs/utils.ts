@@ -1,4 +1,4 @@
-/** 두 배열이 공통요소를 하나라도 가지고 있는지 판단하는 함수 */
+/** 두 배열이 공통요소를 가지고 있는지 판단하는 함수 */
 export function haveCommonElements(
 	firstArray: number[],
 	secondArray: number[]
@@ -13,17 +13,20 @@ export function haveCommonElements(
 	return false;
 }
 
-/** 하나의 배열이 다른 중첩된 배열안의 요소와 공통 요소를 가지고 있다면 해당 요소를 리턴하는 함수 */
-export function isElementInNestedArray(
+/** 중첩된 배열에서 비교배열과 공통요소를 가지고 있는 2차 배열을 모두 리턴하는 함수 */
+export function findCommonElementInNestedArray(
 	compareArray: number[],
 	nestedArray: number[][]
 ) {
-	let resultArray: number[][] = [];
-	for (const ElementArray of nestedArray) {
-		if (haveCommonElements(ElementArray, compareArray)) {
-			resultArray = [...resultArray, ElementArray];
-		}
-	}
+	const newNestedArray = [...nestedArray];
+	const resultArray = newNestedArray.reduce<number[][]>(
+		(prevArray, currentElement) =>
+			haveCommonElements(currentElement, compareArray)
+				? [...prevArray, currentElement]
+				: prevArray,
+		[]
+	);
+
 	return resultArray;
 }
 
