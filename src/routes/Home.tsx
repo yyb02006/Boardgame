@@ -890,7 +890,59 @@ const BoxCollection = ({
 		 *
 		 * ps. 시발거
 		 *  */
-		const newEnclosedBoxesRecursive = () => {};
+		/* getEnclosedBox 함수 클로저함수로 리팩토링 */
+		const dummy = {
+			horizontal: [[1, 2], [3], [4, 5], [6], [7]],
+			vertical: [[1], [2, 3, 4], [5], [6, 7]],
+		};
+
+		const createFindEnclosedClosure = (
+			initBoxes: number[],
+			closedBoxesArray: Record<Direction, number[][]>
+		) => {
+			const accumulator: Record<Direction, number[][]> = {
+				horizontal: [],
+				vertical: [],
+			};
+			let sourceBoxes = [initBoxes];
+			const newEnclosedBoxesRecursive = (
+				currentDirection: Direction = 'horizontal'
+			): Record<Direction, number[][]> => {
+				const localOppositeDirection = getOppositeElement(currentDirection);
+				sourceBoxes = sourceBoxes
+					.reduce<number[][]>((accumulator, currentbox) => {
+						const test = findCommonElementInNestedArray(
+							currentbox,
+							closedBoxesArray[localOppositeDirection]
+						);
+						const result = test.filter(
+							(box) =>
+								!accumulator.some(
+									(el) => JSON.stringify(el) === JSON.stringify(box)
+								)
+						);
+						return [...accumulator, ...result];
+					}, [])
+					.filter(
+						(box) =>
+							!accumulator[localOppositeDirection].some(
+								(el) => JSON.stringify(el) === JSON.stringify(box)
+							)
+					);
+				if (sourceBoxes.length > 0) {
+					accumulator[localOppositeDirection] = [
+						...accumulator[localOppositeDirection],
+						...sourceBoxes,
+					];
+					return newEnclosedBoxesRecursive(localOppositeDirection);
+				} else {
+					return accumulator;
+				}
+			};
+			return newEnclosedBoxesRecursive;
+		};
+
+		console.log(createFindEnclosedClosure([1], dummy)('vertical'));
 
 		const getEnclosedBox = (closedBox: number[], initDirection: Direction) => {
 			const horizontalClosedBoxes: ClosedBoxes = {
