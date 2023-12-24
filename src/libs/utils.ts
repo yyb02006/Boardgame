@@ -50,7 +50,7 @@ export function compareAndFilterSelecteds(
 ) {
 	const result = sourceSelecteds.filter(
 		(selected) =>
-			!comparisonSelecteds.find(
+			!comparisonSelecteds.some(
 				(item) =>
 					item.border === selected.border &&
 					item.side === selected.side &&

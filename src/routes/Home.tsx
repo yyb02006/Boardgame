@@ -287,7 +287,7 @@ const BoxCollection = ({
 	const opponentPlayer = getOppositeElement(currentPlayer);
 	const oppositeDirection = getOppositeElement(direction);
 	const onBoxClick = (sideId: number) => {
-		const formattedSelected: Selected = !selected[direction].find(
+		const formattedSelected: Selected = !selected[direction].some(
 			(item) => item.border === borderId && item.side === sideId
 		)
 			? {
@@ -549,7 +549,7 @@ const BoxCollection = ({
 			};
 			return (
 				/* 같은 자리에 이미 클릭된 border가 있을 경우  */
-				!!selected[direction].find(
+				!!selected[direction].some(
 					(item) => item.border === borderId && item.side === sideId
 				) ||
 				/* 다른 곳에 있는 border에 이어지는 border만 클릭할 수 있음(가장 첫번째 selected 예외) */
@@ -562,10 +562,10 @@ const BoxCollection = ({
 						...commonFindExistSideSelectedProps,
 						sidePos: 'right',
 					}).length === 0 &&
-					(selected.horizontal.find(
+					(selected.horizontal.some(
 						(border) => border.owner === currentPlayer
-					) ??
-						selected.vertical.find((border) => border.owner === currentPlayer))
+					) ||
+						selected.vertical.some((border) => border.owner === currentPlayer))
 				) ||
 				/* 다른 border 2개로 막혀있는 곳 사이를 뚫고 지나갈 수 없음 */
 				isNotClickableWhenBlocked({
@@ -836,8 +836,7 @@ const BoxCollection = ({
 					isHorizontal ? 'vertical' : 'horizontal'
 				].find((item) => item.border === border && item.side === side);
 				if (existSelected) {
-					existSelected.owner = owner;
-					return existSelected;
+					return { ...existSelected, owner };
 				} else {
 					return {
 						border,
@@ -1036,7 +1035,7 @@ const BoxCollection = ({
 					(count, id) => (boxes[id].isSurrounded ? count + 1 : count),
 					0
 				);
-				const isBoxesIncludeOtherPlayers = box.horizontal.find(
+				const isBoxesIncludeOtherPlayers = box.horizontal.some(
 					(boxEl) => boxes[boxEl].owner === opponentPlayer
 				);
 				/* 새로 enclosed상태가 된 박스들 간의 borderMerge */
@@ -1060,7 +1059,7 @@ const BoxCollection = ({
 					if (
 						box.horizontal.includes(boxIndex + 1) &&
 						rightBorder &&
-						!mergeableSelected.vertical.find(
+						!mergeableSelected.vertical.some(
 							(item) =>
 								item.border === rightBorder.border &&
 								item.side === rightBorder.side
@@ -1071,7 +1070,7 @@ const BoxCollection = ({
 					if (
 						box.horizontal.includes(boxIndex + 5) &&
 						downBorder &&
-						!mergeableSelected.horizontal.find(
+						!mergeableSelected.horizontal.some(
 							(item) =>
 								item.border === downBorder.border &&
 								item.side === downBorder.side
@@ -1179,12 +1178,7 @@ const BoxCollection = ({
 					);
 					const foundOwnable = players[currentPlayer].ownableSelecteds[
 						direction
-					].find((item) => item.border === borderId && item.side === sideId);
-					/* console.log(
-						selected.horizontal.length +
-							selected.vertical.length +
-							players[getOppositeElement(currentPlayer)].ownableSelecteds.length
-					); */
+					].some((item) => item.border === borderId && item.side === sideId);
 					return (
 						<BoxWrapper key={sideId} direction={direction} $isLast={isLast}>
 							<BoxHover
@@ -1196,7 +1190,7 @@ const BoxCollection = ({
 								$currentPlayer={currentPlayer}
 								$owner={foundSelected ? foundSelected.owner : currentPlayer}
 								$isMergeable={foundSelected ? foundSelected.isMergeable : false}
-								$isOwnable={!!foundOwnable}
+								$isOwnable={foundOwnable}
 							>
 								<FakeHover />
 								<BoxSide />
