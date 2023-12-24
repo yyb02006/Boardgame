@@ -5,6 +5,7 @@ import {
 	getOppositeElement,
 	findCommonElementInNestedArray,
 	sortByOrder,
+	isNumArrayEqual,
 } from '../libs/utils';
 import { HomeProvider, useHomeContext } from './HomeContext';
 
@@ -224,6 +225,7 @@ const BoxHover = styled.div<BoxHoverProps>`
 	}};
 	${(props) =>
 		props.$isOwnable &&
+		!props.$isSelected &&
 		css`
 			animation: ${colorChange(props.$currentPlayer)} 3s infinite;
 		`}
@@ -867,17 +869,24 @@ const BoxCollection = ({
 							Array.from(
 								{ length: borders[idx + 1].border - borders[idx].border },
 								(_, index) => {
-									return (
+									const boxNumber =
 										(borders[idx].border + index) * (isHorizontal ? 5 : 1) +
-										borders[idx].side * (isHorizontal ? 1 : 5)
-									);
+										borders[idx].side * (isHorizontal ? 1 : 5);
+									return boxes[boxNumber].isSurrounded ? undefined : boxNumber;
 								}
 							)
 					  )
 					: [];
 			})
 				.flat()
-				.filter((item) => !!item);
+				.reduce<number[][]>((accumulator, currentBoxes) => {
+					const removedSurrounded = currentBoxes.filter(
+						(box) => box !== undefined
+					) as number[];
+					return removedSurrounded.length > 0
+						? [...accumulator, removedSurrounded]
+						: accumulator;
+				}, []);
 		};
 
 		/**
@@ -904,9 +913,9 @@ const BoxCollection = ({
 				vertical: [],
 			};
 			let sourceBoxes = [initBoxes];
-			const newEnclosedBoxesRecursive = (
+			const getEnclosedBoxesRecursive = (
 				currentDirection: Direction = 'horizontal'
-			): Record<Direction, number[][]> => {
+			): number[] | false => {
 				const localOppositeDirection = getOppositeElement(currentDirection);
 				sourceBoxes = sourceBoxes
 					.reduce<number[][]>((accumulator, currentbox) => {
@@ -915,17 +924,14 @@ const BoxCollection = ({
 							closedBoxesArray[localOppositeDirection]
 						);
 						const result = test.filter(
-							(box) =>
-								!accumulator.some(
-									(el) => JSON.stringify(el) === JSON.stringify(box)
-								)
+							(box) => !accumulator.some((el) => isNumArrayEqual(el, box))
 						);
 						return [...accumulator, ...result];
 					}, [])
 					.filter(
 						(box) =>
-							!accumulator[localOppositeDirection].some(
-								(el) => JSON.stringify(el) === JSON.stringify(box)
+							!accumulator[localOppositeDirection].some((el) =>
+								isNumArrayEqual(el, box)
 							)
 					);
 				if (sourceBoxes.length > 0) {
@@ -933,15 +939,22 @@ const BoxCollection = ({
 						...accumulator[localOppositeDirection],
 						...sourceBoxes,
 					];
-					return newEnclosedBoxesRecursive(localOppositeDirection);
+					return getEnclosedBoxesRecursive(localOppositeDirection);
+				} else if (
+					isNumArrayEqual(
+						accumulator.horizontal.flat(),
+						accumulator.vertical.flat()
+					)
+				) {
+					return accumulator.horizontal.flat();
 				} else {
-					return accumulator;
+					return false;
 				}
 			};
-			return newEnclosedBoxesRecursive;
+			return getEnclosedBoxesRecursive;
 		};
 
-		console.log(createFindEnclosedClosure([1], dummy)('vertical'));
+		console.log(createFindEnclosedClosure([1, 2], dummy)('horizontal'));
 
 		const getEnclosedBox = (closedBox: number[], initDirection: Direction) => {
 			const horizontalClosedBoxes: ClosedBoxes = {
@@ -1029,6 +1042,23 @@ const BoxCollection = ({
 			const enclosedBoxes = findClosedBoxByDirection('horizontal').map((item) =>
 				getEnclosedBox(item, oppositeDirection)
 			);
+
+			const test = findClosedBoxByDirection('horizontal').reduce<number[][]>(
+				(accumulator, currentSelected) => {
+					const value = createFindEnclosedClosure(currentSelected, {
+						horizontal: findClosedBoxByDirection('horizontal'),
+						vertical: findClosedBoxByDirection('vertical'),
+					})('horizontal');
+					return value &&
+						!accumulator.some((box) => isNumArrayEqual(value, box))
+						? [...accumulator, value]
+						: accumulator;
+				},
+				[]
+			);
+
+			console.log(test, enclosedBoxes, findClosedBoxByDirection('horizontal'));
+
 			const mergeableSelected: Selected = { horizontal: [], vertical: [] };
 			for (const box of enclosedBoxes) {
 				const surroundedBoxCount = box.horizontal.reduce(
@@ -1080,7 +1110,7 @@ const BoxCollection = ({
 					}
 				}
 				if (
-					JSON.stringify(box.horizontal) === JSON.stringify(box.vertical) &&
+					isNumArrayEqual(box.horizontal, box.vertical) &&
 					surroundedBoxCount < box.horizontal.length &&
 					!isBoxesIncludeOtherPlayers
 				) {
