@@ -13,6 +13,19 @@ export function haveCommonElements(
 	return false;
 }
 
+/** 숫자를 요소로 갖는 두 배열이 순서에 상관 없이 완전히 일치하는지 판단하는 함수 */
+export function isNumArrayEqual(arr1: number[], arr2: number[]) {
+	if (arr1.length !== arr2.length) return false;
+	for (let i = 0; i < arr1.length; i++) {
+		if (
+			sortByOrder(arr1, 'ascending')[i] !== sortByOrder(arr2, 'ascending')[i]
+		) {
+			return false;
+		}
+	}
+	return true;
+}
+
 /** 중첩된 배열에서 비교배열과 공통요소를 가지고 있는 2차 배열을 모두 리턴하는 함수 */
 export function findCommonElementInNestedArray(
 	compareArray: number[],
