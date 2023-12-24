@@ -872,7 +872,10 @@ const BoxCollection = ({
 									const boxNumber =
 										(borders[idx].border + index) * (isHorizontal ? 5 : 1) +
 										borders[idx].side * (isHorizontal ? 1 : 5);
-									return boxes[boxNumber].isSurrounded ? undefined : boxNumber;
+									return boxes[boxNumber].isSurrounded &&
+										boxes[boxNumber].owner === currentPlayer
+										? undefined
+										: boxNumber;
 								}
 							)
 					  )
@@ -899,7 +902,7 @@ const BoxCollection = ({
 		 * ps. 시발거
 		 *  */
 		/* getEnclosedBox 함수 클로저함수로 리팩토링 */
-		const createFindEnclosedClosure = (
+		const createGetEnclosedClosure = (
 			initBoxes: number[],
 			closedBoxesArray: Record<Direction, number[][]>,
 			currentDirection: Direction = 'horizontal'
@@ -934,7 +937,7 @@ const BoxCollection = ({
 						...accumulator[localOppositeDirection],
 						...sourceBoxes,
 					];
-					bordersDirection = oppositeDirection;
+					bordersDirection = localOppositeDirection;
 					return getEnclosedBoxesRecursive();
 				} else if (
 					accumulator.horizontal.length > 0 &&
@@ -949,62 +952,6 @@ const BoxCollection = ({
 				}
 			};
 			return getEnclosedBoxesRecursive;
-		};
-
-		const getEnclosedBox = (closedBox: number[], initDirection: Direction) => {
-			const horizontalClosedBoxes: ClosedBoxes = {
-				arr: findClosedBoxByDirection('horizontal'),
-				label: 'horizontal',
-			};
-			const verticalClosedBoxes: ClosedBoxes = {
-				arr: findClosedBoxByDirection('vertical'),
-				label: 'vertical',
-			};
-
-			const result: GetEnclosedBoxResult = {
-				horizontal: [],
-				vertical: [],
-			};
-
-			const addEnclosedBoxesRecursive = (
-				closedBox: number[],
-				boxesObject: {
-					arr: NestedArray<number>;
-					label: Direction;
-				}
-			) => {
-				const resultIsIncluded = findCommonElementInNestedArray(
-					closedBox,
-					boxesObject.arr
-				);
-				if (resultIsIncluded.length > 0) {
-					resultIsIncluded.forEach((el) => {
-						if (!result[boxesObject.label].includes(el)) {
-							result[boxesObject.label] = [...result[boxesObject.label], el];
-							addEnclosedBoxesRecursive(
-								el,
-								boxesObject.label === 'horizontal'
-									? verticalClosedBoxes
-									: horizontalClosedBoxes
-							);
-						}
-					});
-				} else {
-					return false;
-				}
-			};
-
-			addEnclosedBoxesRecursive(
-				closedBox,
-				initDirection === 'horizontal'
-					? horizontalClosedBoxes
-					: verticalClosedBoxes
-			);
-
-			return {
-				horizontal: sortByOrder(result.horizontal.flat(), 'ascending'),
-				vertical: sortByOrder(result.vertical.flat(), 'ascending'),
-			};
 		};
 
 		/** const deepNewBoxes: boxes = JSON.parse(JSON.stringify(boxes));
@@ -1022,7 +969,6 @@ const BoxCollection = ({
 			sourcePlayer: currentPlayer,
 		};
 
-		const mergeBoxesWhenEnclosed = () => {};
 		/* 임의의 구역이 enclosed가 될 시 */
 		if (
 			findExistSideSelected({
@@ -1034,32 +980,23 @@ const BoxCollection = ({
 				sidePos: 'right',
 			}).length > 0
 		) {
-			const enclosedBoxes = findClosedBoxByDirection('horizontal').map((item) =>
-				getEnclosedBox(item, oppositeDirection)
-			);
-
-			const test = findClosedBoxByDirection('horizontal').reduce<number[][]>(
-				(accumulator, currentSelected) => {
-					const value = createFindEnclosedClosure(
-						currentSelected,
-						{
-							horizontal: findClosedBoxByDirection('horizontal'),
-							vertical: findClosedBoxByDirection('vertical'),
-						},
-						'horizontal'
-					)();
-					console.log(value);
-
-					return value &&
-						!accumulator.some((box) => isNumArrayEqual(value, box))
-						? [...accumulator, value]
-						: accumulator;
-				},
-				[]
-			);
+			const enclosedBoxes = findClosedBoxByDirection('horizontal').reduce<
+				number[][]
+			>((accumulator, currentSelected) => {
+				const value = createGetEnclosedClosure(
+					currentSelected,
+					{
+						horizontal: findClosedBoxByDirection('horizontal'),
+						vertical: findClosedBoxByDirection('vertical'),
+					},
+					'horizontal'
+				)();
+				return value && !accumulator.some((box) => isNumArrayEqual(value, box))
+					? [...accumulator, value]
+					: accumulator;
+			}, []);
 
 			console.log(
-				test,
 				enclosedBoxes,
 				findClosedBoxByDirection('horizontal'),
 				findClosedBoxByDirection('vertical')
@@ -1067,15 +1004,11 @@ const BoxCollection = ({
 
 			const mergeableSelected: Selected = { horizontal: [], vertical: [] };
 			for (const box of enclosedBoxes) {
-				const surroundedBoxCount = box.horizontal.reduce(
-					(count, id) => (boxes[id].isSurrounded ? count + 1 : count),
-					0
-				);
-				const isBoxesIncludeOtherPlayers = box.horizontal.some(
+				const isBoxesIncludeOtherPlayers = box.some(
 					(boxEl) => boxes[boxEl].owner === opponentPlayer
 				);
 				/* 새로 enclosed상태가 된 박스들 간의 borderMerge */
-				for (const boxIndex of box.horizontal) {
+				for (const boxIndex of box) {
 					const commonBoxToBorderProps: Omit<BoxToBorderProps, 'direction'> = {
 						boxIndex,
 						isSelected: true,
@@ -1093,7 +1026,7 @@ const BoxCollection = ({
 					});
 					/* 자기 자신이 이미 있는지에 대한 검증 필요 */
 					if (
-						box.horizontal.includes(boxIndex + 1) &&
+						box.includes(boxIndex + 1) &&
 						rightBorder &&
 						!mergeableSelected.vertical.some(
 							(item) =>
@@ -1104,7 +1037,7 @@ const BoxCollection = ({
 						mergeableSelected.vertical.push(rightBorder);
 					}
 					if (
-						box.horizontal.includes(boxIndex + 5) &&
+						box.includes(boxIndex + 5) &&
 						downBorder &&
 						!mergeableSelected.horizontal.some(
 							(item) =>
@@ -1115,12 +1048,8 @@ const BoxCollection = ({
 						mergeableSelected.horizontal.push(downBorder);
 					}
 				}
-				if (
-					isNumArrayEqual(box.horizontal, box.vertical) &&
-					surroundedBoxCount < box.horizontal.length &&
-					!isBoxesIncludeOtherPlayers
-				) {
-					box.horizontal.forEach((item) => {
+				if (!isBoxesIncludeOtherPlayers) {
+					box.forEach((item) => {
 						deepNewBoxes[item].isSurrounded = true;
 						deepNewBoxes[item].owner = currentPlayer;
 					});
