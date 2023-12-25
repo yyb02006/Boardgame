@@ -601,11 +601,14 @@ const BoxCollection = ({
 		)
 			return;
 
-		const currentPlayerSelecteds = (player: PlayerElement) => ({
-			horizontal: formattedSelected.horizontal.filter(
+		const currentPlayerSelecteds = (
+			player: PlayerElement,
+			sourceSelecteds: Selected
+		) => ({
+			horizontal: sourceSelecteds.horizontal.filter(
 				(item) => item.owner === player
 			),
-			vertical: formattedSelected.vertical.filter(
+			vertical: sourceSelecteds.vertical.filter(
 				(item) => item.owner === player
 			),
 		});
@@ -733,63 +736,62 @@ const BoxCollection = ({
 			isRecursive: boolean,
 			originalSelecteds: Selected
 		) => {
-			const createCommonProps = (
-				commonPlayer: PlayerElement,
-				commonIsRecursive: boolean
-			): FindUnownedRecursive => ({
-				sourceSelecteds: insertDirectionAtSelecteds(
-					currentPlayerSelecteds(commonPlayer)
-				),
-				originalSelecteds,
-				currentPlayer: commonPlayer,
-				recursive: commonIsRecursive,
-			});
+			const createUnownedArray = (
+				player: PlayerElement,
+				localIsRecursive: boolean,
+				localOriginalSelecteds: Selected
+			) => {
+				const commonProps = {
+					sourceSelecteds: insertDirectionAtSelecteds(
+						currentPlayerSelecteds(player, localOriginalSelecteds)
+					),
+					originalSelecteds: localOriginalSelecteds,
+					currentPlayer: player,
+					recursive: localIsRecursive,
+				};
+				return compareAndFilterSelecteds(
+					findUnownedRecursive(commonProps),
+					insertDirectionAtSelecteds(
+						currentPlayerSelecteds(player, localOriginalSelecteds)
+					)
+				);
+			};
 			return {
-				player1: compareAndFilterSelecteds(
-					findUnownedRecursive(createCommonProps('player1', isRecursive)),
-					insertDirectionAtSelecteds(currentPlayerSelecteds('player1'))
-				),
-				player2: compareAndFilterSelecteds(
-					findUnownedRecursive(createCommonProps('player2', isRecursive)),
-					insertDirectionAtSelecteds(currentPlayerSelecteds('player2'))
-				),
+				player1: createUnownedArray('player1', isRecursive, originalSelecteds),
+				player2: createUnownedArray('player2', isRecursive, originalSelecteds),
 			};
 		};
 
 		const createFormattedUnownedSelecteds = (
 			originalSelecteds: Selected
 		): Record<PlayerElement, Selected> => {
-			const createCommonProps = (
-				commonDirection: Direction,
-				commonPlayer: PlayerElement
-			): FormatUnownedSelecteds => {
-				const unownedSelecteds = createUnownedSelecteds(
-					false,
-					originalSelecteds
-				);
+			const createFormattedObject = (player: PlayerElement) => {
+				const createCommonProps = (
+					commonDirection: Direction,
+					commonPlayer: PlayerElement
+				): FormatUnownedSelecteds => {
+					const unownedSelecteds = createUnownedSelecteds(
+						false,
+						originalSelecteds
+					);
+					return {
+						direction: commonDirection,
+						unownedSelecteds: unownedSelecteds[commonPlayer],
+						currentPlayer: commonPlayer,
+					};
+				};
 				return {
-					direction: commonDirection,
-					unownedSelecteds: unownedSelecteds[commonPlayer],
-					currentPlayer: commonPlayer,
+					horizontal: formatUnownedSelecteds(
+						createCommonProps('horizontal', player)
+					),
+					vertical: formatUnownedSelecteds(
+						createCommonProps('vertical', player)
+					),
 				};
 			};
 			return {
-				player1: {
-					horizontal: formatUnownedSelecteds(
-						createCommonProps('horizontal', 'player1')
-					),
-					vertical: formatUnownedSelecteds(
-						createCommonProps('vertical', 'player1')
-					),
-				},
-				player2: {
-					horizontal: formatUnownedSelecteds(
-						createCommonProps('horizontal', 'player2')
-					),
-					vertical: formatUnownedSelecteds(
-						createCommonProps('vertical', 'player2')
-					),
-				},
+				player1: createFormattedObject('player1'),
+				player2: createFormattedObject('player2'),
 			};
 		};
 
@@ -861,6 +863,7 @@ const BoxCollection = ({
 			}
 		};
 
+		// 순수함수로 수정, 로직 재고 필요
 		const findClosedBoxByDirection = (direction: Direction) => {
 			const isHorizontal = direction === 'horizontal';
 			return Array.from({ length: 5 }, (_, id) => {
@@ -904,7 +907,6 @@ const BoxCollection = ({
 		 *
 		 * ps. 시발거
 		 *  */
-		/* getEnclosedBox 함수 클로저함수로 리팩토링 */
 		const createGetEnclosedClosure = (
 			initBoxes: number[],
 			closedBoxesArray: Record<Direction, number[][]>,
@@ -919,15 +921,14 @@ const BoxCollection = ({
 			const getEnclosedBoxesRecursive = (): number[] | false => {
 				const localOppositeDirection = getOppositeElement(bordersDirection);
 				sourceBoxes = sourceBoxes
-					.reduce<number[][]>((accumulator, currentbox) => {
-						const test = findCommonElementInNestedArray(
+					.reduce<number[][]>((accumulatedBoxes, currentbox) => {
+						const newBoxes = findCommonElementInNestedArray(
 							currentbox,
 							closedBoxesArray[localOppositeDirection]
+						).filter(
+							(box) => !accumulatedBoxes.some((el) => isNumArrayEqual(el, box))
 						);
-						const result = test.filter(
-							(box) => !accumulator.some((el) => isNumArrayEqual(el, box))
-						);
-						return [...accumulator, ...result];
+						return [...accumulatedBoxes, ...newBoxes];
 					}, [])
 					.filter(
 						(box) =>
@@ -959,7 +960,7 @@ const BoxCollection = ({
 
 		/** const deepNewBoxes: boxes = JSON.parse(JSON.stringify(boxes));
 		 *
-		 *  이러한 방식의 깊은 복사는 undefined를 제거해버림
+		 *  JSON 방식의 깊은 복사는 undefined를 제거해버림
 		 * */
 		const deepNewBoxes: Boxes = boxes.map((item) => ({ ...item }));
 
@@ -998,12 +999,6 @@ const BoxCollection = ({
 					? [...accumulator, value]
 					: accumulator;
 			}, []);
-
-			console.log(
-				enclosedBoxes,
-				findClosedBoxByDirection('horizontal'),
-				findClosedBoxByDirection('vertical')
-			);
 
 			const mergeableSelected: Selected = { horizontal: [], vertical: [] };
 			for (const box of enclosedBoxes) {
@@ -1073,45 +1068,59 @@ const BoxCollection = ({
 		}
 
 		/* 이미 존재하는 박스와 새로 연결되는 박스들 간의 borderMerge */
-		const isMergeableSelected = (
-			direction: Direction,
+		const createMergeadSelectedObject = (
 			sourceSelecteds: Selected,
-			player: PlayerElement
+			player: PlayerElement,
+			sourceBoxes: Boxes
 		) => {
-			const resultSelecteds = sourceSelecteds[direction].map((item) => {
-				const upBox = borderToBox(direction, true, item.border, item.side);
-				const downBox = borderToBox(direction, false, item.border, item.side);
-				if (
-					/* 여기서 upBox !== false를 해줘야 upBox가 0일때 true를 반환해야 하지만 0자체가 falsy이기 때문에 false로 판단되는 버그를 방지할 수 있다. 
-					   논리합 사용 상황에서는 논리합('||') 대신 병합연산자('??')를 사용하면 falsy인 상황이 아닌 null이나 undefined상황만 잡아줄 수도 있다. */
-					upBox !== false &&
-					downBox !== false &&
-					deepNewBoxes[upBox].isSurrounded &&
-					deepNewBoxes[downBox].isSurrounded &&
-					deepNewBoxes[upBox].owner === player &&
-					deepNewBoxes[downBox].owner === player
-				) {
-					return { ...item, isMergeable: true };
-				}
-				return item;
-			});
-			return resultSelecteds;
+			const commonProps = { sourceSelecteds, player, sourceBoxes };
+			const createResultProps = (
+				direction: Direction,
+				props: typeof commonProps
+			) => {
+				return { direction, ...props };
+			};
+			const isMergeableSelected = ({
+				direction,
+				sourceSelecteds,
+				player,
+				sourceBoxes,
+			}: IsMergeableSelected) => {
+				const resultSelecteds = sourceSelecteds[direction].map((item) => {
+					const upBox = borderToBox(direction, true, item.border, item.side);
+					const downBox = borderToBox(direction, false, item.border, item.side);
+					if (
+						/* 0일 가능성이 있음 */
+						upBox !== false &&
+						downBox !== false &&
+						sourceBoxes[upBox].isSurrounded &&
+						sourceBoxes[downBox].isSurrounded &&
+						sourceBoxes[upBox].owner === player &&
+						sourceBoxes[downBox].owner === player
+					) {
+						return { ...item, isMergeable: true };
+					}
+					return item;
+				});
+				return resultSelecteds;
+			};
+			return {
+				horizontal: isMergeableSelected(
+					createResultProps('horizontal', commonProps)
+				),
+				vertical: isMergeableSelected(
+					createResultProps('vertical', commonProps)
+				),
+			};
 		};
 
-		const resultSelected = {
-			horizontal: isMergeableSelected(
-				'horizontal',
-				formattedSelected,
-				currentPlayer
-			),
-			vertical: isMergeableSelected(
-				'vertical',
-				formattedSelected,
-				currentPlayer
-			),
-		};
+		const resultSelectedObject = createMergeadSelectedObject(
+			formattedSelected,
+			currentPlayer,
+			deepNewBoxes
+		);
 
-		setSelected(resultSelected);
+		setSelected(resultSelectedObject);
 		setBoxes(deepNewBoxes);
 		setPlayers((p) => {
 			const newPlayers: Players = {

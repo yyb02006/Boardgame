@@ -31,6 +31,13 @@ type UnownedSelecteds = Record<
 
 /** Function Props Types */
 
+interface IsMergeableSelected {
+	direction: Direction;
+	sourceSelecteds: Selected;
+	player: PlayerElement;
+	sourceBoxes: Boxes;
+}
+
 interface FormatUnownedSelecteds {
 	direction: Direction;
 	unownedSelecteds: BorderStateWithDirection[];
