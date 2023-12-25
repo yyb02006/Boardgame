@@ -56,6 +56,29 @@ export function sortByOrder(
 	}
 }
 
+/** direction을 고려하지 않고 두 selected의 위치가 같은지 border, side, direction에 의해 비교해서 참, 거짓을 반환하는 함수 */
+export function compareSelecteds(
+	arr1: BorderState | BorderStateWithDirection,
+	arr2: BorderState | BorderStateWithDirection,
+	opt: { withDirection: boolean }
+) {
+	if (
+		Object.keys(arr1).includes('direction') &&
+		Object.keys(arr2).includes('direction') &&
+		opt.withDirection
+	) {
+		const newArr1 = arr1 as BorderStateWithDirection;
+		const newArr2 = arr2 as BorderStateWithDirection;
+		return (
+			newArr1.border === newArr2.border &&
+			newArr1.side === newArr2.side &&
+			newArr1.direction === newArr2.direction
+		);
+	} else {
+		return arr1.border === arr2.border && arr1.side === arr2.side;
+	}
+}
+
 /** 객체의 border, side, direction 값을 비교해서 comparison에 존재하지 않는 source값만 반환하는 함수 */
 export function compareAndFilterSelecteds(
 	sourceSelecteds: Array<BorderState & { direction: Direction }>,
