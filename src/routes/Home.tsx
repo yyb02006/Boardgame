@@ -315,7 +315,7 @@ const BoxCollection = ({
 			comparatorSelected.border === targetSelected.border &&
 			comparatorSelected.side === targetSelected.side;
 
-		const findSideSelected = (
+		const findSides = (
 			selectedBorderId: number,
 			selectedSideId: number,
 			sidePos: HorizontalPos,
@@ -365,7 +365,7 @@ const BoxCollection = ({
 			};
 		};
 
-		const findExistSideSelected = ({
+		const findExistSides = ({
 			borderId,
 			sideId,
 			selectedDirection,
@@ -373,7 +373,7 @@ const BoxCollection = ({
 			sourcePlayer,
 			owner,
 			sourceSelecteds,
-		}: FindExistSideSelectedProps) => {
+		}: FindExistSidesProps): BorderStateWithDirection[] => {
 			const localOppositDirection = getOppositeElement(selectedDirection);
 			const localOppositPlayer = getOppositeElement(sourcePlayer);
 			return [
@@ -431,7 +431,7 @@ const BoxCollection = ({
 			sourceSelecteds: Selected,
 			currenPlayer: PlayerElement
 		) => {
-			const existSideSelecteds = findExistSideSelected({
+			const existSideSelecteds = findExistSides({
 				borderId: border,
 				sideId: side,
 				sidePos: horizontalPos,
@@ -440,7 +440,7 @@ const BoxCollection = ({
 				sourceSelecteds,
 				sourcePlayer: currenPlayer,
 			});
-			const sideSelecteds = findSideSelected(
+			const sideSelecteds = findSides(
 				border,
 				side,
 				horizontalPos,
@@ -477,7 +477,7 @@ const BoxCollection = ({
 		}: IsBlockedProps) => {
 			const localOppositeDirection = getOppositeElement(direction);
 			return (
-				findExistSideSelected({
+				findExistSides({
 					borderId: border,
 					sideId: side,
 					sidePos: objectPos,
@@ -490,21 +490,21 @@ const BoxCollection = ({
 			);
 		};
 
-		const isNotClickableWhenBlocked = ({
+		const canClickWhenBlocked = ({
 			border,
 			side,
 			direction,
 			objectPos,
 			sourceSelecteds,
 			currentPlayer,
-		}: IsNotClickableWhenBlockedProps) =>
+		}: CanClickWhenBlockedProps) =>
 			isSelectedBlocked({
 				border,
 				side,
 				direction,
 				objectPos,
 			}) &&
-			findExistSideSelected({
+			findExistSides({
 				borderId: border,
 				sideId: side,
 				sidePos: getOppositeElement(objectPos),
@@ -523,10 +523,7 @@ const BoxCollection = ({
 			currentPlayer,
 		}: ShouldAbortProps) => {
 			/* Omit === 타입빼기 */
-			const commonFindExistSideSelectedProps: Omit<
-				FindExistSideSelectedProps,
-				'sidePos'
-			> = {
+			const commonFindExistSidesProps: Omit<FindExistSidesProps, 'sidePos'> = {
 				borderId,
 				sideId,
 				owner: 'current',
@@ -534,8 +531,12 @@ const BoxCollection = ({
 				sourceSelecteds,
 				sourcePlayer: currentPlayer,
 			};
-			const commonIsNotClickableWhenBlockedProps: Omit<
-				IsNotClickableWhenBlockedProps,
+			const notHasExistSide = (
+				sidePos: HorizontalPos,
+				commonProps: typeof commonFindExistSidesProps
+			): boolean => findExistSides({ ...commonProps, sidePos }).length === 0;
+			const commonCanClickWhenBlockedProps: Omit<
+				CanClickWhenBlockedProps,
 				'objectPos'
 			> = {
 				border: borderId,
@@ -544,11 +545,27 @@ const BoxCollection = ({
 				sourceSelecteds,
 				currentPlayer,
 			};
+			const canClickWhenBlockedBySide = (
+				objectPos: HorizontalPos,
+				commonProps: typeof commonCanClickWhenBlockedProps
+			) =>
+				canClickWhenBlocked({
+					...commonProps,
+					objectPos,
+				});
 			const commonIsSelectedBlockedProps: Omit<IsBlockedProps, 'objectPos'> = {
 				border: borderId,
 				side: sideId,
 				direction,
 			};
+			const isSelectedBlockedBySide = (
+				objectPos: HorizontalPos,
+				commonProps: typeof commonIsSelectedBlockedProps
+			) =>
+				isSelectedBlocked({
+					...commonProps,
+					objectPos,
+				});
 			return (
 				/* 같은 자리에 이미 클릭된 border가 있을 경우  */
 				!!selected[direction].some(
@@ -556,36 +573,18 @@ const BoxCollection = ({
 				) ||
 				/* 다른 곳에 있는 border에 이어지는 border만 클릭할 수 있음(가장 첫번째 selected 예외) */
 				!!(
-					findExistSideSelected({
-						...commonFindExistSideSelectedProps,
-						sidePos: 'left',
-					}).length === 0 &&
-					findExistSideSelected({
-						...commonFindExistSideSelectedProps,
-						sidePos: 'right',
-					}).length === 0 &&
+					notHasExistSide('left', commonFindExistSidesProps) &&
+					notHasExistSide('right', commonFindExistSidesProps) &&
 					(selected.horizontal.some(
 						(border) => border.owner === currentPlayer
 					) ||
 						selected.vertical.some((border) => border.owner === currentPlayer))
 				) ||
 				/* 다른 border 2개로 막혀있는 곳 사이를 뚫고 지나갈 수 없음 */
-				isNotClickableWhenBlocked({
-					...commonIsNotClickableWhenBlockedProps,
-					objectPos: 'left',
-				}) ||
-				isNotClickableWhenBlocked({
-					...commonIsNotClickableWhenBlockedProps,
-					objectPos: 'right',
-				}) ||
-				(isSelectedBlocked({
-					...commonIsSelectedBlockedProps,
-					objectPos: 'left',
-				}) &&
-					isSelectedBlocked({
-						...commonIsSelectedBlockedProps,
-						objectPos: 'right',
-					}))
+				canClickWhenBlockedBySide('left', commonCanClickWhenBlockedProps) ||
+				canClickWhenBlockedBySide('right', commonCanClickWhenBlockedProps) ||
+				(isSelectedBlockedBySide('left', commonIsSelectedBlockedProps) &&
+					isSelectedBlockedBySide('right', commonIsSelectedBlockedProps))
 			);
 		};
 
@@ -964,7 +963,7 @@ const BoxCollection = ({
 		 * */
 		const deepNewBoxes: Boxes = boxes.map((item) => ({ ...item }));
 
-		const commonEnclosedProps: Omit<FindExistSideSelectedProps, 'sidePos'> = {
+		const commonEnclosedProps: Omit<FindExistSidesProps, 'sidePos'> = {
 			borderId,
 			sideId,
 			owner: 'current',
@@ -975,11 +974,11 @@ const BoxCollection = ({
 
 		/* 임의의 구역이 enclosed가 될 시 */
 		if (
-			findExistSideSelected({
+			findExistSides({
 				...commonEnclosedProps,
 				sidePos: 'left',
 			}).length > 0 &&
-			findExistSideSelected({
+			findExistSides({
 				...commonEnclosedProps,
 				sidePos: 'right',
 			}).length > 0

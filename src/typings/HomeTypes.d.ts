@@ -68,7 +68,7 @@ interface BoxToBorderProps {
 	sourceSelecteds: Selected;
 }
 
-interface FindExistSideSelectedProps extends BorderAndSide {
+interface FindExistSidesProps extends BorderAndSide {
 	sidePos: 'left' | 'right';
 	owner: 'current' | 'other' | 'all';
 	selectedDirection: Direction;
@@ -96,7 +96,7 @@ interface IsBlockedProps {
 	objectPos: HorizontalPos;
 }
 
-interface IsNotClickableWhenBlockedProps extends IsBlockedProps {
+interface CanClickWhenBlockedProps extends IsBlockedProps {
 	sourceSelecteds: Selected;
 	currentPlayer: PlayerElement;
 }
