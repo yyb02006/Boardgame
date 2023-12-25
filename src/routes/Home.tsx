@@ -1068,7 +1068,7 @@ const BoxCollection = ({
 		}
 
 		/* 이미 존재하는 박스와 새로 연결되는 박스들 간의 borderMerge */
-		const createMergeadSelectedObject = (
+		const getMergeableSelected = (
 			sourceSelecteds: Selected,
 			player: PlayerElement,
 			sourceBoxes: Boxes
@@ -1080,7 +1080,7 @@ const BoxCollection = ({
 			) => {
 				return { direction, ...props };
 			};
-			const isMergeableSelected = ({
+			const getMergeableSelectedByDirection = ({
 				direction,
 				sourceSelecteds,
 				player,
@@ -1105,16 +1105,16 @@ const BoxCollection = ({
 				return resultSelecteds;
 			};
 			return {
-				horizontal: isMergeableSelected(
+				horizontal: getMergeableSelectedByDirection(
 					createResultProps('horizontal', commonProps)
 				),
-				vertical: isMergeableSelected(
+				vertical: getMergeableSelectedByDirection(
 					createResultProps('vertical', commonProps)
 				),
 			};
 		};
 
-		const resultSelectedObject = createMergeadSelectedObject(
+		const resultSelectedObject = getMergeableSelected(
 			formattedSelected,
 			currentPlayer,
 			deepNewBoxes
