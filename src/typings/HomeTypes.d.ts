@@ -24,12 +24,17 @@ interface BorderStateWithDirection extends BorderState {
 	direction: Direction;
 }
 
-type UnownedSelecteds = Record<
-	'includeDefault' | 'notIncludeDefault',
-	Selected
->;
+type OwnableSelecteds = Record<PlayerElement, Selected>;
 
 /** Function Props Types */
+
+interface CreateNewPlayerInfoProps {
+	player: PlayerElement;
+	playerInfos: Players;
+	boxesResult: Boxes;
+	ownableSelecteds: OwnableSelecteds;
+	opt: { withBoxCount: boolean };
+}
 
 interface IsMergeableSelected {
 	direction: Direction;

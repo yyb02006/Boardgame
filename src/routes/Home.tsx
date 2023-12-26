@@ -764,7 +764,7 @@ const BoxCollection = ({
 
 		const createFormattedUnownedSelecteds = (
 			originalSelecteds: Selected
-		): Record<PlayerElement, Selected> => {
+		): OwnableSelecteds => {
 			const createFormattedObject = (player: PlayerElement) => {
 				const createCommonProps = (
 					commonDirection: Direction,
@@ -962,8 +962,6 @@ const BoxCollection = ({
 		 *
 		 *  JSON 방식의 깊은 복사는 undefined를 제거해버림
 		 * */
-		const deepNewBoxes: Boxes = boxes.map((item) => ({ ...item }));
-
 		const commonEnclosedProps: Omit<FindExistSidesProps, 'sidePos'> = {
 			borderId,
 			sideId,
@@ -982,28 +980,37 @@ const BoxCollection = ({
 				sidePos,
 			}).length > 0;
 
+		const createNewPlayerInfo = ({
+			player,
+			playerInfos,
+			boxesResult,
+			ownableSelecteds,
+			opt,
+		}: CreateNewPlayerInfoProps) => {
+			return {
+				...playerInfos[player],
+				boxCount: opt.withBoxCount
+					? boxesResult.filter(
+							(item) => item.owner === player && item.isSurrounded
+					  ).length
+					: playerInfos[player].boxCount,
+				ownableSelecteds: ownableSelecteds[player],
+			};
+		};
+
+		const createCommonPlayerInfoProps = (
+			player: PlayerElement,
+			rest: Omit<CreateNewPlayerInfoProps, 'player'>
+		): CreateNewPlayerInfoProps => ({
+			player,
+			...rest,
+		});
+
 		/* 임의의 구역이 enclosed가 될 시 */
 		if (
 			hasSidesBySide('left', commonEnclosedProps) &&
 			hasSidesBySide('right', commonEnclosedProps)
 		) {
-			const enclosedBoxes = findClosedBoxByDirection('horizontal').reduce<
-				number[][]
-			>((accumulator, currentSelected) => {
-				const enclosedboxResult = createGetEnclosedClosure(
-					currentSelected,
-					{
-						horizontal: findClosedBoxByDirection('horizontal'),
-						vertical: findClosedBoxByDirection('vertical'),
-					},
-					'horizontal'
-				)();
-				return enclosedboxResult &&
-					!accumulator.some((box) => isNumArrayEqual(enclosedboxResult, box))
-					? [...accumulator, enclosedboxResult]
-					: accumulator;
-			}, []);
-
 			/* 중첩배열 제거, 같은 배열이 여러번 쌓이는 현상 방지 */
 			const getEnclosedBox = (closedBoxes: number[][]) => {
 				for (const box of closedBoxes) {
@@ -1023,14 +1030,8 @@ const BoxCollection = ({
 				return [];
 			};
 
-			const test = getEnclosedBox(findClosedBoxByDirection('horizontal'));
-
-			const isBoxIncludeOtherPlayers = test.some(
-				(boxEl) => boxes[boxEl].owner === opponentPlayer
-			);
-
-			/* 추상화 필요, A코드 대체 */
-			const getNewMergeableSelecteds = (
+			/* 추상화 필요 */
+			const getMergeableFromEnclosedBoxes = (
 				box: number[],
 				player: PlayerElement,
 				sourceSelecteds: Selected
@@ -1046,6 +1047,24 @@ const BoxCollection = ({
 					owner: player,
 					sourceSelecteds,
 				});
+				const resultSelecteds = (
+					direction: Direction,
+					border: BorderState | undefined,
+					box: number[],
+					boxIndex: number,
+					accumulator: Selected
+				) => {
+					const addCount = direction === 'horizontal' ? 5 : 1;
+					return border &&
+						box.includes(boxIndex + addCount) &&
+						!accumulator[direction].some((selected) =>
+							compareSelecteds(selected, border, {
+								withDirection: false,
+							})
+						)
+						? [...accumulator[direction], { ...border, isMergeable: true }]
+						: [...accumulator[direction]];
+				};
 				const result = box.reduce<Selected>(
 					(accumulator, boxIndex) => {
 						const rightBorder = boxToborder(
@@ -1054,24 +1073,6 @@ const BoxCollection = ({
 						const downBorder = boxToborder(
 							commonBoxToBorderProps('down', boxIndex)
 						);
-						const resultSelecteds = (
-							direction: Direction,
-							border: BorderState | undefined,
-							box: number[],
-							boxIndex: number,
-							accumulator: Selected
-						) => {
-							const addCount = direction === 'horizontal' ? 5 : 1;
-							return border &&
-								box.includes(boxIndex + addCount) &&
-								!accumulator[direction].some((selected) =>
-									compareSelecteds(selected, border, {
-										withDirection: false,
-									})
-								)
-								? [...accumulator[direction], border]
-								: [...accumulator[direction]];
-						};
 						return {
 							...accumulator,
 							horizontal: resultSelecteds(
@@ -1095,154 +1096,172 @@ const BoxCollection = ({
 				return result;
 			};
 
-			const mergeableSelected: Selected = { horizontal: [], vertical: [] };
-			for (const box of enclosedBoxes) {
-				const isBoxIncludeOtherPlayers = box.some(
-					(boxEl) => boxes[boxEl].owner === opponentPlayer
-				);
-				/* 새로 enclosed상태가 된 박스들 간의 borderMerge */
-				/* A코드 */
-				for (const boxIndex of box) {
-					const commonBoxToBorderProps: Omit<BoxToBorderProps, 'direction'> = {
-						boxIndex,
-						isSelected: true,
-						isMergeable: true,
-						owner: currentPlayer,
-						sourceSelecteds: selected,
-					};
-					const rightBorder = boxToborder({
-						...commonBoxToBorderProps,
-						direction: 'right',
-					});
-					const downBorder = boxToborder({
-						...commonBoxToBorderProps,
-						direction: 'down',
-					});
-					/* 자기 자신이 이미 있는지에 대한 검증 필요 */
-					if (
-						box.includes(boxIndex + 1) &&
-						rightBorder &&
-						!mergeableSelected.vertical.some(
-							(item) =>
-								item.border === rightBorder.border &&
-								item.side === rightBorder.side
-						)
-					) {
-						mergeableSelected.vertical.push(rightBorder);
-					}
-					if (
-						box.includes(boxIndex + 5) &&
-						downBorder &&
-						!mergeableSelected.horizontal.some(
-							(item) =>
-								item.border === downBorder.border &&
-								item.side === downBorder.side
-						)
-					) {
-						mergeableSelected.horizontal.push(downBorder);
-					}
-				}
-				console.log(
-					mergeableSelected,
-					getNewMergeableSelecteds(box, currentPlayer, selected)
-				);
-
-				if (!isBoxIncludeOtherPlayers) {
-					box.forEach((item) => {
-						deepNewBoxes[item].isSurrounded = true;
-						deepNewBoxes[item].owner = currentPlayer;
-					});
-					formattedSelected.horizontal = [
-						...new Set([
-							...formattedSelected.horizontal,
-							...mergeableSelected.horizontal,
-						]),
-					];
-					formattedSelected.vertical = [
-						...new Set([
-							...formattedSelected.vertical,
-							...mergeableSelected.vertical,
-						]),
-					];
-				}
-			}
-		}
-
-		/* 이미 존재하는 박스와 새로 연결되는 박스들 간의 borderMerge */
-		const getMergeableSelected = (
-			sourceSelecteds: Selected,
-			player: PlayerElement,
-			sourceBoxes: Boxes
-		) => {
-			const commonProps = { sourceSelecteds, player, sourceBoxes };
-			const createResultProps = (
-				direction: Direction,
-				props: typeof commonProps
+			const assignBoxOwners = (
+				originalBoxes: Boxes,
+				currentPlayer: PlayerElement
 			) => {
-				return { direction, ...props };
+				const opponentPlayer = getOppositeElement(currentPlayer);
+				const enclosedBoxes = getEnclosedBox(
+					findClosedBoxByDirection('horizontal')
+				);
+				const isBoxesIncludeOpponentPlayer = enclosedBoxes.some(
+					(boxIndex) => originalBoxes[boxIndex].owner === opponentPlayer
+				);
+				if (!isBoxesIncludeOpponentPlayer) {
+					return originalBoxes.map((box, id) =>
+						enclosedBoxes.includes(id)
+							? { ...box, owner: currentPlayer, isSurrounded: true }
+							: box
+					);
+				} else {
+					return originalBoxes;
+				}
 			};
-			const getMergeableSelectedByDirection = ({
-				direction,
-				sourceSelecteds,
-				player,
-				sourceBoxes,
-			}: IsMergeableSelected) => {
-				const resultSelecteds = sourceSelecteds[direction].map((item) => {
-					const upBox = borderToBox(direction, true, item.border, item.side);
-					const downBox = borderToBox(direction, false, item.border, item.side);
-					if (
-						/* 0일 가능성이 있음 */
-						upBox !== false &&
-						downBox !== false &&
-						sourceBoxes[upBox].isSurrounded &&
-						sourceBoxes[downBox].isSurrounded &&
-						sourceBoxes[upBox].owner === player &&
-						sourceBoxes[downBox].owner === player
-					) {
-						return { ...item, isMergeable: true };
-					}
-					return item;
-				});
-				return resultSelecteds;
-			};
-			return {
-				horizontal: getMergeableSelectedByDirection(
-					createResultProps('horizontal', commonProps)
-				),
-				vertical: getMergeableSelectedByDirection(
-					createResultProps('vertical', commonProps)
-				),
-			};
-		};
 
-		const resultSelectedObject = getMergeableSelected(
-			formattedSelected,
-			currentPlayer,
-			deepNewBoxes
-		);
-
-		setSelected(resultSelectedObject);
-		setBoxes(deepNewBoxes);
-		setPlayers((p) => {
-			const newPlayers: Players = {
-				player1: {
-					...p.player1,
-					boxCount: deepNewBoxes.filter(
-						(item) => item.owner === 'player1' && item.isSurrounded
-					).length,
-					ownableSelecteds: formattedUnownedSelecteds.player1,
-				},
-				player2: {
-					...p.player2,
-					boxCount: deepNewBoxes.filter(
-						(item) => item.owner === 'player2' && item.isSurrounded
-					).length,
-					ownableSelecteds: formattedUnownedSelecteds.player2,
-				} satisfies PlayerInfo,
+			const assignSelectedState = (
+				originalSelecteds: Selected,
+				originalBoxes: Boxes,
+				currentPlayer: PlayerElement
+			): Selected => {
+				const opponentPlayer = getOppositeElement(currentPlayer);
+				const enclosedBoxes = getEnclosedBox(
+					findClosedBoxByDirection('horizontal')
+				);
+				const isBoxesIncludeOpponentPlayer = enclosedBoxes.some(
+					(boxIndex) => originalBoxes[boxIndex].owner === opponentPlayer
+				);
+				const mergeableSelecteds = getMergeableFromEnclosedBoxes(
+					enclosedBoxes,
+					currentPlayer,
+					originalSelecteds
+				);
+				if (!isBoxesIncludeOpponentPlayer) {
+					return {
+						horizontal: [
+							...originalSelecteds.horizontal.filter(
+								(selected) =>
+									!mergeableSelecteds.horizontal.find((item) =>
+										compareSelecteds(selected, item, { withDirection: false })
+									)
+							),
+							...mergeableSelecteds.horizontal,
+						],
+						vertical: [
+							...originalSelecteds.vertical.filter(
+								(selected) =>
+									!mergeableSelecteds.vertical.find((item) =>
+										compareSelecteds(selected, item, { withDirection: false })
+									)
+							),
+							...mergeableSelecteds.vertical,
+						],
+					};
+				} else {
+					return originalSelecteds;
+				}
 			};
-			return newPlayers;
-		});
-		setCurrentPlayer(opponentPlayer);
+
+			/* 이미 존재하는 박스와 새로 연결되는 박스들 간의 borderMerge */
+			const getMergeableSelected = (
+				sourceSelecteds: Selected,
+				player: PlayerElement,
+				sourceBoxes: Boxes
+			) => {
+				const commonProps = { sourceSelecteds, player, sourceBoxes };
+				const createResultProps = (
+					direction: Direction,
+					props: typeof commonProps
+				) => {
+					return { direction, ...props };
+				};
+				const getMergeableSelectedByDirection = ({
+					direction,
+					sourceSelecteds,
+					player,
+					sourceBoxes,
+				}: IsMergeableSelected) => {
+					const resultSelecteds = sourceSelecteds[direction].map((item) => {
+						const upBox = borderToBox(direction, true, item.border, item.side);
+						const downBox = borderToBox(
+							direction,
+							false,
+							item.border,
+							item.side
+						);
+						if (
+							/* 0일 가능성이 있음 */
+							upBox !== false &&
+							downBox !== false &&
+							sourceBoxes[upBox].isSurrounded &&
+							sourceBoxes[downBox].isSurrounded &&
+							sourceBoxes[upBox].owner === player &&
+							sourceBoxes[downBox].owner === player
+						) {
+							return { ...item, isMergeable: true };
+						}
+						return item;
+					});
+					return resultSelecteds;
+				};
+				return {
+					horizontal: getMergeableSelectedByDirection(
+						createResultProps('horizontal', commonProps)
+					),
+					vertical: getMergeableSelectedByDirection(
+						createResultProps('vertical', commonProps)
+					),
+				};
+			};
+
+			const boxesResult = assignBoxOwners(boxes, currentPlayer);
+
+			const selectedsResult = getMergeableSelected(
+				assignSelectedState(formattedSelected, boxes, currentPlayer),
+				currentPlayer,
+				boxesResult
+			);
+
+			const commonPlayerInfoProps = {
+				boxesResult,
+				ownableSelecteds: formattedUnownedSelecteds,
+				playerInfos: players,
+				opt: { withBoxCount: true },
+			};
+
+			const playersResult = {
+				player1: createNewPlayerInfo(
+					createCommonPlayerInfoProps('player1', commonPlayerInfoProps)
+				),
+				player2: createNewPlayerInfo(
+					createCommonPlayerInfoProps('player2', commonPlayerInfoProps)
+				),
+			};
+
+			setSelected(selectedsResult);
+			setBoxes(boxesResult);
+			setPlayers(playersResult);
+			setCurrentPlayer(opponentPlayer);
+		} else {
+			const commonPlayerInfoProps = {
+				boxesResult: boxes,
+				ownableSelecteds: formattedUnownedSelecteds,
+				playerInfos: players,
+				opt: { withBoxCount: false },
+			};
+
+			const playersResult = {
+				player1: createNewPlayerInfo(
+					createCommonPlayerInfoProps('player1', commonPlayerInfoProps)
+				),
+				player2: createNewPlayerInfo(
+					createCommonPlayerInfoProps('player2', commonPlayerInfoProps)
+				),
+			};
+
+			setSelected(formattedSelected);
+			setPlayers(playersResult);
+			setCurrentPlayer(opponentPlayer);
+		}
 		/* why doesn't TypeGuard work when using a func return instead a variable? */
 	};
 
