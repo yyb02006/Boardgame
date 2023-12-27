@@ -1035,20 +1035,20 @@ const BoxCollection = ({
 			);
 
 			const getMergeableFromEnclosedBoxes = (
-				box: number[],
+				boxes: number[],
 				player: PlayerElement,
 				sourceSelecteds: Selected
 			) => {
 				const resultSelecteds = ({
 					direction,
 					border,
-					box,
+					boxes,
 					boxIndex,
 					accumulator,
 				}: resultSelectedsProps) => {
 					const addCount = direction === 'horizontal' ? 5 : 1;
 					return border &&
-						box.includes(boxIndex + addCount) &&
+						boxes.includes(boxIndex + addCount) &&
 						!accumulator[direction].some((selected) =>
 							compareSelecteds(selected, border, {
 								withDirection: false,
@@ -1057,7 +1057,7 @@ const BoxCollection = ({
 						? [...accumulator[direction], { ...border, isMergeable: true }]
 						: [...accumulator[direction]];
 				};
-				const result = box.reduce<Selected>(
+				const result = boxes.reduce<Selected>(
 					(accumulator, boxIndex) => {
 						const commonBoxToBorderProps = {
 							boxIndex,
@@ -1066,7 +1066,7 @@ const BoxCollection = ({
 							owner: player,
 							sourceSelecteds,
 						};
-						const commonResultSelectedsProps = { box, boxIndex, accumulator };
+						const commonResultSelectedsProps = { boxes, boxIndex, accumulator };
 						const rightBorder = boxToborder({
 							direction: 'right',
 							...commonBoxToBorderProps,
@@ -1075,7 +1075,6 @@ const BoxCollection = ({
 							direction: 'down',
 							...commonBoxToBorderProps,
 						});
-
 						return {
 							...accumulator,
 							horizontal: resultSelecteds({
@@ -1084,7 +1083,7 @@ const BoxCollection = ({
 								...commonResultSelectedsProps,
 							}),
 							vertical: resultSelecteds({
-								direction: 'horizontal',
+								direction: 'vertical',
 								border: rightBorder,
 								...commonResultSelectedsProps,
 							}),
@@ -1221,7 +1220,7 @@ const BoxCollection = ({
 			const selectedsResult = getMergeableSelected(
 				getAddedSelectedsBetweenEnclosedBoxes(
 					formattedSelected,
-					boxes,
+					boxesResult,
 					currentPlayer,
 					enclosedBoxes
 				),

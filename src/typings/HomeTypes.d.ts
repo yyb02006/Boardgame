@@ -31,7 +31,7 @@ type OwnableSelecteds = Record<PlayerElement, Selected>;
 interface resultSelectedsProps {
 	direction: Direction;
 	border: BorderState | undefined;
-	box: number[];
+	boxes: number[];
 	boxIndex: number;
 	accumulator: Selected;
 }
