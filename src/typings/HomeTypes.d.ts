@@ -28,6 +28,20 @@ type OwnableSelecteds = Record<PlayerElement, Selected>;
 
 /** Function Props Types */
 
+interface resultSelectedsProps {
+	direction: Direction;
+	border: BorderState | undefined;
+	box: number[];
+	boxIndex: number;
+	accumulator: Selected;
+}
+
+interface CreateResultSelectedsProps {
+	direction: Direction;
+	originalSelecteds: Selected;
+	mergeableSelecteds: Selected;
+}
+
 interface CreateNewPlayerInfoProps {
 	player: PlayerElement;
 	playerInfos: Players;
