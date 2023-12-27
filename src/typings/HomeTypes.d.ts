@@ -60,13 +60,13 @@ interface IsMergeableSelected {
 interface FormatUnownedSelecteds {
 	direction: Direction;
 	unownedSelecteds: BorderStateWithDirection[];
-	currentPlayer: PlayerElement;
+	player: PlayerElement;
 }
 
 interface FindUnownedRecursive {
 	sourceSelecteds: BorderStateWithDirection[];
 	originalSelecteds: Selected;
-	currentPlayer: PlayerElement;
+	player: PlayerElement;
 	recursive: boolean;
 }
 
@@ -84,21 +84,21 @@ interface BoxToBorderProps {
 	isSelected: boolean;
 	isMergeable: boolean;
 	owner: PlayerElement;
-	sourceSelecteds: Selected;
+	originalSelecteds: Selected;
 }
 
 interface FindExistSidesProps extends BorderAndSide {
 	sidePos: 'left' | 'right';
 	owner: 'current' | 'other' | 'all';
 	selectedDirection: Direction;
-	sourceSelecteds: Selected;
-	sourcePlayer: PlayerElement;
+	originalSelecteds: Selected;
+	player: PlayerElement;
 }
 
 interface ShouldAbortProps extends BorderAndSide {
 	selected: Selected;
 	direction: Direction;
-	sourceSelecteds: Selected;
+	originalSelecteds: Selected;
 	currentPlayer: PlayerElement;
 }
 
@@ -113,12 +113,11 @@ interface IsBlockedProps {
 	side: number;
 	direction: Direction;
 	objectPos: HorizontalPos;
+	originalSelecteds: Selected;
+	player: PlayerElement;
 }
 
-interface CanClickWhenBlockedProps extends IsBlockedProps {
-	sourceSelecteds: Selected;
-	currentPlayer: PlayerElement;
-}
+interface CanClickWhenBlockedProps extends IsBlockedProps {}
 
 /** Styled Components Types */
 

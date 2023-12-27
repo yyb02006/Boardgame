@@ -321,7 +321,7 @@ const BoxCollection = ({
 			selectedSideId: number,
 			sidePos: HorizontalPos,
 			selectedDireciton: Direction,
-			currentPlayer: PlayerElement
+			player: PlayerElement
 		) => {
 			const createBorderOrSide = ({
 				borderId,
@@ -348,7 +348,7 @@ const BoxCollection = ({
 					border: heightPos === 'middle' ? subBorder : mainBorder,
 					side: heightPos === 'middle' ? mainBorder : subBorder,
 					isSelected: false,
-					owner: currentPlayer,
+					owner: player,
 					isMergeable: false,
 					ownable: { player1: false, player2: false },
 				};
@@ -371,18 +371,18 @@ const BoxCollection = ({
 			sideId,
 			selectedDirection,
 			sidePos,
-			sourcePlayer,
+			player,
 			owner,
-			sourceSelecteds,
+			originalSelecteds,
 		}: FindExistSidesProps): BorderStateWithDirection[] => {
 			const localOppositDirection = getOppositeElement(selectedDirection);
-			const localOppositPlayer = getOppositeElement(sourcePlayer);
+			const localOppositPlayer = getOppositeElement(player);
 			return [
-				...sourceSelecteds[localOppositDirection]
+				...originalSelecteds[localOppositDirection]
 					.filter(
 						(item) =>
 							(owner === 'current'
-								? item.owner === sourcePlayer
+								? item.owner === player
 								: owner === 'other'
 								? item.owner === localOppositPlayer
 								: true) &&
@@ -401,11 +401,11 @@ const BoxCollection = ({
 						...item,
 						direction: localOppositDirection,
 					})),
-				...sourceSelecteds[selectedDirection]
+				...originalSelecteds[selectedDirection]
 					.filter(
 						(item) =>
 							(owner === 'current'
-								? item.owner === sourcePlayer
+								? item.owner === player
 								: owner === 'other'
 								? item.owner === localOppositPlayer
 								: true) &&
@@ -429,8 +429,8 @@ const BoxCollection = ({
 			side: number,
 			direction: Direction,
 			horizontalPos: HorizontalPos,
-			sourceSelecteds: Selected,
-			currenPlayer: PlayerElement
+			originalSelecteds: Selected,
+			player: PlayerElement
 		) => {
 			const existSideSelecteds = findExistSides({
 				borderId: border,
@@ -438,15 +438,15 @@ const BoxCollection = ({
 				sidePos: horizontalPos,
 				owner: 'all',
 				selectedDirection: direction,
-				sourceSelecteds,
-				sourcePlayer: currenPlayer,
+				originalSelecteds,
+				player,
 			});
 			const sideSelecteds = findSides(
 				border,
 				side,
 				horizontalPos,
 				direction,
-				currenPlayer
+				player
 			);
 			const mappedSelecteds = Object.entries(sideSelecteds)
 				.filter(
@@ -475,6 +475,8 @@ const BoxCollection = ({
 			side,
 			direction,
 			objectPos,
+			originalSelecteds,
+			player,
 		}: IsBlockedProps) => {
 			const localOppositeDirection = getOppositeElement(direction);
 			return (
@@ -484,8 +486,8 @@ const BoxCollection = ({
 					sidePos: objectPos,
 					owner: 'other',
 					selectedDirection: direction,
-					sourceSelecteds: formattedSelected,
-					sourcePlayer: currentPlayer,
+					originalSelecteds,
+					player,
 				}).filter((border) => border.direction === localOppositeDirection)
 					.length === 2
 			);
@@ -496,14 +498,16 @@ const BoxCollection = ({
 			side,
 			direction,
 			objectPos,
-			sourceSelecteds,
-			currentPlayer,
+			originalSelecteds,
+			player,
 		}: CanClickWhenBlockedProps) =>
 			isSelectedBlocked({
 				border,
 				side,
 				direction,
 				objectPos,
+				originalSelecteds,
+				player,
 			}) &&
 			findExistSides({
 				borderId: border,
@@ -511,8 +515,8 @@ const BoxCollection = ({
 				sidePos: getOppositeElement(objectPos),
 				owner: 'current',
 				selectedDirection: direction,
-				sourceSelecteds,
-				sourcePlayer: currentPlayer,
+				originalSelecteds,
+				player,
 			}).length === 0;
 
 		const shouldAbort = ({
@@ -520,7 +524,7 @@ const BoxCollection = ({
 			borderId,
 			sideId,
 			direction,
-			sourceSelecteds,
+			originalSelecteds,
 			currentPlayer,
 		}: ShouldAbortProps) => {
 			/* Omit === 타입빼기 */
@@ -529,8 +533,8 @@ const BoxCollection = ({
 				sideId,
 				owner: 'current',
 				selectedDirection: direction,
-				sourceSelecteds,
-				sourcePlayer: currentPlayer,
+				originalSelecteds,
+				player: currentPlayer,
 			};
 			const notHasExistSide = (
 				sidePos: HorizontalPos,
@@ -543,8 +547,8 @@ const BoxCollection = ({
 				border: borderId,
 				side: sideId,
 				direction,
-				sourceSelecteds,
-				currentPlayer,
+				originalSelecteds,
+				player: currentPlayer,
 			};
 			const canClickWhenBlockedBySide = (
 				objectPos: HorizontalPos,
@@ -558,6 +562,8 @@ const BoxCollection = ({
 				border: borderId,
 				side: sideId,
 				direction,
+				originalSelecteds,
+				player: currentPlayer,
 			};
 			const isSelectedBlockedBySide = (
 				objectPos: HorizontalPos,
@@ -596,19 +602,19 @@ const BoxCollection = ({
 				selected,
 				direction,
 				currentPlayer,
-				sourceSelecteds: formattedSelected,
+				originalSelecteds: formattedSelected,
 			})
 		)
 			return;
 
-		const currentPlayerSelecteds = (
+		const playerSelecteds = (
 			player: PlayerElement,
-			sourceSelecteds: Selected
+			originalSelecteds: Selected
 		) => ({
-			horizontal: sourceSelecteds.horizontal.filter(
+			horizontal: originalSelecteds.horizontal.filter(
 				(item) => item.owner === player
 			),
-			vertical: sourceSelecteds.vertical.filter(
+			vertical: originalSelecteds.vertical.filter(
 				(item) => item.owner === player
 			),
 		});
@@ -643,7 +649,7 @@ const BoxCollection = ({
 		const findUnownedRecursive = ({
 			sourceSelecteds,
 			originalSelecteds,
-			currentPlayer,
+			player,
 			recursive,
 		}: FindUnownedRecursive): BorderStateWithDirection[] => {
 			const findUnownedSelecteds = sourceSelecteds.reduce<
@@ -662,6 +668,8 @@ const BoxCollection = ({
 						side,
 						direction,
 						objectPos,
+						player,
+						originalSelecteds,
 					})
 						? findNotExistSelected(
 								border,
@@ -669,7 +677,7 @@ const BoxCollection = ({
 								direction,
 								objectPos,
 								originalSelecteds,
-								currentPlayer
+								player
 						  ).map((item) => ({
 								...item,
 								ownable: { ...item.ownable, [player]: true },
@@ -678,7 +686,7 @@ const BoxCollection = ({
 				const commonGetUnblockedProps: Omit<
 					GetUnblockedSelectedsProp,
 					'objectPos'
-				> = { border, side, direction, player: currentPlayer };
+				> = { border, side, direction, player };
 				const left = getUnblockedSelecteds({
 					...commonGetUnblockedProps,
 					objectPos: 'left',
@@ -688,17 +696,31 @@ const BoxCollection = ({
 					objectPos: 'right',
 				});
 				const newSelecteds = [...left, ...right];
+				console.log(
+					newSelecteds,
+					isSelectedBlocked({
+						border,
+						side,
+						direction,
+						objectPos: 'left',
+						originalSelecteds,
+						player,
+					}),
+					player
+				);
+
 				const result = [
 					...accumulator,
 					...compareAndFilterSelecteds(newSelecteds, accumulator),
 				];
+
 				return result;
 			}, sourceSelecteds);
 			if (findUnownedSelecteds.length !== sourceSelecteds.length && recursive) {
 				return findUnownedRecursive({
 					sourceSelecteds: [...findUnownedSelecteds],
 					originalSelecteds,
-					currentPlayer,
+					player,
 					recursive,
 				});
 			} else {
@@ -709,7 +731,7 @@ const BoxCollection = ({
 		const formatUnownedSelecteds = ({
 			direction,
 			unownedSelecteds,
-			currentPlayer,
+			player,
 		}: FormatUnownedSelecteds): BorderState[] =>
 			unownedSelecteds
 				.filter((item) => item.direction === direction)
@@ -721,7 +743,7 @@ const BoxCollection = ({
 							owner: item.owner,
 							isSelected: item.isSelected,
 							isMergeable: item.isMergeable,
-							ownable: { ...item.ownable, [currentPlayer]: true },
+							ownable: { ...item.ownable, [player]: true },
 						}) satisfies BorderState
 				)
 				.sort((a, b) => {
@@ -738,22 +760,22 @@ const BoxCollection = ({
 		) => {
 			const createUnownedArray = (
 				player: PlayerElement,
-				localIsRecursive: boolean,
-				localOriginalSelecteds: Selected
+				isRecursive: boolean,
+				originalSelecteds: Selected
 			) => {
 				const commonProps = {
 					sourceSelecteds: insertDirectionAtSelecteds(
-						currentPlayerSelecteds(player, localOriginalSelecteds)
+						playerSelecteds(player, originalSelecteds)
 					),
-					originalSelecteds: localOriginalSelecteds,
-					currentPlayer: player,
-					recursive: localIsRecursive,
+					originalSelecteds,
+					player,
+					recursive: isRecursive,
 				};
+				console.log(findUnownedRecursive(commonProps));
+
 				return compareAndFilterSelecteds(
 					findUnownedRecursive(commonProps),
-					insertDirectionAtSelecteds(
-						currentPlayerSelecteds(player, localOriginalSelecteds)
-					)
+					insertDirectionAtSelecteds(playerSelecteds(player, originalSelecteds))
 				);
 			};
 			return {
@@ -767,19 +789,25 @@ const BoxCollection = ({
 		): OwnableSelecteds => {
 			const createFormattedObject = (player: PlayerElement) => {
 				const createCommonProps = (
-					commonDirection: Direction,
-					commonPlayer: PlayerElement
+					direction: Direction,
+					player: PlayerElement
 				): FormatUnownedSelecteds => {
 					const unownedSelecteds = createUnownedSelecteds(
 						false,
 						originalSelecteds
 					);
+					console.log(unownedSelecteds);
+
 					return {
-						direction: commonDirection,
-						unownedSelecteds: unownedSelecteds[commonPlayer],
-						currentPlayer: commonPlayer,
+						direction,
+						unownedSelecteds: unownedSelecteds[player],
+						player,
 					};
 				};
+				console.log(
+					formatUnownedSelecteds(createCommonProps('horizontal', player))
+				);
+
 				return {
 					horizontal: formatUnownedSelecteds(
 						createCommonProps('horizontal', player)
@@ -795,17 +823,17 @@ const BoxCollection = ({
 			};
 		};
 
-		const recursiveUnownedSelecteds = createUnownedSelecteds(
+		/* const recursiveUnownedSelecteds = createUnownedSelecteds(
 			true,
 			formattedSelected
-		);
+		); */
 
 		const formattedUnownedSelecteds =
 			createFormattedUnownedSelecteds(formattedSelected);
 
-		console.log(createUnownedSelecteds(false, formattedSelected));
+		/* console.log(createUnownedSelecteds(false, formattedSelected));
 
-		console.log(createFormattedUnownedSelecteds(formattedSelected));
+		console.log(createFormattedUnownedSelecteds(formattedSelected)); */
 
 		const borderToBox = (
 			direction: Direction,
@@ -831,7 +859,7 @@ const BoxCollection = ({
 			isSelected,
 			isMergeable,
 			owner,
-			sourceSelecteds,
+			originalSelecteds,
 		}: BoxToBorderProps) => {
 			const resultSelected: (opt: number) => BorderState = (opt) => {
 				const remainder = boxIndex % 5;
@@ -839,7 +867,7 @@ const BoxCollection = ({
 				const isHorizontal = direction === 'left' || direction === 'right';
 				const border = (isHorizontal ? remainder : quotient) + opt;
 				const side = isHorizontal ? quotient : remainder;
-				const existSelected = sourceSelecteds[
+				const existSelected = originalSelecteds[
 					isHorizontal ? 'vertical' : 'horizontal'
 				].find((item) => item.border === border && item.side === side);
 				if (existSelected) {
@@ -967,8 +995,8 @@ const BoxCollection = ({
 			sideId,
 			owner: 'current',
 			selectedDirection: direction,
-			sourceSelecteds: formattedSelected,
-			sourcePlayer: currentPlayer,
+			originalSelecteds: formattedSelected,
+			player: currentPlayer,
 		};
 
 		const hasSidesBySide = (
@@ -1037,7 +1065,7 @@ const BoxCollection = ({
 			const getMergeableFromEnclosedBoxes = (
 				boxes: number[],
 				player: PlayerElement,
-				sourceSelecteds: Selected
+				originalSelecteds: Selected
 			) => {
 				const resultSelecteds = ({
 					direction,
@@ -1064,7 +1092,7 @@ const BoxCollection = ({
 							isSelected: true,
 							isMergeable: true,
 							owner: player,
-							sourceSelecteds,
+							originalSelecteds,
 						};
 						const commonResultSelectedsProps = { boxes, boxIndex, accumulator };
 						const rightBorder = boxToborder({
