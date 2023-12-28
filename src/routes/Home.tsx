@@ -580,8 +580,9 @@ const BoxCollection = ({
 				) ||
 				/* 다른 곳에 있는 border에 이어지는 border만 클릭할 수 있음(가장 첫번째 selected 예외) */
 				!!(
-					notHasExistSide('left', commonFindExistSidesProps) &&
-					notHasExistSide('right', commonFindExistSidesProps) &&
+					(['left', 'right'] as HorizontalPos[]).every((position) =>
+						notHasExistSide(position, commonFindExistSidesProps)
+					) &&
 					(selected.horizontal.some(
 						(border) => border.owner === currentPlayer
 					) ||
@@ -590,8 +591,9 @@ const BoxCollection = ({
 				/* 다른 border 2개로 막혀있는 곳 사이를 뚫고 지나갈 수 없음 */
 				canClickWhenBlockedBySide('left', commonCanClickWhenBlockedProps) ||
 				canClickWhenBlockedBySide('right', commonCanClickWhenBlockedProps) ||
-				(isSelectedBlockedBySide('left', commonIsSelectedBlockedProps) &&
-					isSelectedBlockedBySide('right', commonIsSelectedBlockedProps))
+				(['left', 'right'] as HorizontalPos[]).every((position) =>
+					isSelectedBlockedBySide(position, commonIsSelectedBlockedProps)
+				)
 			);
 		};
 
@@ -1129,8 +1131,9 @@ const BoxCollection = ({
 
 		/* 임의의 구역이 enclosed가 될 시 */
 		if (
-			hasSidesBySide('left', commonEnclosedProps) &&
-			hasSidesBySide('right', commonEnclosedProps)
+			(['left', 'right'] as HorizontalPos[]).every((position) =>
+				hasSidesBySide(position, commonEnclosedProps)
+			)
 		) {
 			const enclosedBoxes = getEnclosedBoxes(formattedSelected, currentPlayer);
 
@@ -1279,21 +1282,24 @@ const BoxCollection = ({
 					sourceBoxes,
 				}: IsMergeableSelected) => {
 					const resultSelecteds = sourceSelecteds[direction].map((item) => {
-						const upBox = borderToBox(direction, true, item.border, item.side);
-						const downBox = borderToBox(
-							direction,
-							false,
-							item.border,
-							item.side
-						);
+						const boxes: Record<'upBox' | 'downBox', number | false> = {
+							upBox: borderToBox(direction, true, item.border, item.side),
+							downBox: borderToBox(direction, false, item.border, item.side),
+						};
+						const verticalBoxLabels: Array<'upBox' | 'downBox'> = [
+							'upBox',
+							'downBox',
+						];
 						if (
-							/* 0일 가능성이 있음 */
-							upBox !== false &&
-							downBox !== false &&
-							sourceBoxes[upBox].isSurrounded &&
-							sourceBoxes[downBox].isSurrounded &&
-							sourceBoxes[upBox].owner === player &&
-							sourceBoxes[downBox].owner === player
+							verticalBoxLabels.every((label) => {
+								const box = boxes[label];
+								return (
+									/* box는 0일 가능성이 있음 */
+									box !== false &&
+									sourceBoxes[box].isSurrounded &&
+									sourceBoxes[box].owner === player
+								);
+							})
 						) {
 							return { ...item, isMergeable: true };
 						}
