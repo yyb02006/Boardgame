@@ -696,18 +696,6 @@ const BoxCollection = ({
 					objectPos: 'right',
 				});
 				const newSelecteds = [...left, ...right];
-				console.log(
-					newSelecteds,
-					isSelectedBlocked({
-						border,
-						side,
-						direction,
-						objectPos: 'left',
-						originalSelecteds,
-						player,
-					}),
-					player
-				);
 
 				const result = [
 					...accumulator,
@@ -771,7 +759,6 @@ const BoxCollection = ({
 					player,
 					recursive: isRecursive,
 				};
-				console.log(findUnownedRecursive(commonProps));
 
 				return compareAndFilterSelecteds(
 					findUnownedRecursive(commonProps),
@@ -796,7 +783,6 @@ const BoxCollection = ({
 						false,
 						originalSelecteds
 					);
-					console.log(unownedSelecteds);
 
 					return {
 						direction,
@@ -804,9 +790,6 @@ const BoxCollection = ({
 						player,
 					};
 				};
-				console.log(
-					formatUnownedSelecteds(createCommonProps('horizontal', player))
-				);
 
 				return {
 					horizontal: formatUnownedSelecteds(
@@ -822,14 +805,6 @@ const BoxCollection = ({
 				player2: createFormattedObject('player2'),
 			};
 		};
-
-		/* const recursiveUnownedSelecteds = createUnownedSelecteds(
-			true,
-			formattedSelected
-		); */
-
-		const formattedUnownedSelecteds =
-			createFormattedUnownedSelecteds(formattedSelected);
 
 		/* console.log(createUnownedSelecteds(false, formattedSelected));
 
@@ -1256,6 +1231,16 @@ const BoxCollection = ({
 				boxesResult
 			);
 
+			const recursiveUnownedSelecteds = createUnownedSelecteds(
+				true,
+				selectedsResult
+			);
+
+			const formattedUnownedSelecteds =
+				createFormattedUnownedSelecteds(selectedsResult);
+
+			console.log(formattedUnownedSelecteds);
+
 			const commonPlayerInfoProps = {
 				boxesResult,
 				ownableSelecteds: formattedUnownedSelecteds,
@@ -1277,6 +1262,9 @@ const BoxCollection = ({
 			setPlayers(playersResult);
 			setCurrentPlayer(opponentPlayer);
 		} else {
+			const formattedUnownedSelecteds =
+				createFormattedUnownedSelecteds(formattedSelected);
+
 			const commonPlayerInfoProps = {
 				boxesResult: boxes,
 				ownableSelecteds: formattedUnownedSelecteds,
