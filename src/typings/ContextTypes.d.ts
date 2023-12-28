@@ -6,6 +6,7 @@ type Ownable = Record<PlayerElement, boolean>;
 
 interface PlayerInfo {
 	boxCount: number;
+	ownableBoxCount: number;
 	name: string;
 	ownableSelecteds: Selected;
 }

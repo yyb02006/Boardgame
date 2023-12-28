@@ -7,11 +7,13 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 	const [players, setPlayers] = useState<Players>({
 		player1: {
 			boxCount: 0,
+			ownableBoxCount: 0,
 			name: 'player1',
 			ownableSelecteds: { horizontal: [], vertical: [] },
 		},
 		player2: {
 			boxCount: 0,
+			ownableBoxCount: 0,
 			name: 'player2',
 			ownableSelecteds: { horizontal: [], vertical: [] },
 		},

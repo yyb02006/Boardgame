@@ -645,14 +645,14 @@ const BoxCollection = ({
 		 *
 		 * 	실행 컨텍스트가 모두 해결될 때 최종적으로 undefined를 뱉어내게 된다.
 		 *  */
-		/* 12/23 findUnownedRecursive재귀함수 리팩토링 순수함수이며 1가지의 목적을 가지도록 변경 */
-		const findUnownedRecursive = ({
+		/* 12/23 findOwnableRecursive재귀함수 리팩토링 순수함수이며 1가지의 목적을 가지도록 변경 */
+		const findOwnableRecursive = ({
 			sourceSelecteds,
 			originalSelecteds,
 			player,
 			recursive,
-		}: FindUnownedRecursive): BorderStateWithDirection[] => {
-			const findUnownedSelecteds = sourceSelecteds.reduce<
+		}: FindOwnableRecursive): BorderStateWithDirection[] => {
+			const findOwnableSelecteds = sourceSelecteds.reduce<
 				BorderStateWithDirection[]
 			>((accumulator, currentSelected) => {
 				const { border, side, direction } = currentSelected;
@@ -704,24 +704,24 @@ const BoxCollection = ({
 
 				return result;
 			}, sourceSelecteds);
-			if (findUnownedSelecteds.length !== sourceSelecteds.length && recursive) {
-				return findUnownedRecursive({
-					sourceSelecteds: [...findUnownedSelecteds],
+			if (findOwnableSelecteds.length !== sourceSelecteds.length && recursive) {
+				return findOwnableRecursive({
+					sourceSelecteds: [...findOwnableSelecteds],
 					originalSelecteds,
 					player,
 					recursive,
 				});
 			} else {
-				return findUnownedSelecteds;
+				return findOwnableSelecteds;
 			}
 		};
 
-		const formatUnownedSelecteds = ({
+		const mapAndSortOwnableSelecteds = ({
 			direction,
-			unownedSelecteds,
+			ownableSelecteds,
 			player,
-		}: FormatUnownedSelecteds): BorderState[] =>
-			unownedSelecteds
+		}: FormatOwnableSelecteds): BorderState[] =>
+			ownableSelecteds
 				.filter((item) => item.direction === direction)
 				.map(
 					(item) =>
@@ -742,60 +742,83 @@ const BoxCollection = ({
 					}
 				});
 
-		const createUnownedSelecteds = (
+		const getOwnableSelecteds = (
+			player: PlayerElement,
 			isRecursive: boolean,
-			originalSelecteds: Selected
+			originalSelecteds: Selected,
+			opt: { withOriginalSelecteds: boolean } = {
+				withOriginalSelecteds: false,
+			}
 		) => {
-			const createUnownedArray = (
-				player: PlayerElement,
-				isRecursive: boolean,
-				originalSelecteds: Selected
-			) => {
-				const commonProps = {
-					sourceSelecteds: insertDirectionAtSelecteds(
-						playerSelecteds(player, originalSelecteds)
-					),
-					originalSelecteds,
-					player,
-					recursive: isRecursive,
-				};
-
+			const commonProps = {
+				sourceSelecteds: insertDirectionAtSelecteds(
+					playerSelecteds(player, originalSelecteds)
+				),
+				originalSelecteds,
+				player,
+				recursive: isRecursive,
+			};
+			if (opt.withOriginalSelecteds) {
+				return findOwnableRecursive(commonProps);
+			} else {
 				return compareAndFilterSelecteds(
-					findUnownedRecursive(commonProps),
+					findOwnableRecursive(commonProps),
 					insertDirectionAtSelecteds(playerSelecteds(player, originalSelecteds))
 				);
-			};
+			}
+		};
+
+		const createOwnableSelectedsWithPlayers = (
+			isRecursive: boolean,
+			originalSelecteds: Selected,
+			opt: { withOriginalSelecteds: boolean } = { withOriginalSelecteds: false }
+		) => {
+			const { withOriginalSelecteds } = opt;
 			return {
-				player1: createUnownedArray('player1', isRecursive, originalSelecteds),
-				player2: createUnownedArray('player2', isRecursive, originalSelecteds),
+				player1: getOwnableSelecteds(
+					'player1',
+					isRecursive,
+					originalSelecteds,
+					{
+						withOriginalSelecteds,
+					}
+				),
+				player2: getOwnableSelecteds(
+					'player2',
+					isRecursive,
+					originalSelecteds,
+					{
+						withOriginalSelecteds,
+					}
+				),
 			};
 		};
 
-		const createFormattedUnownedSelecteds = (
+		const formatOwnableSelecteds = (
 			originalSelecteds: Selected
 		): OwnableSelecteds => {
 			const createFormattedObject = (player: PlayerElement) => {
 				const createCommonProps = (
 					direction: Direction,
 					player: PlayerElement
-				): FormatUnownedSelecteds => {
-					const unownedSelecteds = createUnownedSelecteds(
+				): FormatOwnableSelecteds => {
+					const ownableSelecteds = createOwnableSelectedsWithPlayers(
 						false,
 						originalSelecteds
 					);
 
 					return {
 						direction,
-						unownedSelecteds: unownedSelecteds[player],
+						ownableSelecteds: ownableSelecteds[player],
 						player,
 					};
 				};
 
 				return {
-					horizontal: formatUnownedSelecteds(
+					horizontal: mapAndSortOwnableSelecteds(
 						createCommonProps('horizontal', player)
 					),
-					vertical: formatUnownedSelecteds(
+					vertical: mapAndSortOwnableSelecteds(
 						createCommonProps('vertical', player)
 					),
 				};
@@ -806,9 +829,9 @@ const BoxCollection = ({
 			};
 		};
 
-		/* console.log(createUnownedSelecteds(false, formattedSelected));
+		/* console.log(createOwnableSelectedsWithPlayers(false, formattedSelected));
 
-		console.log(createFormattedUnownedSelecteds(formattedSelected)); */
+		console.log(formatOwnableSelecteds(formattedSelected)); */
 
 		const borderToBox = (
 			direction: Direction,
@@ -830,16 +853,16 @@ const BoxCollection = ({
 
 		const boxToborder = ({
 			boxIndex,
-			direction,
-			isSelected,
-			isMergeable,
-			owner,
+			position,
+			isSelected = true,
+			isMergeable = false,
+			owner = 'player1',
 			originalSelecteds,
 		}: BoxToBorderProps) => {
 			const resultSelected: (opt: number) => BorderState = (opt) => {
 				const remainder = boxIndex % 5;
 				const quotient = Math.floor(boxIndex / 5);
-				const isHorizontal = direction === 'left' || direction === 'right';
+				const isHorizontal = position === 'left' || position === 'right';
 				const border = (isHorizontal ? remainder : quotient) + opt;
 				const side = isHorizontal ? quotient : remainder;
 				const existSelected = originalSelecteds[
@@ -859,19 +882,23 @@ const BoxCollection = ({
 				}
 			};
 			switch (true) {
-				case direction === 'left' || direction === 'up':
+				case position === 'left' || position === 'up':
 					return resultSelected(0);
-				case direction === 'right' || direction === 'down':
+				default:
 					return resultSelected(1);
 			}
 		};
 
 		// 순수함수로 수정, 로직 재고 필요, 빈배열은 리턴하지 않는 로직은 유지
-		const findClosedBoxByDirection = (direction: Direction) => {
+		const findClosedBoxByDirection = (
+			direction: Direction,
+			sourceSelecteds: Selected,
+			player: PlayerElement
+		) => {
 			const isHorizontal = direction === 'horizontal';
 			return Array.from({ length: 5 }, (_, id) => {
-				const borders = formattedSelected[direction]
-					.filter((item) => item.side === id && item.owner === currentPlayer)
+				const borders = sourceSelecteds[direction]
+					.filter((item) => item.side === id && item.owner === player)
 					.sort((a, b) => a.border - b.border);
 				return borders.length > 1
 					? Array.from({ length: borders.length - 1 }, (_, idx) =>
@@ -882,7 +909,7 @@ const BoxCollection = ({
 										(borders[idx].border + index) * (isHorizontal ? 5 : 1) +
 										borders[idx].side * (isHorizontal ? 1 : 5);
 									return boxes[boxNumber].isSurrounded &&
-										boxes[boxNumber].owner === currentPlayer
+										boxes[boxNumber].owner === player
 										? undefined
 										: boxNumber;
 								}
@@ -922,12 +949,12 @@ const BoxCollection = ({
 			let sourceBoxes = [initBoxes];
 			let bordersDirection = currentDirection;
 			const getEnclosedBoxesRecursive = (): number[] | false => {
-				const localOppositeDirection = getOppositeElement(bordersDirection);
+				const oppositeDirection = getOppositeElement(bordersDirection);
 				sourceBoxes = sourceBoxes
 					.reduce<number[][]>((accumulatedBoxes, currentbox) => {
 						const newBoxes = findCommonElementInNestedArray(
 							currentbox,
-							closedBoxesArray[localOppositeDirection]
+							closedBoxesArray[oppositeDirection]
 						).filter(
 							(box) => !accumulatedBoxes.some((el) => isNumArrayEqual(el, box))
 						);
@@ -935,16 +962,16 @@ const BoxCollection = ({
 					}, [])
 					.filter(
 						(box) =>
-							!accumulator[localOppositeDirection].some((el) =>
+							!accumulator[oppositeDirection].some((el) =>
 								isNumArrayEqual(el, box)
 							)
 					);
 				if (sourceBoxes.length > 0) {
-					accumulator[localOppositeDirection] = [
-						...accumulator[localOppositeDirection],
+					accumulator[oppositeDirection] = [
+						...accumulator[oppositeDirection],
 						...sourceBoxes,
 					];
-					bordersDirection = localOppositeDirection;
+					bordersDirection = oppositeDirection;
 					return getEnclosedBoxesRecursive();
 				} else if (
 					accumulator.horizontal.length > 0 &&
@@ -987,17 +1014,27 @@ const BoxCollection = ({
 			player,
 			playerInfos,
 			boxesResult,
-			ownableSelecteds,
+			originalSelecteds,
 			opt,
-		}: CreateNewPlayerInfoProps) => {
+		}: CreateNewPlayerInfoProps): PlayerInfo => {
+			const ownableAndOwnedSelecteds = getOwnableSelecteds(
+				player,
+				true,
+				originalSelecteds,
+				{ withOriginalSelecteds: true }
+			);
+			const ownedBoxCount = boxesResult.filter(
+				(item) => item.owner === player && item.isSurrounded
+			).length;
 			return {
 				...playerInfos[player],
 				boxCount: opt.withBoxCount
-					? boxesResult.filter(
-							(item) => item.owner === player && item.isSurrounded
-					  ).length
+					? ownedBoxCount
 					: playerInfos[player].boxCount,
-				ownableSelecteds: ownableSelecteds[player],
+				ownableBoxCount:
+					getSurroundedBoxIndexes(ownableAndOwnedSelecteds, originalSelecteds)
+						.length - ownedBoxCount,
+				ownableSelecteds: formatOwnableSelecteds(originalSelecteds)[player],
 			};
 		};
 
@@ -1010,13 +1047,28 @@ const BoxCollection = ({
 		});
 
 		/* 중첩배열 제거, 같은 배열이 여러번 쌓이는 현상 방지 */
-		const getEnclosedBoxes = (closedBoxes: number[][]) => {
-			for (const box of closedBoxes) {
+		const getEnclosedBoxes = (
+			sourceSelecteds: Selected,
+			player: PlayerElement
+		) => {
+			for (const box of findClosedBoxByDirection(
+				'horizontal',
+				sourceSelecteds,
+				player
+			)) {
 				const enclosedBox = createGetEnclosedClosure(
 					box,
 					{
-						horizontal: findClosedBoxByDirection('horizontal'),
-						vertical: findClosedBoxByDirection('vertical'),
+						horizontal: findClosedBoxByDirection(
+							'horizontal',
+							sourceSelecteds,
+							player
+						),
+						vertical: findClosedBoxByDirection(
+							'vertical',
+							sourceSelecteds,
+							player
+						),
 					},
 					'horizontal'
 				)();
@@ -1028,14 +1080,59 @@ const BoxCollection = ({
 			return [];
 		};
 
+		const getSurroundedBoxIndexes = (
+			sourceSelecteds: BorderStateWithDirection[],
+			originalSelecteds: Selected
+		) => {
+			const positions: Position[] = ['left', 'right', 'up', 'down'];
+			const conditionByPosition = (
+				boxIndex: number,
+				position: Position,
+				sourceSelecteds: BorderStateWithDirection[],
+				originalSelecteds: Selected
+			) => {
+				const selectedLabels: Array<'border' | 'side'> = ['border', 'side'];
+				const direction =
+					position === 'left' || position === 'right'
+						? 'vertical'
+						: 'horizontal';
+				return sourceSelecteds.some(
+					(selected) =>
+						selected.direction === direction &&
+						selectedLabels.every(
+							(label) =>
+								selected[label] ===
+								boxToborder({
+									boxIndex,
+									position,
+									originalSelecteds,
+								})[label]
+						)
+				);
+			};
+			return Array.from({ length: 25 }, (_, id) => id).filter((box) => {
+				if (
+					positions.every((position) =>
+						conditionByPosition(
+							box,
+							position,
+							sourceSelecteds,
+							originalSelecteds
+						)
+					)
+				) {
+					return true;
+				}
+				return false;
+			});
+		};
+
 		/* 임의의 구역이 enclosed가 될 시 */
 		if (
 			hasSidesBySide('left', commonEnclosedProps) &&
 			hasSidesBySide('right', commonEnclosedProps)
 		) {
-			const enclosedBoxes = getEnclosedBoxes(
-				findClosedBoxByDirection('horizontal')
-			);
+			const enclosedBoxes = getEnclosedBoxes(formattedSelected, currentPlayer);
 
 			const getMergeableFromEnclosedBoxes = (
 				boxes: number[],
@@ -1071,11 +1168,11 @@ const BoxCollection = ({
 						};
 						const commonResultSelectedsProps = { boxes, boxIndex, accumulator };
 						const rightBorder = boxToborder({
-							direction: 'right',
+							position: 'right',
 							...commonBoxToBorderProps,
 						});
 						const downBorder = boxToborder({
-							direction: 'down',
+							position: 'down',
 							...commonBoxToBorderProps,
 						});
 						return {
@@ -1231,19 +1328,9 @@ const BoxCollection = ({
 				boxesResult
 			);
 
-			const recursiveUnownedSelecteds = createUnownedSelecteds(
-				true,
-				selectedsResult
-			);
-
-			const formattedUnownedSelecteds =
-				createFormattedUnownedSelecteds(selectedsResult);
-
-			console.log(formattedUnownedSelecteds);
-
 			const commonPlayerInfoProps = {
 				boxesResult,
-				ownableSelecteds: formattedUnownedSelecteds,
+				originalSelecteds: selectedsResult,
 				playerInfos: players,
 				opt: { withBoxCount: true },
 			};
@@ -1262,12 +1349,9 @@ const BoxCollection = ({
 			setPlayers(playersResult);
 			setCurrentPlayer(opponentPlayer);
 		} else {
-			const formattedUnownedSelecteds =
-				createFormattedUnownedSelecteds(formattedSelected);
-
 			const commonPlayerInfoProps = {
 				boxesResult: boxes,
-				ownableSelecteds: formattedUnownedSelecteds,
+				originalSelecteds: formattedSelected,
 				playerInfos: players,
 				opt: { withBoxCount: false },
 			};
@@ -1348,6 +1432,7 @@ const PlayerCard = ({ player }: { player: PlayerElement }) => {
 	return (
 		<PlayerCardStyle $player={player}>
 			{players[player].name} <br />
+			<h3>ownable : {players[player].ownableBoxCount}</h3>
 			<h3>
 				score :{' '}
 				{boxes.filter((box) => box.isSurrounded && box.owner === player).length}

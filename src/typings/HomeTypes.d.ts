@@ -2,6 +2,10 @@ type Direction = 'horizontal' | 'vertical';
 
 type HorizontalPos = 'left' | 'right';
 
+type VerticalPos = 'up' | 'down';
+
+type Position = HorizontalPos | VerticalPos;
+
 type NestedArray<T> = T[][];
 
 interface DirectionInterface {
@@ -46,7 +50,7 @@ interface CreateNewPlayerInfoProps {
 	player: PlayerElement;
 	playerInfos: Players;
 	boxesResult: Boxes;
-	ownableSelecteds: OwnableSelecteds;
+	originalSelecteds: Selected;
 	opt: { withBoxCount: boolean };
 }
 
@@ -57,13 +61,13 @@ interface IsMergeableSelected {
 	sourceBoxes: Boxes;
 }
 
-interface FormatUnownedSelecteds {
+interface FormatOwnableSelecteds {
 	direction: Direction;
-	unownedSelecteds: BorderStateWithDirection[];
+	ownableSelecteds: BorderStateWithDirection[];
 	player: PlayerElement;
 }
 
-interface FindUnownedRecursive {
+interface FindOwnableRecursive {
 	sourceSelecteds: BorderStateWithDirection[];
 	originalSelecteds: Selected;
 	player: PlayerElement;
@@ -80,15 +84,15 @@ interface GetUnblockedSelectedsProp {
 
 interface BoxToBorderProps {
 	boxIndex: number;
-	direction: 'left' | 'right' | 'up' | 'down';
-	isSelected: boolean;
-	isMergeable: boolean;
-	owner: PlayerElement;
+	position: Position;
+	isSelected?: boolean;
+	isMergeable?: boolean;
+	owner?: PlayerElement;
 	originalSelecteds: Selected;
 }
 
 interface FindExistSidesProps extends BorderAndSide {
-	sidePos: 'left' | 'right';
+	sidePos: HorizontalPos;
 	owner: 'current' | 'other' | 'all';
 	selectedDirection: Direction;
 	originalSelecteds: Selected;
