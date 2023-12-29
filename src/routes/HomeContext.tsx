@@ -32,6 +32,10 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 			owner: undefined,
 		}))
 	);
+	const [gameState, setGameState] = useState<GameState>({
+		playState: 'playing',
+		isPlayerWin: { player1: false, player2: false },
+	});
 
 	const contextValue: HomeContextType = {
 		currentPlayer,
@@ -42,6 +46,8 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 		setSelected,
 		boxes,
 		setBoxes,
+		gameState,
+		setGameState,
 	};
 
 	return (

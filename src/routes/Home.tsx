@@ -287,6 +287,8 @@ const BoxCollection = ({
 		setCurrentPlayer,
 		players,
 		setPlayers,
+		gameState,
+		setGameState,
 	} = useHomeContext();
 	const opponentPlayer = getOppositeElement(currentPlayer);
 	const oppositeDirection = getOppositeElement(direction);
@@ -1025,14 +1027,12 @@ const BoxCollection = ({
 		};
 
 		const isPlayerWin = (
-			player: PlayerElement,
 			playersOwnableSelecteds: Record<
 				PlayerElement,
 				BorderStateWithDirection[]
 			>,
 			originalSelecteds: Selected
 		) => {
-			const opponentPlayer = getOppositeElement(player);
 			const ownableAndOwnedBoxes = {
 				player1: getSurroundedBoxIndexes(
 					playersOwnableSelecteds.player1,
@@ -1054,43 +1054,38 @@ const BoxCollection = ({
 				}).length,
 			};
 			const commonOwnableBoxesCount = getNumArrayCommonElements(
-				ownableAndOwnedBoxes[player],
-				ownableAndOwnedBoxes[opponentPlayer]
+				ownableAndOwnedBoxes.player1,
+				ownableAndOwnedBoxes.player2
 			).length;
 			if (!hasAtleastOneSelected(originalSelecteds)) {
 				return undefined;
 			} else if (
 				commonOwnableBoxesCount === 0 &&
-				vulnerableBoxes[player] === 0 &&
-				vulnerableBoxes[opponentPlayer] === 0
+				vulnerableBoxes.player1 === 0 &&
+				vulnerableBoxes.player2 === 0
 			) {
-				console.log(1);
 				const count =
-					ownableAndOwnedBoxes[player].length -
-					ownableAndOwnedBoxes[opponentPlayer].length;
+					ownableAndOwnedBoxes.player1.length -
+					ownableAndOwnedBoxes.player2.length;
 				switch (true) {
 					case count > 0:
-						return player;
+						return 'player1';
 					case count < 0:
-						return opponentPlayer;
+						return 'player2';
 					default:
 						return 'draw';
 				}
 			} else if (
-				ownableAndOwnedBoxes[opponentPlayer].length <
-				ownableAndOwnedBoxes[player].length - vulnerableBoxes[player]
+				ownableAndOwnedBoxes.player2.length <
+				ownableAndOwnedBoxes.player1.length - vulnerableBoxes.player1
 			) {
-				console.log(2);
-				return player;
+				return 'player1';
 			} else if (
-				ownableAndOwnedBoxes[player].length <
-				ownableAndOwnedBoxes[opponentPlayer].length -
-					vulnerableBoxes[opponentPlayer]
+				ownableAndOwnedBoxes.player1.length <
+				ownableAndOwnedBoxes.player2.length - vulnerableBoxes.player2
 			) {
-				console.log(3);
-				return opponentPlayer;
+				return 'player2';
 			} else {
-				console.log(4);
 				return undefined;
 			}
 		};
@@ -1130,7 +1125,7 @@ const BoxCollection = ({
 					: playerInfos[player].boxCount,
 				isWin:
 					hasAtleastOneSelected(originalSelecteds) &&
-					isPlayerWin(player, ownableSelecteds, originalSelecteds) === player,
+					isPlayerWin(ownableSelecteds, originalSelecteds) === player,
 				ownableBoxCount: ownableAndOwnedBoxes[player].length - ownedBoxCount,
 				ownableSelecteds: formatOwnableSelecteds(originalSelecteds)[player],
 			};
@@ -1249,20 +1244,32 @@ const BoxCollection = ({
 			});
 		};
 
-		const ownableSelecteds = {
-			player1: getOwnableSelecteds('player1', true, formattedSelected, {
-				withOriginalSelecteds: true,
-			}),
-			player2: getOwnableSelecteds('player2', true, formattedSelected, {
-				withOriginalSelecteds: true,
-			}),
+		const setGameStateByResult = (
+			gameResult: 'player1' | 'player2' | 'draw' | undefined
+		) => {
+			switch (gameResult) {
+				case 'draw':
+					setGameState({
+						playState: 'draw',
+						isPlayerWin: { player1: false, player2: false },
+					});
+					break;
+				case 'player1':
+					setGameState({
+						playState: 'win',
+						isPlayerWin: { player1: true, player2: false },
+					});
+					break;
+				case 'player2':
+					setGameState({
+						playState: 'win',
+						isPlayerWin: { player1: false, player2: true },
+					});
+					break;
+				default:
+					break;
+			}
 		};
-
-		if (
-			isPlayerWin(currentPlayer, ownableSelecteds, formattedSelected) === 'draw'
-		) {
-			console.log('draw');
-		}
 
 		/* 임의의 구역이 enclosed가 될 시 */
 		if (
@@ -1487,7 +1494,15 @@ const BoxCollection = ({
 				}),
 			};
 
-			console.log(playersResult);
+			const ownableSelecteds = {
+				player1: getOwnableSelecteds('player1', true, selectedsResult, {
+					withOriginalSelecteds: true,
+				}),
+				player2: getOwnableSelecteds('player2', true, selectedsResult, {
+					withOriginalSelecteds: true,
+				}),
+			};
+			const gameResult = isPlayerWin(ownableSelecteds, selectedsResult);
 
 			/**
 			 * ownable의 count가 서로 같지만 boxIndex는 하나도 중첩되지 않을 경우 자동 무승부,
@@ -1499,7 +1514,17 @@ const BoxCollection = ({
 			setBoxes(boxesResult);
 			setPlayers(playersResult);
 			setCurrentPlayer(opponentPlayer);
+			setGameStateByResult(gameResult);
 		} else {
+			const ownableSelecteds = {
+				player1: getOwnableSelecteds('player1', true, formattedSelected, {
+					withOriginalSelecteds: true,
+				}),
+				player2: getOwnableSelecteds('player2', true, formattedSelected, {
+					withOriginalSelecteds: true,
+				}),
+			};
+			const gameResult = isPlayerWin(ownableSelecteds, formattedSelected);
 			const commonPlayerInfoProps = {
 				boxesResult: boxes,
 				originalSelecteds: formattedSelected,
@@ -1518,11 +1543,32 @@ const BoxCollection = ({
 				}),
 			};
 
-			console.log(playersResult);
-
 			setSelected(formattedSelected);
 			setPlayers(playersResult);
 			setCurrentPlayer(opponentPlayer);
+			setGameStateByResult(gameResult);
+			switch (gameResult) {
+				case 'draw':
+					setGameState({
+						playState: 'draw',
+						isPlayerWin: { player1: false, player2: false },
+					});
+					break;
+				case 'player1':
+					setGameState({
+						playState: 'win',
+						isPlayerWin: { player1: true, player2: false },
+					});
+					break;
+				case 'player2':
+					setGameState({
+						playState: 'win',
+						isPlayerWin: { player1: false, player2: true },
+					});
+					break;
+				default:
+					break;
+			}
 		}
 		/* why doesn't TypeGuard work when using a func return instead a variable? */
 	};

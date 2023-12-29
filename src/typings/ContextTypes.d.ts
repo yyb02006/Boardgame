@@ -4,12 +4,19 @@ type PlayerElement = 'player1' | 'player2';
 
 type Ownable = Record<PlayerElement, boolean>;
 
+type PlayState = 'win' | 'draw' | 'playing';
+
 interface PlayerInfo {
 	boxCount: number;
 	ownableBoxCount: number;
 	name: string;
 	ownableSelecteds: Selected;
 	isWin: boolean;
+}
+
+interface GameState {
+	playState: PlayState;
+	isPlayerWin: { player1: boolean; player2: boolean };
 }
 
 type Players = Record<PlayerElement, PlayerInfo>;
@@ -30,6 +37,8 @@ interface HomeContextType {
 	setSelected: React.Dispatch<React.SetStateAction<Selected>>;
 	boxes: Boxes;
 	setBoxes: React.Dispatch<React.SetStateAction<boxes>>;
+	gameState: GameState;
+	setGameState: React.Dispatch<React.SetStateAction<GameState>>;
 }
 
 interface BorderState {
