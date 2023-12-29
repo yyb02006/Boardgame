@@ -32,7 +32,12 @@ type OwnableSelecteds = Record<PlayerElement, Selected>;
 
 /** Function Props Types */
 
-interface resultSelectedsProps {
+interface GetVulnerableBoxesProps {
+	ownableAndOwnedBoxes: number[];
+	opponentOwnableSelecteds: BorderStateWithDirection[];
+}
+
+interface ResultSelectedsProps {
 	direction: Direction;
 	border: BorderState | undefined;
 	boxes: number[];

@@ -1013,19 +1013,61 @@ const BoxCollection = ({
 				sidePos,
 			}).length > 0;
 
+		const hasAtleastOneSelected = (originalSelecteds: Selected) => {
+			const mergedSelecteds = [
+				...originalSelecteds.horizontal,
+				...originalSelecteds.vertical,
+			];
+			return (
+				mergedSelecteds.some((selected) => selected.owner === 'player1') &&
+				mergedSelecteds.some((selected) => selected.owner === 'player2')
+			);
+		};
+
 		const isPlayerWin = (
 			player: PlayerElement,
-			playersOwnableAndOwnedBoxes: { player1: number[]; player2: number[] }
+			playersOwnableSelecteds: Record<
+				PlayerElement,
+				BorderStateWithDirection[]
+			>,
+			originalSelecteds: Selected
 		) => {
 			const opponentPlayer = getOppositeElement(player);
+			const ownableAndOwnedBoxes = {
+				player1: getSurroundedBoxIndexes(
+					playersOwnableSelecteds.player1,
+					originalSelecteds
+				),
+				player2: getSurroundedBoxIndexes(
+					playersOwnableSelecteds.player2,
+					originalSelecteds
+				),
+			};
+			const vulnerableBoxes = {
+				player1: getVulnerableBoxes({
+					ownableAndOwnedBoxes: ownableAndOwnedBoxes.player1,
+					opponentOwnableSelecteds: playersOwnableSelecteds.player2,
+				}).length,
+				player2: getVulnerableBoxes({
+					ownableAndOwnedBoxes: ownableAndOwnedBoxes.player2,
+					opponentOwnableSelecteds: playersOwnableSelecteds.player1,
+				}).length,
+			};
 			const commonOwnableBoxesCount = getNumArrayCommonElements(
-				playersOwnableAndOwnedBoxes[player],
-				playersOwnableAndOwnedBoxes[opponentPlayer]
+				ownableAndOwnedBoxes[player],
+				ownableAndOwnedBoxes[opponentPlayer]
 			).length;
-			if (commonOwnableBoxesCount === 0) {
+			if (!hasAtleastOneSelected(originalSelecteds)) {
+				return undefined;
+			} else if (
+				commonOwnableBoxesCount === 0 &&
+				vulnerableBoxes[player] === 0 &&
+				vulnerableBoxes[opponentPlayer] === 0
+			) {
+				console.log(1);
 				const count =
-					playersOwnableAndOwnedBoxes[player].length -
-					playersOwnableAndOwnedBoxes[opponentPlayer].length;
+					ownableAndOwnedBoxes[player].length -
+					ownableAndOwnedBoxes[opponentPlayer].length;
 				switch (true) {
 					case count > 0:
 						return player;
@@ -1035,17 +1077,20 @@ const BoxCollection = ({
 						return 'draw';
 				}
 			} else if (
-				playersOwnableAndOwnedBoxes[opponentPlayer].length <
-				playersOwnableAndOwnedBoxes[player].length - commonOwnableBoxesCount
+				ownableAndOwnedBoxes[opponentPlayer].length <
+				ownableAndOwnedBoxes[player].length - vulnerableBoxes[player]
 			) {
+				console.log(2);
 				return player;
 			} else if (
-				playersOwnableAndOwnedBoxes[player].length <
-				playersOwnableAndOwnedBoxes[opponentPlayer].length -
-					commonOwnableBoxesCount
+				ownableAndOwnedBoxes[player].length <
+				ownableAndOwnedBoxes[opponentPlayer].length -
+					vulnerableBoxes[opponentPlayer]
 			) {
+				console.log(3);
 				return opponentPlayer;
 			} else {
+				console.log(4);
 				return undefined;
 			}
 		};
@@ -1057,17 +1102,21 @@ const BoxCollection = ({
 			originalSelecteds,
 			opt,
 		}: CreateNewPlayerInfoProps): PlayerInfo => {
+			const ownableSelecteds = {
+				player1: getOwnableSelecteds('player1', true, originalSelecteds, {
+					withOriginalSelecteds: true,
+				}),
+				player2: getOwnableSelecteds('player2', true, originalSelecteds, {
+					withOriginalSelecteds: true,
+				}),
+			};
 			const ownableAndOwnedBoxes = {
 				player1: getSurroundedBoxIndexes(
-					getOwnableSelecteds('player1', true, originalSelecteds, {
-						withOriginalSelecteds: true,
-					}),
+					ownableSelecteds.player1,
 					originalSelecteds
 				),
 				player2: getSurroundedBoxIndexes(
-					getOwnableSelecteds('player2', true, originalSelecteds, {
-						withOriginalSelecteds: true,
-					}),
+					ownableSelecteds.player2,
 					originalSelecteds
 				),
 			};
@@ -1079,7 +1128,9 @@ const BoxCollection = ({
 				boxCount: opt.withBoxCount
 					? ownedBoxCount
 					: playerInfos[player].boxCount,
-				isWin: isPlayerWin(player, ownableAndOwnedBoxes) === player,
+				isWin:
+					hasAtleastOneSelected(originalSelecteds) &&
+					isPlayerWin(player, ownableSelecteds, originalSelecteds) === player,
 				ownableBoxCount: ownableAndOwnedBoxes[player].length - ownedBoxCount,
 				ownableSelecteds: formatOwnableSelecteds(originalSelecteds)[player],
 			};
@@ -1166,22 +1217,50 @@ const BoxCollection = ({
 			});
 		};
 
-		const ownableAndOwnedBoxes = {
-			player1: getSurroundedBoxIndexes(
-				getOwnableSelecteds('player1', true, formattedSelected, {
-					withOriginalSelecteds: true,
-				}),
-				formattedSelected
-			),
-			player2: getSurroundedBoxIndexes(
-				getOwnableSelecteds('player2', true, formattedSelected, {
-					withOriginalSelecteds: true,
-				}),
-				formattedSelected
-			),
+		/* 가질 수 있는 box 수에서 박스를 제외하고 승패를 결정할때는 selecteds로 방해받을 수 있는 요소를 고려하지 않음
+		getVulnerableBoxes함수가 이 방해받을 수 있는 요소를 검사함. */
+
+		const getVulnerableBoxes = ({
+			ownableAndOwnedBoxes,
+			opponentOwnableSelecteds,
+		}: GetVulnerableBoxesProps) => {
+			const positions: Position[] = ['left', 'right', 'up', 'down'];
+			return ownableAndOwnedBoxes.filter((box) => {
+				const selectedsByPositions = positions.map((position) => ({
+					...boxToborder({
+						originalSelecteds: formattedSelected,
+						boxIndex: box,
+						position,
+					}),
+					direction:
+						position === 'left' || position === 'right'
+							? 'vertical'
+							: 'horizontal',
+				}));
+				const condition = opponentOwnableSelecteds.some((selected) =>
+					selectedsByPositions.some((el) =>
+						compareSelecteds(selected, el, { withDirection: true })
+					)
+				);
+				if (condition) {
+					return true;
+				}
+				return false;
+			});
 		};
 
-		if (isPlayerWin(currentPlayer, ownableAndOwnedBoxes) === 'draw') {
+		const ownableSelecteds = {
+			player1: getOwnableSelecteds('player1', true, formattedSelected, {
+				withOriginalSelecteds: true,
+			}),
+			player2: getOwnableSelecteds('player2', true, formattedSelected, {
+				withOriginalSelecteds: true,
+			}),
+		};
+
+		if (
+			isPlayerWin(currentPlayer, ownableSelecteds, formattedSelected) === 'draw'
+		) {
 			console.log('draw');
 		}
 
@@ -1204,7 +1283,7 @@ const BoxCollection = ({
 					boxes,
 					boxIndex,
 					accumulator,
-				}: resultSelectedsProps) => {
+				}: ResultSelectedsProps) => {
 					const addCount = direction === 'horizontal' ? 5 : 1;
 					return border &&
 						boxes.includes(boxIndex + addCount) &&
@@ -1408,6 +1487,8 @@ const BoxCollection = ({
 				}),
 			};
 
+			console.log(playersResult);
+
 			/**
 			 * ownable의 count가 서로 같지만 boxIndex는 하나도 중첩되지 않을 경우 자동 무승부,
 			 *
@@ -1436,6 +1517,9 @@ const BoxCollection = ({
 					...commonPlayerInfoProps,
 				}),
 			};
+
+			console.log(playersResult);
+
 			setSelected(formattedSelected);
 			setPlayers(playersResult);
 			setCurrentPlayer(opponentPlayer);
