@@ -26,6 +26,11 @@ export function isNumArrayEqual(arr1: number[], arr2: number[]) {
 	return true;
 }
 
+/** 숫자를 요소로 갖는 두 배열의 공통요소를 리턴하는 함수 */
+export function getNumArrayCommonElements(arr1: number[], arr2: number[]) {
+	return arr1.filter((el) => arr2.includes(el));
+}
+
 /** 중첩된 배열에서 비교배열과 공통요소를 가지고 있는 2차 배열을 모두 리턴하는 함수 */
 export function findCommonElementInNestedArray(
 	compareArray: number[],
@@ -79,7 +84,7 @@ export function compareSelecteds(
 	}
 }
 
-/** 객체의 border, side, direction 값을 비교해서 comparison에 존재하지 않는 source값만 반환하는 함수 */
+/** 객체의 border, side, direction 값을 비교해서 comparison과 중첩되지 않는 source값만 반환하는 함수 */
 export function compareAndFilterSelecteds(
 	sourceSelecteds: Array<BorderState & { direction: Direction }>,
 	comparisonSelecteds: Array<BorderState & { direction: Direction }>

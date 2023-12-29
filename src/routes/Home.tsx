@@ -7,6 +7,7 @@ import {
 	sortByOrder,
 	isNumArrayEqual,
 	compareSelecteds,
+	getNumArrayCommonElements,
 } from '../libs/utils';
 import { HomeProvider, useHomeContext } from './HomeContext';
 
@@ -1012,6 +1013,43 @@ const BoxCollection = ({
 				sidePos,
 			}).length > 0;
 
+		const isPlayerWin = (
+			player: PlayerElement,
+			playersOwnableAndOwnedBoxes: { player1: number[]; player2: number[] }
+		) => {
+			const opponentPlayer = getOppositeElement(player);
+			const commonOwnableBoxesCount = getNumArrayCommonElements(
+				playersOwnableAndOwnedBoxes[player],
+				playersOwnableAndOwnedBoxes[opponentPlayer]
+			).length;
+			if (commonOwnableBoxesCount === 0) {
+				const count =
+					playersOwnableAndOwnedBoxes[player].length -
+					playersOwnableAndOwnedBoxes[opponentPlayer].length;
+				switch (true) {
+					case count > 0:
+						return player;
+					case count < 0:
+						return opponentPlayer;
+					default:
+						return 'draw';
+				}
+			} else if (
+				playersOwnableAndOwnedBoxes[opponentPlayer].length <
+				playersOwnableAndOwnedBoxes[player].length - commonOwnableBoxesCount
+			) {
+				return player;
+			} else if (
+				playersOwnableAndOwnedBoxes[player].length <
+				playersOwnableAndOwnedBoxes[opponentPlayer].length -
+					commonOwnableBoxesCount
+			) {
+				return opponentPlayer;
+			} else {
+				return undefined;
+			}
+		};
+
 		const createNewPlayerInfo = ({
 			player,
 			playerInfos,
@@ -1019,12 +1057,20 @@ const BoxCollection = ({
 			originalSelecteds,
 			opt,
 		}: CreateNewPlayerInfoProps): PlayerInfo => {
-			const ownableAndOwnedSelecteds = getOwnableSelecteds(
-				player,
-				true,
-				originalSelecteds,
-				{ withOriginalSelecteds: true }
-			);
+			const ownableAndOwnedBoxes = {
+				player1: getSurroundedBoxIndexes(
+					getOwnableSelecteds('player1', true, originalSelecteds, {
+						withOriginalSelecteds: true,
+					}),
+					originalSelecteds
+				),
+				player2: getSurroundedBoxIndexes(
+					getOwnableSelecteds('player2', true, originalSelecteds, {
+						withOriginalSelecteds: true,
+					}),
+					originalSelecteds
+				),
+			};
 			const ownedBoxCount = boxesResult.filter(
 				(item) => item.owner === player && item.isSurrounded
 			).length;
@@ -1033,20 +1079,11 @@ const BoxCollection = ({
 				boxCount: opt.withBoxCount
 					? ownedBoxCount
 					: playerInfos[player].boxCount,
-				ownableBoxCount:
-					getSurroundedBoxIndexes(ownableAndOwnedSelecteds, originalSelecteds)
-						.length - ownedBoxCount,
+				isWin: isPlayerWin(player, ownableAndOwnedBoxes) === player,
+				ownableBoxCount: ownableAndOwnedBoxes[player].length - ownedBoxCount,
 				ownableSelecteds: formatOwnableSelecteds(originalSelecteds)[player],
 			};
 		};
-
-		const createCommonPlayerInfoProps = (
-			player: PlayerElement,
-			rest: Omit<CreateNewPlayerInfoProps, 'player'>
-		): CreateNewPlayerInfoProps => ({
-			player,
-			...rest,
-		});
 
 		/* 중첩배열 제거, 같은 배열이 여러번 쌓이는 현상 방지 */
 		const getEnclosedBoxes = (
@@ -1128,6 +1165,25 @@ const BoxCollection = ({
 				return false;
 			});
 		};
+
+		const ownableAndOwnedBoxes = {
+			player1: getSurroundedBoxIndexes(
+				getOwnableSelecteds('player1', true, formattedSelected, {
+					withOriginalSelecteds: true,
+				}),
+				formattedSelected
+			),
+			player2: getSurroundedBoxIndexes(
+				getOwnableSelecteds('player2', true, formattedSelected, {
+					withOriginalSelecteds: true,
+				}),
+				formattedSelected
+			),
+		};
+
+		if (isPlayerWin(currentPlayer, ownableAndOwnedBoxes) === 'draw') {
+			console.log('draw');
+		}
 
 		/* 임의의 구역이 enclosed가 될 시 */
 		if (
@@ -1342,13 +1398,21 @@ const BoxCollection = ({
 			};
 
 			const playersResult = {
-				player1: createNewPlayerInfo(
-					createCommonPlayerInfoProps('player1', commonPlayerInfoProps)
-				),
-				player2: createNewPlayerInfo(
-					createCommonPlayerInfoProps('player2', commonPlayerInfoProps)
-				),
+				player1: createNewPlayerInfo({
+					player: 'player1',
+					...commonPlayerInfoProps,
+				}),
+				player2: createNewPlayerInfo({
+					player: 'player2',
+					...commonPlayerInfoProps,
+				}),
 			};
+
+			/**
+			 * ownable의 count가 서로 같지만 boxIndex는 하나도 중첩되지 않을 경우 자동 무승부,
+			 *
+			 * 플레이어가 고립되었을 때, 플레이어의 기대스코어 최대값이 다른 플레이어의 기대스코어 최소값보다 낮으면 자동 승부
+			 * */
 
 			setSelected(selectedsResult);
 			setBoxes(boxesResult);
@@ -1363,14 +1427,15 @@ const BoxCollection = ({
 			};
 
 			const playersResult = {
-				player1: createNewPlayerInfo(
-					createCommonPlayerInfoProps('player1', commonPlayerInfoProps)
-				),
-				player2: createNewPlayerInfo(
-					createCommonPlayerInfoProps('player2', commonPlayerInfoProps)
-				),
+				player1: createNewPlayerInfo({
+					player: 'player1',
+					...commonPlayerInfoProps,
+				}),
+				player2: createNewPlayerInfo({
+					player: 'player2',
+					...commonPlayerInfoProps,
+				}),
 			};
-
 			setSelected(formattedSelected);
 			setPlayers(playersResult);
 			setCurrentPlayer(opponentPlayer);

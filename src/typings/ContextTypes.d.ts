@@ -9,6 +9,7 @@ interface PlayerInfo {
 	ownableBoxCount: number;
 	name: string;
 	ownableSelecteds: Selected;
+	isWin: boolean;
 }
 
 type Players = Record<PlayerElement, PlayerInfo>;

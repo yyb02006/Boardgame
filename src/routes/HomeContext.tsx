@@ -10,12 +10,14 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 			ownableBoxCount: 0,
 			name: 'player1',
 			ownableSelecteds: { horizontal: [], vertical: [] },
+			isWin: false,
 		},
 		player2: {
 			boxCount: 0,
 			ownableBoxCount: 0,
 			name: 'player2',
 			ownableSelecteds: { horizontal: [], vertical: [] },
+			isWin: false,
 		},
 	});
 	const [selected, setSelected] = useState<Selected>({
