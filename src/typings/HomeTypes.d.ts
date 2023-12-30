@@ -136,6 +136,7 @@ interface PlayerProps {
 
 interface PlayerCardStyleProps {
 	$player: PlayerElement;
+	$playState: PlayState;
 }
 
 interface BoardItemsContainerProps {

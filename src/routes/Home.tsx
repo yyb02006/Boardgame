@@ -27,6 +27,7 @@ const colors = {
 	common: {
 		noneActiveBorder: '#808080',
 		activeBorder: '#f07400',
+		emphaticYellow: '#ffe030',
 		ownableBorder: '#bda93c',
 	},
 };
@@ -63,7 +64,7 @@ const Player = styled.div<PlayerProps>`
 const TitleContainer = styled.div`
 	display: flex;
 	${Turn} {
-		color: ${colors.common.activeBorder};
+		color: ${colors.common.emphaticYellow};
 	}
 	@media screen and (max-width: 1024px) {
 		font-size: 2rem;
@@ -99,6 +100,16 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 		font-size: ${`clamp(1rem,2vw,2rem)`};
 		font-weight: 600;
 		margin: 0;
+	}
+	div {
+		${(props) =>
+			props.$playState === 'win'
+				? css`
+						display: flex;
+						justify-content: center;
+						align-items: center;
+				  `
+				: null}
 	}
 	@media screen and (max-width: 1024px) {
 		margin: ${(props) =>
@@ -289,8 +300,9 @@ const ResultLayout = styled.div<{ $winner: PlayerElement | undefined }>`
 	justify-content: center;
 	align-items: center;
 	padding-bottom: 40px;
+	color: ${colors.common.emphaticYellow};
 	div {
-		font-size: ${'clamp(4rem,6vw,6rem)'};
+		font-size: ${'clamp(4rem,6vw,8rem)'};
 		div {
 			display: flex;
 			justify-content: center;
@@ -301,7 +313,6 @@ const ResultLayout = styled.div<{ $winner: PlayerElement | undefined }>`
 const Result = ({ gameState }: { gameState: GameState }) => {
 	const playState: Exclude<PlayState, 'playing'> =
 		gameState.playState === 'playing' ? 'draw' : gameState.playState;
-	const playerWiningState = { ...gameState.isPlayerWin };
 	const winner = (
 		Object.entries(gameState.isPlayerWin) as Array<[PlayerElement, boolean]>
 	).find((entry) => entry[1])?.[0];
@@ -311,7 +322,7 @@ const Result = ({ gameState }: { gameState: GameState }) => {
 				<div>Draw</div>
 			) : (
 				<div>
-					<div>winner</div>
+					<div>Winner</div>
 					<div>{winner}</div>
 				</div>
 			)}
@@ -336,7 +347,6 @@ const BoxCollection = ({
 		setGameState,
 	} = useHomeContext();
 	const opponentPlayer = getOppositeElement(currentPlayer);
-	const oppositeDirection = getOppositeElement(direction);
 	const onBoxClick = (sideId: number) => {
 		const formattedSelected: Selected = !selected[direction].some(
 			(item) => item.border === borderId && item.side === sideId
@@ -1652,27 +1662,52 @@ const BorderBox = ({ direction }: BorderBoxProps) => {
 };
 
 const PlayerCard = ({ player }: { player: PlayerElement }) => {
-	const { players, boxes } = useHomeContext();
+	const { players, boxes, gameState } = useHomeContext();
+	const { isPlayerWin, playState } = gameState;
 	return (
-		<PlayerCardStyle $player={player}>
-			{players[player].name} <br />
-			<h3>ownable : {players[player].ownableBoxCount}</h3>
-			<h3>
-				score :{' '}
-				{boxes.filter((box) => box.isSurrounded && box.owner === player).length}
-			</h3>
+		<PlayerCardStyle $player={player} $playState={playState}>
+			{playState === 'win' ? (
+				<div>{isPlayerWin[player] ? 'Win!' : 'Lose...'}</div>
+			) : (
+				<div>
+					{players[player].name} <br />
+					<h3>ownable : {players[player].ownableBoxCount}</h3>
+					<h3>
+						score :{' '}
+						{
+							boxes.filter((box) => box.isSurrounded && box.owner === player)
+								.length
+						}
+					</h3>
+				</div>
+			)}
 		</PlayerCardStyle>
 	);
 };
 
 const Board = () => {
-	const { boxes, currentPlayer } = useHomeContext();
+	const { boxes, currentPlayer, gameState } = useHomeContext();
+	const { isPlayerWin, playState } = gameState;
+	const winner = (
+		Object.entries(isPlayerWin) as Array<[PlayerElement, boolean]>
+	).find((entry) => entry[1])?.[0];
+	const player = playState === 'win' && winner ? winner : currentPlayer;
 	return (
 		<>
 			<TitleContainer>
-				<Player $currentPlayer={currentPlayer}>{currentPlayer}</Player>
-				<span>{`'s`}&nbsp;</span>
-				<Turn>{`turn`}</Turn>
+				{playState === 'draw' ? (
+					<div>Draw</div>
+				) : (
+					<>
+						<Player $currentPlayer={player}>{player}</Player>
+						{playState === 'win' ? (
+							<span>&nbsp;</span>
+						) : (
+							<span>{`'s`}&nbsp;</span>
+						)}
+						<Turn>{playState === 'win' ? `win` : `turn`}</Turn>
+					</>
+				)}
 			</TitleContainer>
 			<BoardLayout>
 				<PlayerCard player="player1" />
