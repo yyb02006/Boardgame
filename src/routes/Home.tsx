@@ -1255,16 +1255,11 @@ const BoxCollection = ({
 					});
 					break;
 				case 'player1':
-					setGameState({
-						playState: 'win',
-						isPlayerWin: { player1: true, player2: false },
-					});
-					break;
 				case 'player2':
-					setGameState({
+					setGameState((p) => ({
 						playState: 'win',
-						isPlayerWin: { player1: false, player2: true },
-					});
+						isPlayerWin: { ...p.isPlayerWin, [gameResult]: true },
+					}));
 					break;
 				default:
 					break;
@@ -1547,28 +1542,6 @@ const BoxCollection = ({
 			setPlayers(playersResult);
 			setCurrentPlayer(opponentPlayer);
 			setGameStateByResult(gameResult);
-			switch (gameResult) {
-				case 'draw':
-					setGameState({
-						playState: 'draw',
-						isPlayerWin: { player1: false, player2: false },
-					});
-					break;
-				case 'player1':
-					setGameState({
-						playState: 'win',
-						isPlayerWin: { player1: true, player2: false },
-					});
-					break;
-				case 'player2':
-					setGameState({
-						playState: 'win',
-						isPlayerWin: { player1: false, player2: true },
-					});
-					break;
-				default:
-					break;
-			}
 		}
 		/* why doesn't TypeGuard work when using a func return instead a variable? */
 	};
