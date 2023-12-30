@@ -96,7 +96,7 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 	padding: 12px 24px;
 	font-size: 4vw;
 	h3 {
-		font-size: 2rem;
+		font-size: ${`clamp(1rem,2vw,2rem)`};
 		font-weight: 600;
 		margin: 0;
 	}
@@ -106,6 +106,9 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 		max-width: 100%;
 		display: flex;
 		justify-content: space-between;
+		h3 {
+			font-size: 4vw;
+		}
 	}
 `;
 
@@ -273,6 +276,49 @@ const BoxHover = styled.div<BoxHoverProps>`
 	}
 `;
 
+const ResultLayout = styled.div<{ $winner: PlayerElement | undefined }>`
+	width: 100%;
+	height: 100%;
+	background-color: ${(props) =>
+		props.$winner ? colors[props.$winner].noneActiveBox : 'transparent'};
+	position: 'absolute';
+	top: 0;
+	left: 0;
+	z-index: 4;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding-bottom: 40px;
+	div {
+		font-size: ${'clamp(4rem,6vw,6rem)'};
+		div {
+			display: flex;
+			justify-content: center;
+		}
+	}
+`;
+
+const Result = ({ gameState }: { gameState: GameState }) => {
+	const playState: Exclude<PlayState, 'playing'> =
+		gameState.playState === 'playing' ? 'draw' : gameState.playState;
+	const playerWiningState = { ...gameState.isPlayerWin };
+	const winner = (
+		Object.entries(gameState.isPlayerWin) as Array<[PlayerElement, boolean]>
+	).find((entry) => entry[1])?.[0];
+	return (
+		<ResultLayout $winner={winner}>
+			{playState === 'draw' ? (
+				<div>Draw</div>
+			) : (
+				<div>
+					<div>winner</div>
+					<div>{winner}</div>
+				</div>
+			)}
+		</ResultLayout>
+	);
+};
+
 const BoxCollection = ({
 	direction,
 	borderId,
@@ -287,7 +333,6 @@ const BoxCollection = ({
 		setCurrentPlayer,
 		players,
 		setPlayers,
-		gameState,
 		setGameState,
 	} = useHomeContext();
 	const opponentPlayer = getOppositeElement(currentPlayer);
@@ -1581,22 +1626,27 @@ const BoxCollection = ({
 };
 
 const BorderBox = ({ direction }: BorderBoxProps) => {
+	const { gameState } = useHomeContext();
 	return (
 		<>
-			{Array(5)
-				.fill(undefined)
-				.map((_, borderId) => (
-					<BoxStyle key={borderId} direction={direction}>
-						<BoxCollection direction={direction} borderId={borderId} />
-						{borderId === 4 ? (
-							<BoxCollection
-								direction={direction}
-								isLast={borderId === 4}
-								borderId={borderId + 1}
-							/>
-						) : null}
-					</BoxStyle>
-				))}
+			{gameState.playState === 'playing' ? (
+				Array(5)
+					.fill(undefined)
+					.map((_, borderId) => (
+						<BoxStyle key={borderId} direction={direction}>
+							<BoxCollection direction={direction} borderId={borderId} />
+							{borderId === 4 ? (
+								<BoxCollection
+									direction={direction}
+									isLast={borderId === 4}
+									borderId={borderId + 1}
+								/>
+							) : null}
+						</BoxStyle>
+					))
+			) : (
+				<Result gameState={gameState} />
+			)}
 		</>
 	);
 };

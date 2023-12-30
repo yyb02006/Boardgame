@@ -16,7 +16,7 @@ interface PlayerInfo {
 
 interface GameState {
 	playState: PlayState;
-	isPlayerWin: { player1: boolean; player2: boolean };
+	isPlayerWin: Record<PlayerElement, boolean>;
 }
 
 type Players = Record<PlayerElement, PlayerInfo>;
