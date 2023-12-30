@@ -1,6 +1,14 @@
 import React from 'react';
-import styled from 'styled-components';
-import { isElementInNestedArray, sortByOrder } from '../libs/utils';
+import styled, { css, keyframes } from 'styled-components';
+import {
+	compareAndFilterSelecteds,
+	getOppositeElement,
+	findCommonElementInNestedArray,
+	sortByOrder,
+	isNumArrayEqual,
+	compareSelecteds,
+	getNumArrayCommonElements,
+} from '../libs/utils';
 import { HomeProvider, useHomeContext } from './HomeContext';
 
 const colors = {
@@ -16,8 +24,19 @@ const colors = {
 		activeBox: '#73dd85',
 		emphaticColor: '#a1ff09',
 	},
-	common: { noneActiveBorder: '#808080', activeBorder: '#e48100' },
+	common: {
+		noneActiveBorder: '#808080',
+		activeBorder: '#f07400',
+		emphaticYellow: '#ffe030',
+		ownableBorder: '#bda93c',
+	},
 };
+
+const colorChange = (player: 'player1' | 'player2' | 'common') => keyframes`
+	0%{border-color: ${colors[player].noneActiveBorder}}
+	50%{border-color: ${colors.common.ownableBorder}}
+	100%{border-color: ${colors[player].noneActiveBorder}}
+`;
 
 const Layout = styled.section`
 	background-color: var(--bgColor-dark);
@@ -45,7 +64,7 @@ const Player = styled.div<PlayerProps>`
 const TitleContainer = styled.div`
 	display: flex;
 	${Turn} {
-		color: ${colors.common.activeBorder};
+		color: ${colors.common.emphaticYellow};
 	}
 	@media screen and (max-width: 1024px) {
 		font-size: 2rem;
@@ -78,9 +97,19 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 	padding: 12px 24px;
 	font-size: 4vw;
 	h3 {
-		font-size: 2rem;
+		font-size: ${`clamp(1rem,2vw,2rem)`};
 		font-weight: 600;
 		margin: 0;
+	}
+	div {
+		${(props) =>
+			props.$playState === 'win'
+				? css`
+						display: flex;
+						justify-content: center;
+						align-items: center;
+				  `
+				: null}
 	}
 	@media screen and (max-width: 1024px) {
 		margin: ${(props) =>
@@ -88,6 +117,9 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 		max-width: 100%;
 		display: flex;
 		justify-content: space-between;
+		h3 {
+			font-size: 4vw;
+		}
 	}
 `;
 
@@ -141,7 +173,7 @@ const BoardBordersContainer = styled.div<BoardBordersContainerProps>`
 	justify-content: space-between;
 `;
 
-const BoxStyle = styled.div<directionInterface>`
+const BoxStyle = styled.div<DirectionInterface>`
 	position: relative;
 	width: ${(props) => (props.direction === 'horizontal' ? '100%' : '20%')};
 	height: ${(props) => (props.direction === 'horizontal' ? '20%' : '100%')};
@@ -201,10 +233,18 @@ const BoxHover = styled.div<BoxHoverProps>`
 				: colors.player2.noneActiveBox;
 		} else if (props.$isMergeable) {
 			return colors[props.$owner].noneActiveBorder;
+		} else if (props.$isOwnable) {
+			return colors.common.ownableBorder;
 		} else {
 			return colors[props.$currentPlayer].noneActiveBorder;
 		}
 	}};
+	${(props) =>
+		props.$isOwnable &&
+		!props.$isSelected &&
+		css`
+			animation: ${colorChange(props.$currentPlayer)} 3s infinite;
+		`}
 	z-index: ${(props) => (props.$isSelected ? 2 : 1)};
 	&:hover {
 		background-color: ${(props) =>
@@ -247,11 +287,54 @@ const BoxHover = styled.div<BoxHoverProps>`
 	}
 `;
 
+const ResultLayout = styled.div<{ $winner: PlayerElement | undefined }>`
+	width: 100%;
+	height: 100%;
+	background-color: ${(props) =>
+		props.$winner ? colors[props.$winner].noneActiveBox : 'transparent'};
+	position: 'absolute';
+	top: 0;
+	left: 0;
+	z-index: 4;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding-bottom: 40px;
+	color: ${colors.common.emphaticYellow};
+	div {
+		font-size: ${'clamp(4rem,6vw,8rem)'};
+		div {
+			display: flex;
+			justify-content: center;
+		}
+	}
+`;
+
+const Result = ({ gameState }: { gameState: GameState }) => {
+	const playState: Exclude<PlayState, 'playing'> =
+		gameState.playState === 'playing' ? 'draw' : gameState.playState;
+	const winner = (
+		Object.entries(gameState.isPlayerWin) as Array<[PlayerElement, boolean]>
+	).find((entry) => entry[1])?.[0];
+	return (
+		<ResultLayout $winner={winner}>
+			{playState === 'draw' ? (
+				<div>Draw</div>
+			) : (
+				<div>
+					<div>Winner</div>
+					<div>{winner}</div>
+				</div>
+			)}
+		</ResultLayout>
+	);
+};
+
 const BoxCollection = ({
 	direction,
 	borderId,
 	isLast = false,
-}: boxCollectionProps) => {
+}: BoxCollectionProps) => {
 	const {
 		boxes,
 		setBoxes,
@@ -261,11 +344,11 @@ const BoxCollection = ({
 		setCurrentPlayer,
 		players,
 		setPlayers,
+		setGameState,
 	} = useHomeContext();
-	const otherPlayer = currentPlayer === 'player1' ? 'player2' : 'player1';
-	const otherDirection = direction === 'horizontal' ? 'vertical' : 'horizontal';
+	const opponentPlayer = getOppositeElement(currentPlayer);
 	const onBoxClick = (sideId: number) => {
-		const formattedSelected: selected = !selected[direction].find(
+		const formattedSelected: Selected = !selected[direction].some(
 			(item) => item.border === borderId && item.side === sideId
 		)
 			? {
@@ -278,300 +361,540 @@ const BoxCollection = ({
 							isSelected: true,
 							owner: currentPlayer,
 							isMergeable: false,
-						} /* satisfies === 중복 검사 */ satisfies borderState,
+							ownable: { player1: false, player2: false },
+						} /* satisfies === 중복 검사 */ satisfies BorderState,
 					],
 			  }
 			: selected;
 
-		const findSideSelected: (
+		const matchSelectedsLocation = (
+			comparatorSelected: BorderState,
+			targetSelected: BorderState
+		) =>
+			comparatorSelected.border === targetSelected.border &&
+			comparatorSelected.side === targetSelected.side;
+
+		const findSides = (
 			selectedBorderId: number,
 			selectedSideId: number,
-			sidePos: 'left' | 'right',
-			sideDireciton: direction
-		) => { top: borderState; middle: borderState; bottom: borderState } = (
-			selectedBorderId,
-			selectedSideId,
-			sidePos,
-			selectedDireciton
+			sidePos: HorizontalPos,
+			selectedDireciton: Direction,
+			player: PlayerElement
 		) => {
-			return {
-				top: {
-					border:
-						selectedSideId +
-						(selectedDireciton === 'horizontal'
-							? sidePos === 'left'
-								? 0
-								: 1
-							: sidePos === 'left'
-							? 1
-							: 0),
-					side: selectedBorderId - 1,
-					isSelected: true,
-					owner: currentPlayer,
-					isMergeable: false,
-				},
-				middle: {
-					border: selectedBorderId,
-					side:
-						selectedSideId +
-						(selectedDireciton === 'horizontal'
-							? sidePos === 'left'
+			const createBorderOrSide = ({
+				borderId,
+				sideId,
+				sidePos,
+				direction,
+				heightPos,
+			}: CreateBorderOrSideProps): BorderState => {
+				const mainBorder =
+					sideId +
+					(direction === 'horizontal'
+						? sidePos === 'left'
+							? heightPos === 'middle'
 								? -1
-								: 1
-							: sidePos === 'left'
-							? 1
-							: -1),
-					isSelected: true,
-					owner: currentPlayer,
+								: 0
+							: 1
+						: sidePos === 'left'
+						? 1
+						: heightPos === 'middle'
+						? -1
+						: 0);
+				const subBorder = heightPos === 'top' ? borderId - 1 : borderId;
+				return {
+					border: heightPos === 'middle' ? subBorder : mainBorder,
+					side: heightPos === 'middle' ? mainBorder : subBorder,
+					isSelected: false,
+					owner: player,
 					isMergeable: false,
-				},
-				bottom: {
-					border:
-						selectedSideId +
-						(selectedDireciton === 'horizontal'
-							? sidePos === 'left'
-								? 0
-								: 1
-							: sidePos === 'left'
-							? 1
-							: 0),
-					side: selectedBorderId,
-					isSelected: true,
-					owner: currentPlayer,
-					isMergeable: false,
-				},
+					ownable: { player1: false, player2: false },
+				};
+			};
+			const commonParams = {
+				borderId: selectedBorderId,
+				sideId: selectedSideId,
+				sidePos,
+				direction: selectedDireciton,
+			};
+			return {
+				top: createBorderOrSide({ ...commonParams, heightPos: 'top' }),
+				middle: createBorderOrSide({ ...commonParams, heightPos: 'middle' }),
+				bottom: createBorderOrSide({ ...commonParams, heightPos: 'bottom' }),
 			};
 		};
 
-		const findExistSideSelected = (
-			borderId: number,
-			sideId: number,
-			sidePos: 'left' | 'right',
-			owner: 'current' | 'other' | 'all',
-			selectedDirection: direction = direction
-		) => [
-			...formattedSelected[
-				selectedDirection === 'horizontal' ? 'vertical' : 'horizontal'
-			]
-				.filter(
-					(item) =>
-						(owner === 'current'
-							? item.owner === currentPlayer
-							: owner === 'other'
-							? item.owner === otherPlayer
-							: true) &&
-						item.border ===
-							sideId +
-								(selectedDirection === 'horizontal'
-									? sidePos === 'left'
-										? 0
-										: 1
-									: sidePos === 'left'
-									? 1
-									: 0) &&
-						(item.side === borderId - 1 || item.side === borderId)
-				)
-				.map((item) => ({
-					...item,
-					direction:
-						selectedDirection === 'horizontal' ? 'vertical' : 'horizontal',
-				})),
-			...formattedSelected[selectedDirection]
-				.filter(
-					(item) =>
-						(owner === 'current'
-							? item.owner === currentPlayer
-							: owner === 'other'
-							? item.owner === otherPlayer
-							: true) &&
-						item.border === borderId &&
-						item.side ===
-							sideId +
-								(selectedDirection === 'horizontal'
-									? sidePos === 'left'
-										? -1
-										: 1
-									: sidePos === 'left'
-									? 1
-									: -1)
-				)
-				.map((item) => ({ ...item, direction: selectedDirection })),
-		];
+		const findExistSides = ({
+			borderId,
+			sideId,
+			selectedDirection,
+			sidePos,
+			player,
+			owner,
+			originalSelecteds,
+		}: FindExistSidesProps): BorderStateWithDirection[] => {
+			const localOppositDirection = getOppositeElement(selectedDirection);
+			const localOppositPlayer = getOppositeElement(player);
+			return [
+				...originalSelecteds[localOppositDirection]
+					.filter(
+						(item) =>
+							(owner === 'current'
+								? item.owner === player
+								: owner === 'other'
+								? item.owner === localOppositPlayer
+								: true) &&
+							item.border ===
+								sideId +
+									(selectedDirection === 'horizontal'
+										? sidePos === 'left'
+											? 0
+											: 1
+										: sidePos === 'left'
+										? 1
+										: 0) &&
+							(item.side === borderId - 1 || item.side === borderId)
+					)
+					.map((item) => ({
+						...item,
+						direction: localOppositDirection,
+					})),
+				...originalSelecteds[selectedDirection]
+					.filter(
+						(item) =>
+							(owner === 'current'
+								? item.owner === player
+								: owner === 'other'
+								? item.owner === localOppositPlayer
+								: true) &&
+							item.border === borderId &&
+							item.side ===
+								sideId +
+									(selectedDirection === 'horizontal'
+										? sidePos === 'left'
+											? -1
+											: 1
+										: sidePos === 'left'
+										? 1
+										: -1)
+					)
+					.map((item) => ({ ...item, direction: selectedDirection })),
+			] as Array<BorderState & { direction: Direction }>;
+		};
 
-		/* ??와 ||는 서로 완전히 같은 목적으로 사용할 수 없음 */
-		const breakOnClickCondition =
-			/* 같은 자리에 이미 클릭된 border가 있을 경우  */
-			!!selected[direction].find(
-				(item) => item.border === borderId && item.side === sideId
-			) ||
-			/* 다른 곳에 있는 border에 이어지는 border만 클릭할 수 있음(가장 첫번째 selected 예외) */
-			!!(
-				findExistSideSelected(borderId, sideId, 'left', 'current').length ===
-					0 &&
-				findExistSideSelected(borderId, sideId, 'right', 'current').length ===
-					0 &&
-				(selected.horizontal.find((border) => border.owner === currentPlayer) ??
-					selected.vertical.find((border) => border.owner === currentPlayer))
-			) ||
-			/* 다른 border 2개로 막혀있는 곳 사이를 뚫고 지나갈 수 없음 */
-			!!(
-				(findExistSideSelected(borderId, sideId, 'left', 'other').filter(
-					(border) => border.direction === otherDirection
-				).length === 2 &&
-					findExistSideSelected(borderId, sideId, 'right', 'current').length ===
-						0) ||
-				(findExistSideSelected(borderId, sideId, 'right', 'other').filter(
-					(border) => border.direction === otherDirection
-				).length === 2 &&
-					findExistSideSelected(borderId, sideId, 'left', 'current').length ===
-						0) ||
-				(findExistSideSelected(borderId, sideId, 'left', 'other').filter(
-					(border) => border.direction === otherDirection
-				).length === 2 &&
-					findExistSideSelected(borderId, sideId, 'right', 'other').filter(
-						(border) => border.direction === otherDirection
-					).length === 2)
+		const findNotExistSelected = (
+			border: number,
+			side: number,
+			direction: Direction,
+			horizontalPos: HorizontalPos,
+			originalSelecteds: Selected,
+			player: PlayerElement
+		) => {
+			const existSideSelecteds = findExistSides({
+				borderId: border,
+				sideId: side,
+				sidePos: horizontalPos,
+				owner: 'all',
+				selectedDirection: direction,
+				originalSelecteds,
+				player,
+			});
+			const sideSelecteds = findSides(
+				border,
+				side,
+				horizontalPos,
+				direction,
+				player
 			);
-
-		const newSelecteds: selected = {
-			horizontal: [],
-			vertical: [],
+			const mappedSelecteds = Object.entries(sideSelecteds)
+				.filter(
+					(selected) =>
+						selected[1].border >= 0 &&
+						selected[1].border < 6 &&
+						selected[1].side >= 0 &&
+						selected[1].side < 5
+				)
+				.map((selected) => ({
+					...selected[1],
+					direction:
+						selected[0] === 'middle'
+							? direction
+							: getOppositeElement(direction),
+				}));
+			const result = compareAndFilterSelecteds(
+				mappedSelecteds,
+				existSideSelecteds
+			);
+			return result;
 		};
 
-		console.log(findSideSelected(2, 2, 'left', 'horizontal'));
+		const isSelectedBlocked = ({
+			border,
+			side,
+			direction,
+			objectPos,
+			originalSelecteds,
+			player,
+		}: IsBlockedProps) => {
+			const localOppositeDirection = getOppositeElement(direction);
+			return (
+				findExistSides({
+					borderId: border,
+					sideId: side,
+					sidePos: objectPos,
+					owner: 'other',
+					selectedDirection: direction,
+					originalSelecteds,
+					player,
+				}).filter((border) => border.direction === localOppositeDirection)
+					.length === 2
+			);
+		};
 
-		/* 하나의 selected 주변에 아무에게도 선택되지 않은 selected를 찾는 함수 */
-		/* 재귀실행은 포기하고 단일 selected에 적용되는 함수로 변환해야함. */
-		/* 12/21 selected와 이웃한 selected 중 소유권 없는 selected 찾기 완료 */
-		const findUnownedSelecteds = (selecteds: selected) => {
-			const tempSelecteds: selected = { horizontal: [], vertical: [] };
-			for (const selectedKey in selecteds) {
-				if (selectedKey !== 'horizontal' && selectedKey !== 'vertical') return;
-				const otherSelectedKey =
-					selectedKey === 'horizontal' ? 'vertical' : 'horizontal';
-				for (const item of selecteds[selectedKey]) {
-					if (item.owner === currentPlayer) {
-						const { border, side } = item;
-						const processIterate = (horizontalDirection: 'left' | 'right') => {
-							const commonExistSelected = (kind: 'all' | 'other' | 'current') =>
-								findExistSideSelected(
-									border,
-									side,
-									horizontalDirection,
-									kind,
-									selectedKey
-								);
-							const verticalCondition = (
-								verticalDirection: 'top' | 'bottom'
-							) => {
-								const objectSelected = findSideSelected(
-									border,
-									side,
-									horizontalDirection,
-									selectedKey
-								)[verticalDirection];
-								if (
-									!commonExistSelected('all').find(
-										(item) =>
-											item.direction === otherSelectedKey &&
-											item.border === objectSelected.border &&
-											item.side === objectSelected.side
-									) &&
-									!tempSelecteds[otherSelectedKey].find(
-										(item) =>
-											item.border === objectSelected.border &&
-											item.side === objectSelected.side
-									) &&
-									objectSelected.border >= 0 &&
-									objectSelected.side >= 0
-								) {
-									tempSelecteds[otherSelectedKey].push(objectSelected);
-								}
-							};
-							if (
-								commonExistSelected('other').filter(
-									(border) => border.direction === otherSelectedKey
-								).length !== 2
-							) {
-								const commonFindSideSelected = findSideSelected(
-									border,
-									side,
-									horizontalDirection,
-									selectedKey
-								).middle;
-								if (
-									!commonExistSelected('all').find(
-										(border) => border.direction === selectedKey
-									) &&
-									!tempSelecteds[selectedKey].find(
-										(item) =>
-											item.border === commonFindSideSelected.border &&
-											item.side === commonFindSideSelected.side
-									) &&
-									commonFindSideSelected.border >= 0 &&
-									commonFindSideSelected.side >= 0
-								) {
-									tempSelecteds[selectedKey].push(commonFindSideSelected);
-								}
-								verticalCondition('top');
-								verticalCondition('bottom');
-							}
-						};
-						processIterate('left');
-						processIterate('right');
-					}
-				}
-			}
-			/* console.log(selecteds);
+		const canClickWhenBlocked = ({
+			border,
+			side,
+			direction,
+			objectPos,
+			originalSelecteds,
+			player,
+		}: CanClickWhenBlockedProps) =>
+			isSelectedBlocked({
+				border,
+				side,
+				direction,
+				objectPos,
+				originalSelecteds,
+				player,
+			}) &&
+			findExistSides({
+				borderId: border,
+				sideId: side,
+				sidePos: getOppositeElement(objectPos),
+				owner: 'current',
+				selectedDirection: direction,
+				originalSelecteds,
+				player,
+			}).length === 0;
 
-			console.log(tempSelecteds); */
-			if (
-				tempSelecteds.horizontal.length > 0 &&
-				tempSelecteds.vertical.length > 0
-			) {
-				const recursiveSelecteds: selected = {
-					horizontal: [
-						...selecteds.horizontal.filter(
-							(item) => item.owner === currentPlayer
-						),
-						...tempSelecteds.horizontal,
-					],
-					vertical: [
-						...selecteds.vertical.filter(
-							(item) => item.owner === currentPlayer
-						),
-						...tempSelecteds.vertical,
-					],
-				};
-				console.log(recursiveSelecteds);
+		const shouldAbort = ({
+			selected,
+			borderId,
+			sideId,
+			direction,
+			originalSelecteds,
+			currentPlayer,
+		}: ShouldAbortProps) => {
+			/* Omit === 타입빼기 */
+			const commonFindExistSidesProps: Omit<FindExistSidesProps, 'sidePos'> = {
+				borderId,
+				sideId,
+				owner: 'current',
+				selectedDirection: direction,
+				originalSelecteds,
+				player: currentPlayer,
+			};
+			const notHasExistSide = (
+				sidePos: HorizontalPos,
+				commonProps: typeof commonFindExistSidesProps
+			): boolean => findExistSides({ ...commonProps, sidePos }).length === 0;
+			const commonCanClickWhenBlockedProps: Omit<
+				CanClickWhenBlockedProps,
+				'objectPos'
+			> = {
+				border: borderId,
+				side: sideId,
+				direction,
+				originalSelecteds,
+				player: currentPlayer,
+			};
+			const canClickWhenBlockedBySide = (
+				objectPos: HorizontalPos,
+				commonProps: typeof commonCanClickWhenBlockedProps
+			) =>
+				canClickWhenBlocked({
+					...commonProps,
+					objectPos,
+				});
+			const commonIsSelectedBlockedProps: Omit<IsBlockedProps, 'objectPos'> = {
+				border: borderId,
+				side: sideId,
+				direction,
+				originalSelecteds,
+				player: currentPlayer,
+			};
+			const isSelectedBlockedBySide = (
+				objectPos: HorizontalPos,
+				commonProps: typeof commonIsSelectedBlockedProps
+			) =>
+				isSelectedBlocked({
+					...commonProps,
+					objectPos,
+				});
+			return (
+				/* 같은 자리에 이미 클릭된 border가 있을 경우  */
+				!!selected[direction].some(
+					(item) => item.border === borderId && item.side === sideId
+				) ||
+				/* 다른 곳에 있는 border에 이어지는 border만 클릭할 수 있음(가장 첫번째 selected 예외) */
+				!!(
+					(['left', 'right'] as HorizontalPos[]).every((position) =>
+						notHasExistSide(position, commonFindExistSidesProps)
+					) &&
+					(selected.horizontal.some(
+						(border) => border.owner === currentPlayer
+					) ||
+						selected.vertical.some((border) => border.owner === currentPlayer))
+				) ||
+				/* 다른 border 2개로 막혀있는 곳 사이를 뚫고 지나갈 수 없음 */
+				canClickWhenBlockedBySide('left', commonCanClickWhenBlockedProps) ||
+				canClickWhenBlockedBySide('right', commonCanClickWhenBlockedProps) ||
+				(['left', 'right'] as HorizontalPos[]).every((position) =>
+					isSelectedBlockedBySide(position, commonIsSelectedBlockedProps)
+				)
+			);
+		};
+
+		if (
+			shouldAbort({
+				borderId,
+				sideId,
+				selected,
+				direction,
+				currentPlayer,
+				originalSelecteds: formattedSelected,
+			})
+		)
+			return;
+
+		const playerSelecteds = (
+			player: PlayerElement,
+			originalSelecteds: Selected
+		) => ({
+			horizontal: originalSelecteds.horizontal.filter(
+				(item) => item.owner === player
+			),
+			vertical: originalSelecteds.vertical.filter(
+				(item) => item.owner === player
+			),
+		});
+
+		const insertDirectionAtSelecteds = (selecteds: Selected) => {
+			const results = [
+				...selecteds.horizontal.map((selected) => ({
+					...selected,
+					direction: 'horizontal',
+				})),
+				...selecteds.vertical.map((selected) => ({
+					...selected,
+					direction: 'vertical',
+				})),
+			] as BorderStateWithDirection[];
+			return results;
+		};
+
+		/** 재귀함수에서 함수의 재호출 부분을 return하지 않으면 콜스택에서 실행컨텍스트가 하나씩 제거될 때
+		 *
+		 *  return (상위 실행컨텍스트의 실행값);이 되어서 반환값을 다시 다음 실행컨텍스트에 물려줘야 하는데
+		 *
+		 * 	return을 넣지 않으면 해당 실행컨텍스트에서 (상위 실행컨텍스트의 실행값); 을 실행하게 되고,
+		 *
+		 * 	이건 곧 return이 없는 것이니 undefined를 뱉어내게 된다.
+		 *
+		 *  그러면 다음 실행컨텍스트는 상위 실행컨텍스트의 실행값으로 undefined를 받으면서 return이 없어 undefined를 뱉어내게 되어
+		 *
+		 * 	실행 컨텍스트가 모두 해결될 때 최종적으로 undefined를 뱉어내게 된다.
+		 *  */
+		/* 12/23 findOwnableRecursive재귀함수 리팩토링 순수함수이며 1가지의 목적을 가지도록 변경 */
+		const findOwnableRecursive = ({
+			sourceSelecteds,
+			originalSelecteds,
+			player,
+			recursive,
+		}: FindOwnableRecursive): BorderStateWithDirection[] => {
+			const findOwnableSelecteds = sourceSelecteds.reduce<
+				BorderStateWithDirection[]
+			>((accumulator, currentSelected) => {
+				const { border, side, direction } = currentSelected;
+				const getUnblockedSelecteds = ({
+					border,
+					side,
+					direction,
+					objectPos,
+					player,
+				}: GetUnblockedSelectedsProp) =>
+					!isSelectedBlocked({
+						border,
+						side,
+						direction,
+						objectPos,
+						player,
+						originalSelecteds,
+					})
+						? findNotExistSelected(
+								border,
+								side,
+								direction,
+								objectPos,
+								originalSelecteds,
+								player
+						  ).map((item) => ({
+								...item,
+								ownable: { ...item.ownable, [player]: true },
+						  }))
+						: [];
+				const commonGetUnblockedProps: Omit<
+					GetUnblockedSelectedsProp,
+					'objectPos'
+				> = { border, side, direction, player };
+				const left = getUnblockedSelecteds({
+					...commonGetUnblockedProps,
+					objectPos: 'left',
+				});
+				const right = getUnblockedSelecteds({
+					...commonGetUnblockedProps,
+					objectPos: 'right',
+				});
+				const newSelecteds = [...left, ...right];
+
+				const result = [
+					...accumulator,
+					...compareAndFilterSelecteds(newSelecteds, accumulator),
+				];
+
+				return result;
+			}, sourceSelecteds);
+			if (findOwnableSelecteds.length !== sourceSelecteds.length && recursive) {
+				return findOwnableRecursive({
+					sourceSelecteds: [...findOwnableSelecteds],
+					originalSelecteds,
+					player,
+					recursive,
+				});
 			} else {
-				console.log(`result = `, selecteds);
+				return findOwnableSelecteds;
 			}
-			/* tempSelecteds.horizontal = [
-				...formattedSelected.horizontal,
-				...tempSelecteds.horizontal,
-			];
-			tempSelecteds.vertical = [
-				...formattedSelected.vertical,
-				...tempSelecteds.vertical,
-			]; */
-
-			/* if (
-				tempSelecteds.horizontal.length > 0 &&
-				tempSelecteds.vertical.length > 0
-			) {
-				findUnownedSelecteds(tempSelecteds);
-			} */
 		};
 
-		/* findUnownedSelecteds(formattedSelected); */
+		const mapAndSortOwnableSelecteds = ({
+			direction,
+			ownableSelecteds,
+			player,
+		}: FormatOwnableSelecteds): BorderState[] =>
+			ownableSelecteds
+				.filter((item) => item.direction === direction)
+				.map(
+					(item) =>
+						({
+							border: item.border,
+							side: item.side,
+							owner: item.owner,
+							isSelected: item.isSelected,
+							isMergeable: item.isMergeable,
+							ownable: { ...item.ownable, [player]: true },
+						}) satisfies BorderState
+				)
+				.sort((a, b) => {
+					if (a.border !== b.border) {
+						return a.border - b.border;
+					} else {
+						return a.side - b.side;
+					}
+				});
 
-		// const countSelectableBorder = () => {formattedSelected.horizontal.filter(border => border.)};
+		const getOwnableSelecteds = (
+			player: PlayerElement,
+			isRecursive: boolean,
+			originalSelecteds: Selected,
+			opt: { withOriginalSelecteds: boolean } = {
+				withOriginalSelecteds: false,
+			}
+		) => {
+			const commonProps = {
+				sourceSelecteds: insertDirectionAtSelecteds(
+					playerSelecteds(player, originalSelecteds)
+				),
+				originalSelecteds,
+				player,
+				recursive: isRecursive,
+			};
+			if (opt.withOriginalSelecteds) {
+				return findOwnableRecursive(commonProps);
+			} else {
+				return compareAndFilterSelecteds(
+					findOwnableRecursive(commonProps),
+					insertDirectionAtSelecteds(playerSelecteds(player, originalSelecteds))
+				);
+			}
+		};
 
-		if (breakOnClickCondition) return;
-		// console.log('border = ' + borderId, 'side = ' + sideId, boxes, selected);
+		const createOwnableSelectedsWithPlayers = (
+			isRecursive: boolean,
+			originalSelecteds: Selected,
+			opt: { withOriginalSelecteds: boolean } = { withOriginalSelecteds: false }
+		) => {
+			const { withOriginalSelecteds } = opt;
+			return {
+				player1: getOwnableSelecteds(
+					'player1',
+					isRecursive,
+					originalSelecteds,
+					{
+						withOriginalSelecteds,
+					}
+				),
+				player2: getOwnableSelecteds(
+					'player2',
+					isRecursive,
+					originalSelecteds,
+					{
+						withOriginalSelecteds,
+					}
+				),
+			};
+		};
+
+		const formatOwnableSelecteds = (
+			originalSelecteds: Selected
+		): OwnableSelecteds => {
+			const createFormattedObject = (player: PlayerElement) => {
+				const createCommonProps = (
+					direction: Direction,
+					player: PlayerElement
+				): FormatOwnableSelecteds => {
+					const ownableSelecteds = createOwnableSelectedsWithPlayers(
+						false,
+						originalSelecteds
+					);
+
+					return {
+						direction,
+						ownableSelecteds: ownableSelecteds[player],
+						player,
+					};
+				};
+
+				return {
+					horizontal: mapAndSortOwnableSelecteds(
+						createCommonProps('horizontal', player)
+					),
+					vertical: mapAndSortOwnableSelecteds(
+						createCommonProps('vertical', player)
+					),
+				};
+			};
+			return {
+				player1: createFormattedObject('player1'),
+				player2: createFormattedObject('player2'),
+			};
+		};
+
+		/* console.log(createOwnableSelectedsWithPlayers(false, formattedSelected));
+
+		console.log(formatOwnableSelecteds(formattedSelected)); */
+
 		const borderToBox = (
-			direction: direction,
+			direction: Direction,
 			isUpPos: boolean,
 			border: number = borderId,
 			side: number = sideId,
@@ -588,25 +911,25 @@ const BoxCollection = ({
 			}
 		};
 
-		const boxToborder = (
-			boxIndex: number,
-			direction: 'left' | 'right' | 'up' | 'down',
-			isSelected: boolean = false,
-			isMergeable: boolean = false,
-			owner: currentPlayer = currentPlayer
-		) => {
-			const resultSelected: (opt: number) => borderState = (opt) => {
+		const boxToborder = ({
+			boxIndex,
+			position,
+			isSelected = true,
+			isMergeable = false,
+			owner = 'player1',
+			originalSelecteds,
+		}: BoxToBorderProps) => {
+			const resultSelected: (opt: number) => BorderState = (opt) => {
 				const remainder = boxIndex % 5;
 				const quotient = Math.floor(boxIndex / 5);
-				const isHorizontal = direction === 'left' || direction === 'right';
+				const isHorizontal = position === 'left' || position === 'right';
 				const border = (isHorizontal ? remainder : quotient) + opt;
 				const side = isHorizontal ? quotient : remainder;
-				const existSelected = selected[
+				const existSelected = originalSelecteds[
 					isHorizontal ? 'vertical' : 'horizontal'
 				].find((item) => item.border === border && item.side === side);
 				if (existSelected) {
-					existSelected.owner = currentPlayer;
-					return existSelected;
+					return { ...existSelected, owner };
 				} else {
 					return {
 						border,
@@ -614,39 +937,55 @@ const BoxCollection = ({
 						isSelected,
 						owner,
 						isMergeable,
-					} satisfies borderState;
+						ownable: { player1: false, player2: false },
+					} satisfies BorderState;
 				}
 			};
 			switch (true) {
-				case direction === 'left' || direction === 'up':
+				case position === 'left' || position === 'up':
 					return resultSelected(0);
-				case direction === 'right' || direction === 'down':
+				default:
 					return resultSelected(1);
 			}
 		};
 
-		const findClosedBoxByDirection = (direction: direction) => {
+		// 순수함수로 수정, 로직 재고 필요, 빈배열은 리턴하지 않는 로직은 유지
+		const findClosedBoxByDirection = (
+			direction: Direction,
+			sourceSelecteds: Selected,
+			player: PlayerElement
+		) => {
 			const isHorizontal = direction === 'horizontal';
 			return Array.from({ length: 5 }, (_, id) => {
-				const borders = formattedSelected[direction]
-					.filter((item) => item.side === id && item.owner === currentPlayer)
+				const borders = sourceSelecteds[direction]
+					.filter((item) => item.side === id && item.owner === player)
 					.sort((a, b) => a.border - b.border);
 				return borders.length > 1
 					? Array.from({ length: borders.length - 1 }, (_, idx) =>
 							Array.from(
 								{ length: borders[idx + 1].border - borders[idx].border },
 								(_, index) => {
-									return (
+									const boxNumber =
 										(borders[idx].border + index) * (isHorizontal ? 5 : 1) +
-										borders[idx].side * (isHorizontal ? 1 : 5)
-									);
+										borders[idx].side * (isHorizontal ? 1 : 5);
+									return boxes[boxNumber].isSurrounded &&
+										boxes[boxNumber].owner === player
+										? undefined
+										: boxNumber;
 								}
 							)
 					  )
 					: [];
 			})
 				.flat()
-				.filter((item) => !!item);
+				.reduce<number[][]>((accumulator, currentBoxes) => {
+					const removedSurrounded = currentBoxes.filter(
+						(box) => box !== undefined
+					) as number[];
+					return removedSurrounded.length > 0
+						? [...accumulator, removedSurrounded]
+						: accumulator;
+				}, []);
 		};
 
 		/**
@@ -658,176 +997,607 @@ const BoxCollection = ({
 		 *
 		 * ps. 시발거
 		 *  */
-
-		const getEnclosedBox = (closedBox: number[], initDirection: direction) => {
-			const horizontalClosedBoxes: closedBoxes = {
-				arr: findClosedBoxByDirection('horizontal'),
-				label: 'horizontal',
-			};
-			const verticalClosedBoxes: closedBoxes = {
-				arr: findClosedBoxByDirection('vertical'),
-				label: 'vertical',
-			};
-
-			const result: getEnclosedBoxResult = {
+		const createGetEnclosedClosure = (
+			initBoxes: number[],
+			closedBoxesArray: Record<Direction, number[][]>,
+			currentDirection: Direction = 'horizontal'
+		) => {
+			const accumulator: Record<Direction, number[][]> = {
 				horizontal: [],
 				vertical: [],
 			};
-
-			const addEnclosedBoxesRecursive = (
-				closedBox: number[],
-				boxesObject: {
-					arr: nestedArray<number>;
-					label: direction;
-				}
-			) => {
-				const resultIsIncluded = isElementInNestedArray(
-					closedBox,
-					boxesObject.arr
-				);
-				if (resultIsIncluded.length > 0) {
-					resultIsIncluded.forEach((el) => {
-						if (!result[boxesObject.label].includes(el)) {
-							result[boxesObject.label] = [...result[boxesObject.label], el];
-							addEnclosedBoxesRecursive(
-								el,
-								boxesObject.label === 'horizontal'
-									? verticalClosedBoxes
-									: horizontalClosedBoxes
-							);
-						}
-					});
+			let sourceBoxes = [initBoxes];
+			let bordersDirection = currentDirection;
+			const getEnclosedBoxesRecursive = (): number[] | false => {
+				const oppositeDirection = getOppositeElement(bordersDirection);
+				sourceBoxes = sourceBoxes
+					.reduce<number[][]>((accumulatedBoxes, currentbox) => {
+						const newBoxes = findCommonElementInNestedArray(
+							currentbox,
+							closedBoxesArray[oppositeDirection]
+						).filter(
+							(box) => !accumulatedBoxes.some((el) => isNumArrayEqual(el, box))
+						);
+						return [...accumulatedBoxes, ...newBoxes];
+					}, [])
+					.filter(
+						(box) =>
+							!accumulator[oppositeDirection].some((el) =>
+								isNumArrayEqual(el, box)
+							)
+					);
+				if (sourceBoxes.length > 0) {
+					accumulator[oppositeDirection] = [
+						...accumulator[oppositeDirection],
+						...sourceBoxes,
+					];
+					bordersDirection = oppositeDirection;
+					return getEnclosedBoxesRecursive();
+				} else if (
+					accumulator.horizontal.length > 0 &&
+					isNumArrayEqual(
+						accumulator.horizontal.flat(),
+						accumulator.vertical.flat()
+					)
+				) {
+					return accumulator.horizontal.flat();
 				} else {
 					return false;
 				}
 			};
-
-			addEnclosedBoxesRecursive(
-				closedBox,
-				initDirection === 'horizontal'
-					? horizontalClosedBoxes
-					: verticalClosedBoxes
-			);
-
-			return {
-				horizontal: sortByOrder(result.horizontal.flat(), 'ascending'),
-				vertical: sortByOrder(result.vertical.flat(), 'ascending'),
-			};
+			return getEnclosedBoxesRecursive;
 		};
 
 		/** const deepNewBoxes: boxes = JSON.parse(JSON.stringify(boxes));
 		 *
-		 *  이러한 방식의 깊은 복사는 undefined를 제거해버림
+		 *  JSON 방식의 깊은 복사는 undefined를 제거해버림
 		 * */
-		const deepNewBoxes: boxes = boxes.map((item) => ({ ...item }));
+		const commonEnclosedProps: Omit<FindExistSidesProps, 'sidePos'> = {
+			borderId,
+			sideId,
+			owner: 'current',
+			selectedDirection: direction,
+			originalSelecteds: formattedSelected,
+			player: currentPlayer,
+		};
+
+		const hasSidesBySide = (
+			sidePos: HorizontalPos,
+			commonProps: typeof commonEnclosedProps
+		) =>
+			findExistSides({
+				...commonProps,
+				sidePos,
+			}).length > 0;
+
+		const hasAtleastOneSelected = (originalSelecteds: Selected) => {
+			const mergedSelecteds = [
+				...originalSelecteds.horizontal,
+				...originalSelecteds.vertical,
+			];
+			return (
+				mergedSelecteds.some((selected) => selected.owner === 'player1') &&
+				mergedSelecteds.some((selected) => selected.owner === 'player2')
+			);
+		};
+
+		const isPlayerWin = (
+			playersOwnableSelecteds: Record<
+				PlayerElement,
+				BorderStateWithDirection[]
+			>,
+			originalSelecteds: Selected
+		) => {
+			const ownableAndOwnedBoxes = {
+				player1: getSurroundedBoxIndexes(
+					playersOwnableSelecteds.player1,
+					originalSelecteds
+				),
+				player2: getSurroundedBoxIndexes(
+					playersOwnableSelecteds.player2,
+					originalSelecteds
+				),
+			};
+			const vulnerableBoxes = {
+				player1: getVulnerableBoxes({
+					ownableAndOwnedBoxes: ownableAndOwnedBoxes.player1,
+					opponentOwnableSelecteds: playersOwnableSelecteds.player2,
+				}).length,
+				player2: getVulnerableBoxes({
+					ownableAndOwnedBoxes: ownableAndOwnedBoxes.player2,
+					opponentOwnableSelecteds: playersOwnableSelecteds.player1,
+				}).length,
+			};
+			const commonOwnableBoxesCount = getNumArrayCommonElements(
+				ownableAndOwnedBoxes.player1,
+				ownableAndOwnedBoxes.player2
+			).length;
+			if (!hasAtleastOneSelected(originalSelecteds)) {
+				return undefined;
+			} else if (
+				commonOwnableBoxesCount === 0 &&
+				vulnerableBoxes.player1 === 0 &&
+				vulnerableBoxes.player2 === 0
+			) {
+				const count =
+					ownableAndOwnedBoxes.player1.length -
+					ownableAndOwnedBoxes.player2.length;
+				switch (true) {
+					case count > 0:
+						return 'player1';
+					case count < 0:
+						return 'player2';
+					default:
+						return 'draw';
+				}
+			} else if (
+				ownableAndOwnedBoxes.player2.length <
+				ownableAndOwnedBoxes.player1.length - vulnerableBoxes.player1
+			) {
+				return 'player1';
+			} else if (
+				ownableAndOwnedBoxes.player1.length <
+				ownableAndOwnedBoxes.player2.length - vulnerableBoxes.player2
+			) {
+				return 'player2';
+			} else {
+				return undefined;
+			}
+		};
+
+		const createNewPlayerInfo = ({
+			player,
+			playerInfos,
+			boxesResult,
+			originalSelecteds,
+			opt,
+		}: CreateNewPlayerInfoProps): PlayerInfo => {
+			const ownableSelecteds = {
+				player1: getOwnableSelecteds('player1', true, originalSelecteds, {
+					withOriginalSelecteds: true,
+				}),
+				player2: getOwnableSelecteds('player2', true, originalSelecteds, {
+					withOriginalSelecteds: true,
+				}),
+			};
+			const ownableAndOwnedBoxes = {
+				player1: getSurroundedBoxIndexes(
+					ownableSelecteds.player1,
+					originalSelecteds
+				),
+				player2: getSurroundedBoxIndexes(
+					ownableSelecteds.player2,
+					originalSelecteds
+				),
+			};
+			const ownedBoxCount = boxesResult.filter(
+				(item) => item.owner === player && item.isSurrounded
+			).length;
+			return {
+				...playerInfos[player],
+				boxCount: opt.withBoxCount
+					? ownedBoxCount
+					: playerInfos[player].boxCount,
+				isWin:
+					hasAtleastOneSelected(originalSelecteds) &&
+					isPlayerWin(ownableSelecteds, originalSelecteds) === player,
+				ownableBoxCount: ownableAndOwnedBoxes[player].length - ownedBoxCount,
+				ownableSelecteds: formatOwnableSelecteds(originalSelecteds)[player],
+			};
+		};
+
+		/* 중첩배열 제거, 같은 배열이 여러번 쌓이는 현상 방지 */
+		const getEnclosedBoxes = (
+			sourceSelecteds: Selected,
+			player: PlayerElement
+		) => {
+			for (const box of findClosedBoxByDirection(
+				'horizontal',
+				sourceSelecteds,
+				player
+			)) {
+				const enclosedBox = createGetEnclosedClosure(
+					box,
+					{
+						horizontal: findClosedBoxByDirection(
+							'horizontal',
+							sourceSelecteds,
+							player
+						),
+						vertical: findClosedBoxByDirection(
+							'vertical',
+							sourceSelecteds,
+							player
+						),
+					},
+					'horizontal'
+				)();
+				if (enclosedBox) {
+					return enclosedBox;
+				}
+			}
+			/* 빈 배열이 나올 경우의 수는 없음 */
+			return [];
+		};
+
+		const getSurroundedBoxIndexes = (
+			sourceSelecteds: BorderStateWithDirection[],
+			originalSelecteds: Selected
+		) => {
+			const positions: Position[] = ['left', 'right', 'up', 'down'];
+			const conditionByPosition = (
+				boxIndex: number,
+				position: Position,
+				sourceSelecteds: BorderStateWithDirection[],
+				originalSelecteds: Selected
+			) => {
+				const selectedLabels: Array<'border' | 'side'> = ['border', 'side'];
+				const direction =
+					position === 'left' || position === 'right'
+						? 'vertical'
+						: 'horizontal';
+				return sourceSelecteds.some(
+					(selected) =>
+						selected.direction === direction &&
+						selectedLabels.every(
+							(label) =>
+								selected[label] ===
+								boxToborder({
+									boxIndex,
+									position,
+									originalSelecteds,
+								})[label]
+						)
+				);
+			};
+			return Array.from({ length: 25 }, (_, id) => id).filter((box) => {
+				if (
+					positions.every((position) =>
+						conditionByPosition(
+							box,
+							position,
+							sourceSelecteds,
+							originalSelecteds
+						)
+					)
+				) {
+					return true;
+				}
+				return false;
+			});
+		};
+
+		/* 가질 수 있는 box 수에서 박스를 제외하고 승패를 결정할때는 selecteds로 방해받을 수 있는 요소를 고려하지 않음
+		getVulnerableBoxes함수가 이 방해받을 수 있는 요소를 검사함. */
+
+		const getVulnerableBoxes = ({
+			ownableAndOwnedBoxes,
+			opponentOwnableSelecteds,
+		}: GetVulnerableBoxesProps) => {
+			const positions: Position[] = ['left', 'right', 'up', 'down'];
+			return ownableAndOwnedBoxes.filter((box) => {
+				const selectedsByPositions = positions.map((position) => ({
+					...boxToborder({
+						originalSelecteds: formattedSelected,
+						boxIndex: box,
+						position,
+					}),
+					direction:
+						position === 'left' || position === 'right'
+							? 'vertical'
+							: 'horizontal',
+				}));
+				const condition = opponentOwnableSelecteds.some((selected) =>
+					selectedsByPositions.some((el) =>
+						compareSelecteds(selected, el, { withDirection: true })
+					)
+				);
+				if (condition) {
+					return true;
+				}
+				return false;
+			});
+		};
+
+		const setGameStateByResult = (
+			gameResult: 'player1' | 'player2' | 'draw' | undefined
+		) => {
+			switch (gameResult) {
+				case 'draw':
+					setGameState({
+						playState: 'draw',
+						isPlayerWin: { player1: false, player2: false },
+					});
+					break;
+				case 'player1':
+				case 'player2':
+					setGameState((p) => ({
+						playState: 'win',
+						isPlayerWin: { ...p.isPlayerWin, [gameResult]: true },
+					}));
+					break;
+				default:
+					break;
+			}
+		};
 
 		/* 임의의 구역이 enclosed가 될 시 */
 		if (
-			findExistSideSelected(borderId, sideId, 'left', 'current').length > 0 &&
-			findExistSideSelected(borderId, sideId, 'right', 'current').length > 0
+			(['left', 'right'] as HorizontalPos[]).every((position) =>
+				hasSidesBySide(position, commonEnclosedProps)
+			)
 		) {
-			const enclosedBoxes = findClosedBoxByDirection('horizontal').map((item) =>
-				getEnclosedBox(item, otherDirection)
-			);
-			const mergeableSelected: selected = { horizontal: [], vertical: [] };
-			for (const box of enclosedBoxes) {
-				const surroundedBoxCount = box.horizontal.reduce(
-					(count, id) => (boxes[id].isSurrounded ? count + 1 : count),
-					0
-				);
-				const isBoxesIncludeOtherPlayers = box.horizontal.find(
-					(boxEl) => boxes[boxEl].owner === otherPlayer
-				);
-				/* 새로 enclosed상태가 된 박스들 간의 borderMerge */
-				for (const boxIndex of box.horizontal) {
-					const rightBorder = boxToborder(boxIndex, 'right', true, true);
-					const downBorder = boxToborder(boxIndex, 'down', true, true);
-					/* 자기 자신이 이미 있는지에 대한 검증 필요 */
-					if (
-						box.horizontal.includes(boxIndex + 1) &&
-						rightBorder &&
-						!mergeableSelected.vertical.find(
-							(item) =>
-								item.border === rightBorder.border &&
-								item.side === rightBorder.side
+			const enclosedBoxes = getEnclosedBoxes(formattedSelected, currentPlayer);
+
+			const getMergeableFromEnclosedBoxes = (
+				boxes: number[],
+				player: PlayerElement,
+				originalSelecteds: Selected
+			) => {
+				const resultSelecteds = ({
+					direction,
+					border,
+					boxes,
+					boxIndex,
+					accumulator,
+				}: ResultSelectedsProps) => {
+					const addCount = direction === 'horizontal' ? 5 : 1;
+					return border &&
+						boxes.includes(boxIndex + addCount) &&
+						!accumulator[direction].some((selected) =>
+							compareSelecteds(selected, border, {
+								withDirection: false,
+							})
 						)
-					) {
-						console.log('vertical run');
-						mergeableSelected.vertical.push(rightBorder);
-					}
-					if (
-						box.horizontal.includes(boxIndex + 5) &&
-						downBorder &&
-						!mergeableSelected.horizontal.find(
-							(item) =>
-								item.border === downBorder.border &&
-								item.side === downBorder.side
-						)
-					) {
-						console.log('horizontal run');
-						mergeableSelected.horizontal.push(downBorder);
-					}
+						? [...accumulator[direction], { ...border, isMergeable: true }]
+						: [...accumulator[direction]];
+				};
+				const result = boxes.reduce<Selected>(
+					(accumulator, boxIndex) => {
+						const commonBoxToBorderProps = {
+							boxIndex,
+							isSelected: true,
+							isMergeable: true,
+							owner: player,
+							originalSelecteds,
+						};
+						const commonResultSelectedsProps = { boxes, boxIndex, accumulator };
+						const rightBorder = boxToborder({
+							position: 'right',
+							...commonBoxToBorderProps,
+						});
+						const downBorder = boxToborder({
+							position: 'down',
+							...commonBoxToBorderProps,
+						});
+						return {
+							...accumulator,
+							horizontal: resultSelecteds({
+								direction: 'horizontal',
+								border: downBorder,
+								...commonResultSelectedsProps,
+							}),
+							vertical: resultSelecteds({
+								direction: 'vertical',
+								border: rightBorder,
+								...commonResultSelectedsProps,
+							}),
+						};
+					},
+					{ horizontal: [], vertical: [] }
+				);
+				return result;
+			};
+
+			const getMergedBoxesWithEnclosed = (
+				originalBoxes: Boxes,
+				currentPlayer: PlayerElement,
+				enclosedBoxes: number[]
+			) => {
+				const opponentPlayer = getOppositeElement(currentPlayer);
+				const isBoxesIncludeOpponentPlayer = enclosedBoxes.some(
+					(boxIndex) => originalBoxes[boxIndex].owner === opponentPlayer
+				);
+				if (!isBoxesIncludeOpponentPlayer) {
+					return originalBoxes.map((box, id) =>
+						enclosedBoxes.includes(id)
+							? { ...box, owner: currentPlayer, isSurrounded: true }
+							: box
+					);
+				} else {
+					return originalBoxes;
 				}
-				if (
-					JSON.stringify(box.horizontal) === JSON.stringify(box.vertical) &&
-					surroundedBoxCount < box.horizontal.length &&
-					!isBoxesIncludeOtherPlayers
-				) {
-					box.horizontal.forEach((item) => {
-						deepNewBoxes[item].isSurrounded = true;
-						deepNewBoxes[item].owner = currentPlayer;
+			};
+
+			const getAddedSelectedsBetweenEnclosedBoxes = (
+				originalSelecteds: Selected,
+				originalBoxes: Boxes,
+				currentPlayer: PlayerElement,
+				enclosedBoxes: number[]
+			): Selected => {
+				const opponentPlayer = getOppositeElement(currentPlayer);
+				const isBoxesIncludeOpponentPlayer = enclosedBoxes.some(
+					(boxIndex) => originalBoxes[boxIndex].owner === opponentPlayer
+				);
+				const mergeableSelecteds = getMergeableFromEnclosedBoxes(
+					enclosedBoxes,
+					currentPlayer,
+					originalSelecteds
+				);
+				const commonProps = { originalSelecteds, mergeableSelecteds };
+				const createResultSelecteds = ({
+					direction,
+					originalSelecteds,
+					mergeableSelecteds,
+				}: CreateResultSelectedsProps) => [
+					...originalSelecteds[direction].filter(
+						(selected) =>
+							!mergeableSelecteds[direction].find((item) =>
+								compareSelecteds(selected, item, { withDirection: false })
+							)
+					),
+					...mergeableSelecteds[direction],
+				];
+				if (!isBoxesIncludeOpponentPlayer) {
+					return {
+						horizontal: createResultSelecteds({
+							direction: 'horizontal',
+							...commonProps,
+						}),
+						vertical: createResultSelecteds({
+							direction: 'vertical',
+							...commonProps,
+						}),
+					};
+				} else {
+					return originalSelecteds;
+				}
+			};
+
+			/* 이미 존재하는 박스와 새로 연결되는 박스들 간의 borderMerge */
+			const getMergeableSelected = (
+				sourceSelecteds: Selected,
+				player: PlayerElement,
+				sourceBoxes: Boxes
+			) => {
+				const commonProps = { sourceSelecteds, player, sourceBoxes };
+				const createResultProps = (
+					direction: Direction,
+					props: typeof commonProps
+				) => {
+					return { direction, ...props };
+				};
+				const getMergeableSelectedByDirection = ({
+					direction,
+					sourceSelecteds,
+					player,
+					sourceBoxes,
+				}: IsMergeableSelected) => {
+					const resultSelecteds = sourceSelecteds[direction].map((item) => {
+						const boxes: Record<'upBox' | 'downBox', number | false> = {
+							upBox: borderToBox(direction, true, item.border, item.side),
+							downBox: borderToBox(direction, false, item.border, item.side),
+						};
+						const verticalBoxLabels: Array<'upBox' | 'downBox'> = [
+							'upBox',
+							'downBox',
+						];
+						if (
+							verticalBoxLabels.every((label) => {
+								const box = boxes[label];
+								return (
+									/* box는 0일 가능성이 있음 */
+									box !== false &&
+									sourceBoxes[box].isSurrounded &&
+									sourceBoxes[box].owner === player
+								);
+							})
+						) {
+							return { ...item, isMergeable: true };
+						}
+						return item;
 					});
-					formattedSelected.horizontal = [
-						...new Set([
-							...formattedSelected.horizontal,
-							...mergeableSelected.horizontal,
-						]),
-					];
-					formattedSelected.vertical = [
-						...new Set([
-							...formattedSelected.vertical,
-							...mergeableSelected.vertical,
-						]),
-					];
-				}
-			}
+					return resultSelecteds;
+				};
+				return {
+					horizontal: getMergeableSelectedByDirection(
+						createResultProps('horizontal', commonProps)
+					),
+					vertical: getMergeableSelectedByDirection(
+						createResultProps('vertical', commonProps)
+					),
+				};
+			};
+
+			const boxesResult = getMergedBoxesWithEnclosed(
+				boxes,
+				currentPlayer,
+				enclosedBoxes
+			);
+
+			const selectedsResult = getMergeableSelected(
+				getAddedSelectedsBetweenEnclosedBoxes(
+					formattedSelected,
+					boxesResult,
+					currentPlayer,
+					enclosedBoxes
+				),
+				currentPlayer,
+				boxesResult
+			);
+
+			const commonPlayerInfoProps = {
+				boxesResult,
+				originalSelecteds: selectedsResult,
+				playerInfos: players,
+				opt: { withBoxCount: true },
+			};
+
+			const playersResult = {
+				player1: createNewPlayerInfo({
+					player: 'player1',
+					...commonPlayerInfoProps,
+				}),
+				player2: createNewPlayerInfo({
+					player: 'player2',
+					...commonPlayerInfoProps,
+				}),
+			};
+
+			const ownableSelecteds = {
+				player1: getOwnableSelecteds('player1', true, selectedsResult, {
+					withOriginalSelecteds: true,
+				}),
+				player2: getOwnableSelecteds('player2', true, selectedsResult, {
+					withOriginalSelecteds: true,
+				}),
+			};
+			const gameResult = isPlayerWin(ownableSelecteds, selectedsResult);
+
+			/**
+			 * ownable의 count가 서로 같지만 boxIndex는 하나도 중첩되지 않을 경우 자동 무승부,
+			 *
+			 * 플레이어가 고립되었을 때, 플레이어의 기대스코어 최대값이 다른 플레이어의 기대스코어 최소값보다 낮으면 자동 승부
+			 * */
+
+			setSelected(selectedsResult);
+			setBoxes(boxesResult);
+			setPlayers(playersResult);
+			setCurrentPlayer(opponentPlayer);
+			setGameStateByResult(gameResult);
+		} else {
+			const ownableSelecteds = {
+				player1: getOwnableSelecteds('player1', true, formattedSelected, {
+					withOriginalSelecteds: true,
+				}),
+				player2: getOwnableSelecteds('player2', true, formattedSelected, {
+					withOriginalSelecteds: true,
+				}),
+			};
+			const gameResult = isPlayerWin(ownableSelecteds, formattedSelected);
+			const commonPlayerInfoProps = {
+				boxesResult: boxes,
+				originalSelecteds: formattedSelected,
+				playerInfos: players,
+				opt: { withBoxCount: false },
+			};
+
+			const playersResult = {
+				player1: createNewPlayerInfo({
+					player: 'player1',
+					...commonPlayerInfoProps,
+				}),
+				player2: createNewPlayerInfo({
+					player: 'player2',
+					...commonPlayerInfoProps,
+				}),
+			};
+
+			setSelected(formattedSelected);
+			setPlayers(playersResult);
+			setCurrentPlayer(opponentPlayer);
+			setGameStateByResult(gameResult);
 		}
-
-		/* 이미 존재하는 박스와 새로 연결되는 박스들 간의 borderMerge */
-		const isMergeableSelected = (direction: direction) =>
-			formattedSelected[direction].map((item) => {
-				const upBox = borderToBox(direction, true, item.border, item.side);
-				const downBox = borderToBox(direction, false, item.border, item.side);
-				if (
-					/* 여기서 upBox !== false를 해줘야 upBox가 0일때 true를 반환해야 하지만 0자체가 falsy이기 때문에 false로 판단되는 버그를 방지할 수 있다. 
-					   논리합 사용 상황에서는 논리합('||') 대신 병합연산자('??')를 사용하면 falsy인 상황이 아닌 null이나 undefined상황만 잡아줄 수도 있다. */
-					upBox !== false &&
-					downBox !== false &&
-					deepNewBoxes[upBox].isSurrounded &&
-					deepNewBoxes[downBox].isSurrounded &&
-					deepNewBoxes[upBox].owner === currentPlayer &&
-					deepNewBoxes[downBox].owner === currentPlayer
-				) {
-					return { ...item, isMergeable: true };
-				}
-				return item;
-			});
-
-		const resultSelected = {
-			horizontal: isMergeableSelected('horizontal'),
-			vertical: isMergeableSelected('vertical'),
-		};
-
-		setSelected(resultSelected);
-		setBoxes(deepNewBoxes);
-		setPlayers((p) => {
-			const newPlayers = { ...p };
-			newPlayers[currentPlayer].boxCount = deepNewBoxes.filter(
-				(item) => item.isSurrounded
-			).length;
-			return newPlayers;
-		});
-		setCurrentPlayer(otherPlayer);
 		/* why doesn't TypeGuard work when using a func return instead a variable? */
 	};
 
@@ -839,6 +1609,9 @@ const BoxCollection = ({
 					const foundSelected = selected[direction].find(
 						(item) => item.border === borderId && item.side === sideId
 					);
+					const foundOwnable = players[currentPlayer].ownableSelecteds[
+						direction
+					].some((item) => item.border === borderId && item.side === sideId);
 					return (
 						<BoxWrapper key={sideId} direction={direction} $isLast={isLast}>
 							<BoxHover
@@ -850,6 +1623,7 @@ const BoxCollection = ({
 								$currentPlayer={currentPlayer}
 								$owner={foundSelected ? foundSelected.owner : currentPlayer}
 								$isMergeable={foundSelected ? foundSelected.isMergeable : false}
+								$isOwnable={foundOwnable}
 							>
 								<FakeHover />
 								<BoxSide />
@@ -861,48 +1635,79 @@ const BoxCollection = ({
 	);
 };
 
-const BorderBox = ({ direction }: borderBoxProps) => {
+const BorderBox = ({ direction }: BorderBoxProps) => {
+	const { gameState } = useHomeContext();
 	return (
 		<>
-			{Array(5)
-				.fill(undefined)
-				.map((_, borderId) => (
-					<BoxStyle key={borderId} direction={direction}>
-						<BoxCollection direction={direction} borderId={borderId} />
-						{borderId === 4 ? (
-							<BoxCollection
-								direction={direction}
-								isLast={borderId === 4}
-								borderId={borderId + 1}
-							/>
-						) : null}
-					</BoxStyle>
-				))}
+			{gameState.playState === 'playing' ? (
+				Array(5)
+					.fill(undefined)
+					.map((_, borderId) => (
+						<BoxStyle key={borderId} direction={direction}>
+							<BoxCollection direction={direction} borderId={borderId} />
+							{borderId === 4 ? (
+								<BoxCollection
+									direction={direction}
+									isLast={borderId === 4}
+									borderId={borderId + 1}
+								/>
+							) : null}
+						</BoxStyle>
+					))
+			) : (
+				<Result gameState={gameState} />
+			)}
 		</>
 	);
 };
 
-const PlayerCard = ({ player }: { player: currentPlayer }) => {
-	const { players, boxes } = useHomeContext();
+const PlayerCard = ({ player }: { player: PlayerElement }) => {
+	const { players, boxes, gameState } = useHomeContext();
+	const { isPlayerWin, playState } = gameState;
 	return (
-		<PlayerCardStyle $player={player}>
-			{players[player].name} <br />
-			<h3>
-				score :{' '}
-				{boxes.filter((box) => box.isSurrounded && box.owner === player).length}
-			</h3>
+		<PlayerCardStyle $player={player} $playState={playState}>
+			{playState === 'win' ? (
+				<div>{isPlayerWin[player] ? 'Win!' : 'Lose...'}</div>
+			) : (
+				<div>
+					{players[player].name} <br />
+					<h3>ownable : {players[player].ownableBoxCount}</h3>
+					<h3>
+						score :{' '}
+						{
+							boxes.filter((box) => box.isSurrounded && box.owner === player)
+								.length
+						}
+					</h3>
+				</div>
+			)}
 		</PlayerCardStyle>
 	);
 };
 
 const Board = () => {
-	const { boxes, currentPlayer } = useHomeContext();
+	const { boxes, currentPlayer, gameState } = useHomeContext();
+	const { isPlayerWin, playState } = gameState;
+	const winner = (
+		Object.entries(isPlayerWin) as Array<[PlayerElement, boolean]>
+	).find((entry) => entry[1])?.[0];
+	const player = playState === 'win' && winner ? winner : currentPlayer;
 	return (
 		<>
 			<TitleContainer>
-				<Player $currentPlayer={currentPlayer}>{currentPlayer}</Player>
-				<span>{`'s`}&nbsp;</span>
-				<Turn>{`turn`}</Turn>
+				{playState === 'draw' ? (
+					<div>Draw</div>
+				) : (
+					<>
+						<Player $currentPlayer={player}>{player}</Player>
+						{playState === 'win' ? (
+							<span>&nbsp;</span>
+						) : (
+							<span>{`'s`}&nbsp;</span>
+						)}
+						<Turn>{playState === 'win' ? `win` : `turn`}</Turn>
+					</>
+				)}
 			</TitleContainer>
 			<BoardLayout>
 				<PlayerCard player="player1" />

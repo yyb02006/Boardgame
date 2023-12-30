@@ -3,16 +3,28 @@ import React, { createContext, useContext, useState } from 'react';
 const AppContext = createContext<HomeContextType | undefined>(undefined);
 
 function HomeProvider({ children }: { children: React.ReactNode }) {
-	const [currentPlayer, setCurrentPlayer] = useState<currentPlayer>('player1');
-	const [players, setPlayers] = useState<players>({
-		player1: { boxCount: 0, name: 'player1' },
-		player2: { boxCount: 0, name: 'player2' },
+	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>('player1');
+	const [players, setPlayers] = useState<Players>({
+		player1: {
+			boxCount: 0,
+			ownableBoxCount: 0,
+			name: 'player1',
+			ownableSelecteds: { horizontal: [], vertical: [] },
+			isWin: false,
+		},
+		player2: {
+			boxCount: 0,
+			ownableBoxCount: 0,
+			name: 'player2',
+			ownableSelecteds: { horizontal: [], vertical: [] },
+			isWin: false,
+		},
 	});
-	const [selected, setSelected] = useState<selected>({
+	const [selected, setSelected] = useState<Selected>({
 		vertical: [],
 		horizontal: [],
 	});
-	const [boxes, setBoxes] = useState<boxes>(
+	const [boxes, setBoxes] = useState<Boxes>(
 		Array.from({ length: 25 }, (_, id) => ({
 			id,
 			isPartialSurrounded: false,
@@ -20,6 +32,10 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 			owner: undefined,
 		}))
 	);
+	const [gameState, setGameState] = useState<GameState>({
+		playState: 'playing',
+		isPlayerWin: { player1: false, player2: false },
+	});
 
 	const contextValue: HomeContextType = {
 		currentPlayer,
@@ -30,6 +46,8 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 		setSelected,
 		boxes,
 		setBoxes,
+		gameState,
+		setGameState,
 	};
 
 	return (
