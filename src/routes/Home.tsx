@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled, { css, keyframes } from 'styled-components';
 import {
 	compareAndFilterSelecteds,
@@ -291,7 +291,9 @@ const ResultLayout = styled.div<{ $winner: PlayerElement | undefined }>`
 	width: 100%;
 	height: 100%;
 	background-color: ${(props) =>
-		props.$winner ? colors[props.$winner].noneActiveBox : 'transparent'};
+		props.$winner
+			? colors[props.$winner].noneActiveBox
+			: colors.common.emphaticYellow};
 	position: 'absolute';
 	top: 0;
 	left: 0;
@@ -300,7 +302,8 @@ const ResultLayout = styled.div<{ $winner: PlayerElement | undefined }>`
 	justify-content: center;
 	align-items: center;
 	padding-bottom: 40px;
-	color: ${colors.common.emphaticYellow};
+	color: ${(props) =>
+		props.$winner ? colors.common.emphaticYellow : '#eaeaea'};
 	div {
 		font-size: ${'clamp(4rem,6vw,8rem)'};
 		div {
@@ -347,6 +350,19 @@ const BoxCollection = ({
 		setGameState,
 	} = useHomeContext();
 	const opponentPlayer = getOppositeElement(currentPlayer);
+	const [seconds, setSeconds] = useState<number>(30);
+
+	useEffect(() => {
+		const interval = setInterval(() => {
+			setSeconds((p) => p - 1);
+		}, 1000);
+		return () => {
+			clearInterval(interval);
+		};
+	}, []);
+
+	console.log(seconds);
+
 	const onBoxClick = (sideId: number) => {
 		const formattedSelected: Selected = !selected[direction].some(
 			(item) => item.border === borderId && item.side === sideId
@@ -366,13 +382,6 @@ const BoxCollection = ({
 					],
 			  }
 			: selected;
-
-		const matchSelectedsLocation = (
-			comparatorSelected: BorderState,
-			targetSelected: BorderState
-		) =>
-			comparatorSelected.border === targetSelected.border &&
-			comparatorSelected.side === targetSelected.side;
 
 		const findSides = (
 			selectedBorderId: number,
