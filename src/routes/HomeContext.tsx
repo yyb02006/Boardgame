@@ -37,6 +37,8 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 		isPlayerWin: { player1: false, player2: false },
 	});
 
+	const [seconds, setSeconds] = useState<Seconds>(30);
+
 	const contextValue: HomeContextType = {
 		currentPlayer,
 		setCurrentPlayer,
@@ -48,6 +50,8 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 		setBoxes,
 		gameState,
 		setGameState,
+		seconds,
+		setSeconds,
 	};
 
 	return (

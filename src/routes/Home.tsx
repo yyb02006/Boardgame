@@ -61,14 +61,24 @@ const Player = styled.div<PlayerProps>`
 	color: ${(props) => colors[props.$currentPlayer].noneActiveBox};
 `;
 
+const GameIndicator = styled.div``;
+const Timer = styled.div``;
+
 const TitleContainer = styled.div`
 	display: flex;
+	justify-content: space-between;
 	${Turn} {
+		color: ${colors.common.emphaticYellow};
+	}
+	${GameIndicator} {
+		display: flex;
+	}
+	${Timer} {
 		color: ${colors.common.emphaticYellow};
 	}
 	@media screen and (max-width: 1024px) {
 		font-size: 2rem;
-		margin-left: 24px;
+		margin: 0 24px;
 	}
 `;
 
@@ -348,21 +358,9 @@ const BoxCollection = ({
 		players,
 		setPlayers,
 		setGameState,
+		setSeconds,
 	} = useHomeContext();
 	const opponentPlayer = getOppositeElement(currentPlayer);
-	const [seconds, setSeconds] = useState<number>(30);
-
-	useEffect(() => {
-		const interval = setInterval(() => {
-			setSeconds((p) => p - 1);
-		}, 1000);
-		return () => {
-			clearInterval(interval);
-		};
-	}, []);
-
-	console.log(seconds);
-
 	const onBoxClick = (sideId: number) => {
 		const formattedSelected: Selected = !selected[direction].some(
 			(item) => item.border === borderId && item.side === sideId
@@ -1330,6 +1328,19 @@ const BoxCollection = ({
 			}
 		};
 
+		/* 상태업데이트함수는 어차피 불순함수인데 굳이 순수함수로 만들어야하나? */
+		const updateState = (
+			selecteds: Selected,
+			player: Players,
+			gameState: 'player1' | 'player2' | 'draw' | undefined
+		) => {
+			setSelected(selecteds);
+			setPlayers(player);
+			setGameStateByResult(gameState);
+			setCurrentPlayer(opponentPlayer);
+			setSeconds(30);
+		};
+
 		/* 임의의 구역이 enclosed가 될 시 */
 		if (
 			(['left', 'right'] as HorizontalPos[]).every((position) =>
@@ -1569,12 +1580,8 @@ const BoxCollection = ({
 			 * 플레이어가 고립되었을 때, 플레이어의 기대스코어 최대값이 다른 플레이어의 기대스코어 최소값보다 낮으면 자동 승부
 			 * */
 
-			setSelected(selectedsResult);
+			updateState(selectedsResult, playersResult, gameResult);
 			setBoxes(boxesResult);
-			setPlayers(playersResult);
-			setCurrentPlayer(opponentPlayer);
-			setGameStateByResult(gameResult);
-			setSeconds(30);
 		} else {
 			const ownableSelecteds = {
 				player1: getOwnableSelecteds('player1', true, formattedSelected, {
@@ -1603,11 +1610,7 @@ const BoxCollection = ({
 				}),
 			};
 
-			setSelected(formattedSelected);
-			setPlayers(playersResult);
-			setCurrentPlayer(opponentPlayer);
-			setGameStateByResult(gameResult);
-			setSeconds(30);
+			updateState(formattedSelected, playersResult, gameResult);
 		}
 		/* why doesn't TypeGuard work when using a func return instead a variable? */
 	};
@@ -1697,12 +1700,33 @@ const PlayerCard = ({ player }: { player: PlayerElement }) => {
 };
 
 const Board = () => {
-	const { boxes, currentPlayer, gameState } = useHomeContext();
+	const {
+		boxes,
+		currentPlayer,
+		setCurrentPlayer,
+		gameState,
+		seconds,
+		setSeconds,
+	} = useHomeContext();
 	const { isPlayerWin, playState } = gameState;
 	const winner = (
 		Object.entries(isPlayerWin) as Array<[PlayerElement, boolean]>
 	).find((entry) => entry[1])?.[0];
 	const player = playState === 'win' && winner ? winner : currentPlayer;
+	useEffect(() => {
+		const interval = setInterval(() => {
+			setSeconds((p) => p - 1);
+		}, 1000);
+		return () => {
+			clearInterval(interval);
+		};
+	}, []);
+	useEffect(() => {
+		if (seconds === 0) {
+			setSeconds(30);
+			setCurrentPlayer((p) => getOppositeElement(p));
+		}
+	}, [seconds]);
 	return (
 		<>
 			<TitleContainer>
@@ -1710,13 +1734,16 @@ const Board = () => {
 					<div>Draw</div>
 				) : (
 					<>
-						<Player $currentPlayer={player}>{player}</Player>
-						{playState === 'win' ? (
-							<span>&nbsp;</span>
-						) : (
-							<span>{`'s`}&nbsp;</span>
-						)}
-						<Turn>{playState === 'win' ? `win` : `turn`}</Turn>
+						<GameIndicator>
+							<Player $currentPlayer={player}>{player}</Player>
+							{playState === 'win' ? (
+								<span>&nbsp;</span>
+							) : (
+								<span>{`'s`}&nbsp;</span>
+							)}
+							<Turn>{playState === 'win' ? `win` : `turn`}</Turn>
+						</GameIndicator>
+						<Timer>{seconds}</Timer>
 					</>
 				)}
 			</TitleContainer>
