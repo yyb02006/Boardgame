@@ -1574,6 +1574,7 @@ const BoxCollection = ({
 			setPlayers(playersResult);
 			setCurrentPlayer(opponentPlayer);
 			setGameStateByResult(gameResult);
+			setSeconds(30);
 		} else {
 			const ownableSelecteds = {
 				player1: getOwnableSelecteds('player1', true, formattedSelected, {
@@ -1606,6 +1607,7 @@ const BoxCollection = ({
 			setPlayers(playersResult);
 			setCurrentPlayer(opponentPlayer);
 			setGameStateByResult(gameResult);
+			setSeconds(30);
 		}
 		/* why doesn't TypeGuard work when using a func return instead a variable? */
 	};
