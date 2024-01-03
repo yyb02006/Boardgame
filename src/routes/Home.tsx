@@ -1743,7 +1743,7 @@ const Board = () => {
 							)}
 							<Turn>{playState === 'win' ? `win` : `turn`}</Turn>
 						</GameIndicator>
-						<Timer>{seconds}</Timer>
+						{playState === 'playing' && <Timer>{seconds}</Timer>}
 					</>
 				)}
 			</TitleContainer>
