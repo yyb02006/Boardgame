@@ -31,20 +31,68 @@ const colors = {
 	},
 };
 
-const colorChange = (player: 'player1' | 'player2' | 'common') => css`
-	@keyframes changeKeyFrames {
-		0% {
+const colorChange = (
+	player: 'player1' | 'player2' | 'common',
+	name: string
+) => css`
+	@keyframes changeKeyFrames_${name} {
+		from {
 			border-color: ${colors[player].noneActiveBorder};
 		}
-		50% {
+		to {
 			border-color: ${colors.common.ownableBorder};
 		}
-		100% {
-			border-color: ${colors[player].noneActiveBorder};
-		}
 	}
-	animation: changeKeyFrames 1s infinite;
+	animation: ${`changeKeyFrames_` + name} ease-in-out 0.7s infinite alternate;
 `;
+
+const resultTransition = {
+	boardTransition: (name: string, seqDirection: 'reverse' | 'normal') => css`
+		@keyframes board_${name} {
+			from {
+				transform: translateY(-200px);
+				opacity: 0;
+			}
+			to {
+				transform: translateY(0px);
+				opacity: 1;
+			}
+		}
+		animation: ${`board_` + name} 0.5s ease-in-out ${seqDirection};
+	`,
+	boxTransition: (
+		seqDirection: 'reverse' | 'normal',
+		aniDirection: HorizontalPos | VerticalPos
+	) => css`
+		@keyframes box_${aniDirection} {
+			from {
+				opacity: 0;
+				${aniDirection === 'left' || aniDirection === 'right'
+					? css`
+							transform: translateX(
+								${aniDirection === 'left' ? '-100px' : '100px'}
+							);
+					  `
+					: css`
+							transform: translateY(
+								${aniDirection === 'up' ? '-100px' : '100px'}
+							);
+					  `}
+			}
+			to {
+				opacity: 1;
+				${aniDirection === 'left' || aniDirection === 'right'
+					? css`
+							transform: translateX(0);
+					  `
+					: css`
+							transform: translateY(0);
+					  `}
+			}
+		}
+		animation: ${`box_` + aniDirection} 0.5s ease-in-out ${seqDirection};
+	`,
+};
 
 const Layout = styled.section`
 	background-color: var(--bgColor-dark);
@@ -258,7 +306,9 @@ const BoxHover = styled.div<BoxHoverProps>`
 		}
 	}};
 	${(props) =>
-		props.$isOwnable && !props.$isSelected && colorChange(props.$currentPlayer)}
+		props.$isOwnable &&
+		!props.$isSelected &&
+		colorChange(props.$currentPlayer, props.$currentPlayer)}
 	z-index: ${(props) => (props.$isSelected ? 2 : 1)};
 	&:hover {
 		background-color: ${(props) =>
@@ -301,26 +351,57 @@ const BoxHover = styled.div<BoxHoverProps>`
 	}
 `;
 
+const PartionCover = styled.div<{ $aniDirection: HorizontalPos | VerticalPos }>`
+	width: 50%;
+	height: 50%;
+	position: absolute;
+	background-color: ${(props) =>
+		['left', 'down'].includes(props.$aniDirection)
+			? colors.player1.noneActiveBox
+			: colors.player2.noneActiveBox};
+	${(props) =>
+		props.$aniDirection === 'left' || props.$aniDirection === 'down'
+			? css`
+					left: 0;
+			  `
+			: css`
+					right: 0;
+			  `};
+	${(props) =>
+		props.$aniDirection === 'left' || props.$aniDirection === 'up'
+			? css`
+					top: 0;
+			  `
+			: css`
+					bottom: 0;
+			  `};
+	${(props) => resultTransition.boxTransition('normal', props.$aniDirection)}
+	@media screen and (max-width: 1024px) {
+		background-color: ${(props) =>
+			['left', 'up'].includes(props.$aniDirection)
+				? colors.player1.noneActiveBox
+				: colors.player2.noneActiveBox};
+	}
+`;
+
 const ResultLayout = styled.div<{ $winner: PlayerElement | undefined }>`
 	width: 100%;
 	height: 100%;
-	background-color: ${(props) =>
-		props.$winner
-			? colors[props.$winner].noneActiveBox
-			: colors.common.emphaticYellow};
-	position: 'absolute';
+	position: relative;
 	top: 0;
 	left: 0;
 	z-index: 4;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	padding-bottom: 40px;
+	overflow: hidden;
 	color: ${(props) =>
 		props.$winner ? colors.common.emphaticYellow : '#eaeaea'};
-	div {
+	div:last-child {
+		width: 100%;
+		height: 100%;
+		position: relative;
+		${resultTransition.boardTransition('player', 'normal')}
 		font-size: ${'clamp(4rem,6vw,8rem)'};
-		div {
+		padding-bottom: 40px;
+		> div {
 			display: flex;
 			justify-content: center;
 		}
@@ -333,15 +414,31 @@ const Result = ({ gameState }: { gameState: GameState }) => {
 	const winner = (
 		Object.entries(gameState.isPlayerWin) as Array<[PlayerElement, boolean]>
 	).find((entry) => entry[1])?.[0];
+	const aniDirections: Array<HorizontalPos | VerticalPos> = [
+		'left',
+		'right',
+		'up',
+		'down',
+	];
 	return (
 		<ResultLayout $winner={winner}>
 			{playState === 'draw' ? (
-				<div>Draw</div>
+				<>
+					{aniDirections.map((direction, id) => (
+						<PartionCover key={id} $aniDirection={direction} />
+					))}
+					<div>Draw</div>
+				</>
 			) : (
-				<div>
-					<div>Winner</div>
-					<div>{winner}</div>
-				</div>
+				<>
+					{aniDirections.map((direction, id) => (
+						<PartionCover key={id} $aniDirection={direction} />
+					))}
+					<div>
+						<div>Winner</div>
+						<div>{winner}</div>
+					</div>
+				</>
 			)}
 		</ResultLayout>
 	);
