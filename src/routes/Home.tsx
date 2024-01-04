@@ -146,27 +146,21 @@ const Layout = styled.section`
 	}
 `;
 
-const Turn = styled.span``;
-
 const Player = styled.div<PlayerProps>`
 	color: ${(props) => colors[props.$currentPlayer].noneActiveBox};
 `;
-
-const GameIndicator = styled.div``;
-
-const Timer = styled.div``;
 
 const TitleContainer = styled.div`
 	display: flex;
 	justify-content: space-between;
 	margin-bottom: 24px;
-	${Turn} {
+	.Turn {
 		color: ${colors.common.emphaticYellow};
 	}
-	${GameIndicator} {
+	.GameIndicator {
 		display: flex;
 	}
-	${Timer} {
+	.Timer {
 		color: ${colors.common.emphaticYellow};
 	}
 	@media screen and (max-width: 1024px) {
@@ -456,11 +450,6 @@ const ResultLayout = styled.div<{ $winner: PlayerElement | undefined }>`
 		justify-content: center;
 		align-items: center;
 	}
-	.wrapper {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
 `;
 
 const Result = ({ gameState }: { gameState: GameState }) => {
@@ -491,8 +480,8 @@ const Result = ({ gameState }: { gameState: GameState }) => {
 					))}
 					<div>
 						<div>
-							<div className="winLetter">Winner</div>
-							<div className="winLetter">{winner}</div>
+							<div>Winner</div>
+							<div>{winner}</div>
 						</div>
 					</div>
 				</>
@@ -1892,16 +1881,16 @@ const Board = () => {
 					<span>Draw</span>
 				) : (
 					<>
-						<GameIndicator>
+						<div className="GameIndicator">
 							<Player $currentPlayer={player}>{player}</Player>
 							{playState === 'win' ? (
 								<span>&nbsp;</span>
 							) : (
 								<span>{`'s`}&nbsp;</span>
 							)}
-							<Turn>{playState === 'win' ? `win` : `turn`}</Turn>
-						</GameIndicator>
-						{playState === 'playing' && <Timer>{seconds}</Timer>}
+							<div className="Turn">{playState === 'win' ? `win` : `turn`}</div>
+						</div>
+						{playState === 'playing' && <div className="Timer">{seconds}</div>}
 					</>
 				)}
 			</TitleContainer>
