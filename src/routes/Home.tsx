@@ -60,7 +60,7 @@ const resultTransition = {
 		}
 		animation: ${`board_` + name} 0.5s ease-in-out ${seqDirection};
 	`,
-	boxTransition: (
+	drawTransition: (
 		seqDirection: 'reverse' | 'normal',
 		aniDirection: HorizontalPos | VerticalPos
 	) => css`
@@ -90,8 +90,44 @@ const resultTransition = {
 					  `}
 			}
 		}
-		animation: ${`box_` + aniDirection} 0.5s ease-in-out ${seqDirection};
+		animation: ${`box_` + aniDirection} 0.7s ease-in-out forwards
+			${seqDirection};
 	`,
+	winTransition: (
+		seqDirection: 'reverse' | 'normal',
+		aniDirection: HorizontalPos | VerticalPos,
+		winner: PlayerElement
+	) => {
+		const directionToIndex = (aniDirection: HorizontalPos | VerticalPos) => {
+			switch (aniDirection) {
+				case 'left':
+					return 0;
+				case 'up':
+					return 1;
+				case 'down':
+					return 2;
+				case 'right':
+					return 3;
+				default:
+					return 0;
+			}
+		};
+		const index = directionToIndex(aniDirection);
+		return css`
+			@keyframes box_${aniDirection} {
+				from {
+					opacity: 0;
+					transform: translateX(${winner === 'player1' ? '-200px' : '200px'});
+				}
+				to {
+					opacity: 1;
+					transform: translateX(0);
+				}
+			}
+			animation: ${`box_` + aniDirection} 0.5s ease-in-out forwards
+				${index * 0.12}s ${seqDirection};
+		`;
+	},
 };
 
 const Layout = styled.section`
@@ -113,16 +149,17 @@ const Layout = styled.section`
 const Turn = styled.span``;
 
 const Player = styled.div<PlayerProps>`
-	margin-bottom: 16px;
 	color: ${(props) => colors[props.$currentPlayer].noneActiveBox};
 `;
 
 const GameIndicator = styled.div``;
+
 const Timer = styled.div``;
 
 const TitleContainer = styled.div`
 	display: flex;
 	justify-content: space-between;
+	margin-bottom: 24px;
 	${Turn} {
 		color: ${colors.common.emphaticYellow};
 	}
@@ -134,7 +171,7 @@ const TitleContainer = styled.div`
 	}
 	@media screen and (max-width: 1024px) {
 		font-size: 2rem;
-		margin: 0 24px;
+		margin: 0 24px 16px 24px;
 	}
 `;
 
@@ -181,7 +218,6 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 		margin: ${(props) =>
 			props.$player === 'player1' ? '0 0 20px 0' : '20px 0 0 0 '};
 		max-width: 100%;
-
 		h3 {
 			font-size: 4vw;
 		}
@@ -354,12 +390,15 @@ const BoxHover = styled.div<BoxHoverProps>`
 	}
 `;
 
-const PartionCover = styled.div<{ $aniDirection: HorizontalPos | VerticalPos }>`
+const PartialCover = styled.div<PartialCoverProps>`
 	width: 50%;
 	height: 50%;
 	position: absolute;
+	opacity: 0;
 	background-color: ${(props) =>
-		['left', 'down'].includes(props.$aniDirection)
+		props.$winner
+			? colors[props.$winner].noneActiveBox
+			: ['left', 'down'].includes(props.$aniDirection)
 			? colors.player1.noneActiveBox
 			: colors.player2.noneActiveBox};
 	${(props) =>
@@ -378,10 +417,19 @@ const PartionCover = styled.div<{ $aniDirection: HorizontalPos | VerticalPos }>`
 			: css`
 					bottom: 0;
 			  `};
-	${(props) => resultTransition.boxTransition('normal', props.$aniDirection)}
+	${(props) =>
+		props.$winner
+			? resultTransition.winTransition(
+					'normal',
+					props.$aniDirection,
+					props.$winner
+			  )
+			: resultTransition.drawTransition('normal', props.$aniDirection)}
 	@media screen and (max-width: 1024px) {
 		background-color: ${(props) =>
-			['left', 'up'].includes(props.$aniDirection)
+			props.$winner
+				? colors[props.$winner].noneActiveBox
+				: ['left', 'up'].includes(props.$aniDirection)
 				? colors.player1.noneActiveBox
 				: colors.player2.noneActiveBox};
 	}
@@ -397,17 +445,21 @@ const ResultLayout = styled.div<{ $winner: PlayerElement | undefined }>`
 	overflow: hidden;
 	color: ${(props) =>
 		props.$winner ? colors.common.emphaticYellow : '#eaeaea'};
-	div:last-child {
+	> div:last-child {
 		width: 100%;
 		height: 100%;
 		position: relative;
 		${resultTransition.boardTransition('player', 'normal')}
 		font-size: ${'clamp(4rem,6vw,8rem)'};
 		padding-bottom: 40px;
-		> div {
-			display: flex;
-			justify-content: center;
-		}
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	.wrapper {
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 `;
 
@@ -428,18 +480,20 @@ const Result = ({ gameState }: { gameState: GameState }) => {
 			{playState === 'draw' ? (
 				<>
 					{aniDirections.map((direction, id) => (
-						<PartionCover key={id} $aniDirection={direction} />
+						<PartialCover key={id} $aniDirection={direction} $winner={winner} />
 					))}
 					<div>Draw</div>
 				</>
 			) : (
 				<>
 					{aniDirections.map((direction, id) => (
-						<PartionCover key={id} $aniDirection={direction} />
+						<PartialCover key={id} $aniDirection={direction} $winner={winner} />
 					))}
 					<div>
-						<div>Winner</div>
-						<div>{winner}</div>
+						<div>
+							<div className="winLetter">Winner</div>
+							<div className="winLetter">{winner}</div>
+						</div>
 					</div>
 				</>
 			)}
@@ -1835,7 +1889,7 @@ const Board = () => {
 		<>
 			<TitleContainer>
 				{playState === 'draw' ? (
-					<div>Draw</div>
+					<span>Draw</span>
 				) : (
 					<>
 						<GameIndicator>

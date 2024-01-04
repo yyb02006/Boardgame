@@ -130,6 +130,11 @@ interface CanClickWhenBlockedProps extends IsBlockedProps {}
 
 /** Styled Components Types */
 
+interface PartialCoverProps {
+	$aniDirection: HorizontalPos | VerticalPos;
+	$winner: PlayerElement | undefined;
+}
+
 interface PlayerProps {
 	$currentPlayer: PlayerElement;
 }
