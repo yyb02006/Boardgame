@@ -167,7 +167,7 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 		font-weight: 600;
 		margin: 0;
 	}
-	div {
+	> div {
 		${(props) =>
 			props.$playState === 'win'
 				? css`
@@ -181,10 +181,13 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 		margin: ${(props) =>
 			props.$player === 'player1' ? '0 0 20px 0' : '20px 0 0 0 '};
 		max-width: 100%;
-		display: flex;
-		justify-content: space-between;
+
 		h3 {
 			font-size: 4vw;
+		}
+		> div {
+			display: flex;
+			justify-content: space-between;
 		}
 	}
 `;
@@ -1785,7 +1788,7 @@ const PlayerCard = ({ player }: { player: PlayerElement }) => {
 				<div>{isPlayerWin[player] ? 'Win!' : 'Lose...'}</div>
 			) : (
 				<div>
-					{players[player].name} <br />
+					{players[player].name}
 					<h3>ownable : {players[player].ownableBoxCount}</h3>
 					<h3>
 						score :{' '}
