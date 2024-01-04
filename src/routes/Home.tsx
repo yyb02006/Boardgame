@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import styled, { css, keyframes } from 'styled-components';
 import {
 	compareAndFilterSelecteds,
 	getOppositeElement,
 	findCommonElementInNestedArray,
-	sortByOrder,
 	isNumArrayEqual,
 	compareSelecteds,
 	getNumArrayCommonElements,
@@ -32,10 +31,19 @@ const colors = {
 	},
 };
 
-const colorChange = (player: 'player1' | 'player2' | 'common') => keyframes`
-	0%{border-color: ${colors[player].noneActiveBorder}}
-	50%{border-color: ${colors.common.ownableBorder}}
-	100%{border-color: ${colors[player].noneActiveBorder}}
+const colorChange = (player: 'player1' | 'player2' | 'common') => css`
+	@keyframes changeKeyFrames {
+		0% {
+			border-color: ${colors[player].noneActiveBorder};
+		}
+		50% {
+			border-color: ${colors.common.ownableBorder};
+		}
+		100% {
+			border-color: ${colors[player].noneActiveBorder};
+		}
+	}
+	animation: changeKeyFrames 1s infinite;
 `;
 
 const Layout = styled.section`
@@ -250,11 +258,7 @@ const BoxHover = styled.div<BoxHoverProps>`
 		}
 	}};
 	${(props) =>
-		props.$isOwnable &&
-		!props.$isSelected &&
-		css`
-			animation: ${colorChange(props.$currentPlayer)} 3s infinite;
-		`}
+		props.$isOwnable && !props.$isSelected && colorChange(props.$currentPlayer)}
 	z-index: ${(props) => (props.$isSelected ? 2 : 1)};
 	&:hover {
 		background-color: ${(props) =>
