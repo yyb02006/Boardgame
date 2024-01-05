@@ -152,10 +152,10 @@ const TitleContainerLayout = styled.div`
 	display: flex;
 	justify-content: space-between;
 	margin-bottom: 24px;
-	> .GameIndicator {
+	& .GameIndicator {
 		display: flex;
 	}
-	> .Yellow {
+	& .Yellow {
 		color: ${colors.common.emphaticYellow};
 	}
 	@media screen and (max-width: 1024px) {
