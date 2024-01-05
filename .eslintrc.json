@@ -22,7 +22,8 @@
 				"singleQuote": true,
 				"useTabs": true,
 				"endOfLine": "auto",
-				"trailingComma": "es5"
+				"trailingComma": "es5",
+				"printWidth": 100
 			}
 		],
 		"space-before-function-paren": ["error", "never"],

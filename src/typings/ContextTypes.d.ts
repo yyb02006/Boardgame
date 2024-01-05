@@ -4,7 +4,7 @@ type PlayerElement = 'player1' | 'player2';
 
 type Ownable = Record<PlayerElement, boolean>;
 
-type PlayState = 'win' | 'draw' | 'playing';
+type PlayState = 'win' | 'draw' | 'playing' | 'ready';
 
 type Seconds = number;
 
