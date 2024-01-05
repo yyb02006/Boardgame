@@ -8,7 +8,9 @@ type Position = HorizontalPos | VerticalPos;
 
 type NestedArray<T> = T[][];
 
-type seqDirection = 'reverse' | 'normal';
+type SeqDirection = 'reverse' | 'normal';
+
+type SeqPlayState = 'paused' | 'running';
 
 interface DirectionInterface {
 	direction: Direction;
@@ -134,9 +136,9 @@ interface CanClickWhenBlockedProps extends IsBlockedProps {}
 /** Styled Components Types */
 
 interface PartialCoverProps {
-	$seqDirection: seqDirection;
 	$aniDirection: HorizontalPos | VerticalPos;
 	$winner: PlayerElement | undefined;
+	$seqState: 'Win' | 'Draw' | 'Start' | 'Playing' | '';
 }
 
 interface PlayerProps {
@@ -172,6 +174,7 @@ interface BoxHoverProps extends DirectionInterface {
 	$owner: PlayerElement;
 	$isMergeable: boolean;
 	$isOwnable: boolean;
+	$playState: PlayState;
 }
 
 /** Routes Components Types */

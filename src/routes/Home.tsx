@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled, { css } from 'styled-components';
 import {
 	compareAndFilterSelecteds,
@@ -55,7 +55,7 @@ const resultTransition = {
 				opacity: 1;
 			}
 		}
-		animation: ${`board_` + name} 0.5s ease-in-out ${seqDirection};
+		animation: ${`board_` + name} 0.5s ease-in-out ${seqDirection} forwards;
 	`,
 	spinAndZoom: ({
 		seqDirection,
@@ -86,7 +86,7 @@ const resultTransition = {
 					  `}
 			}
 		}
-		animation: ${`box_` + aniDirection} 0.7s ease-in-out forwards ${seqDirection};
+		animation: ${`box_` + aniDirection} 0.6s ease-in-out forwards ${seqDirection};
 	`,
 	slideInFromSide: ({
 		seqDirection,
@@ -152,10 +152,10 @@ const TitleContainerLayout = styled.div`
 	display: flex;
 	justify-content: space-between;
 	margin-bottom: 24px;
-	.GameIndicator {
+	> .GameIndicator {
 		display: flex;
 	}
-	.Yellow {
+	> .Yellow {
 		color: ${colors.common.emphaticYellow};
 	}
 	@media screen and (max-width: 1024px) {
@@ -330,14 +330,25 @@ const BoxHover = styled.div<BoxHoverProps>`
 		colorChange(props.$currentPlayer, props.$currentPlayer)}
 	z-index: ${(props) => (props.$isSelected ? 2 : 1)};
 	&:hover {
-		background-color: ${(props) => (props.$isMergeable ? 'auto' : colors.common.activeBorder)};
-		border-color: ${(props) =>
-			props.$isMergeable ? 'auto' : colors[props.$currentPlayer].noneActiveBox};
-		z-index: 3;
+		${(props) =>
+			props.$playState === 'playing' &&
+			css`
+				background-color: ${props.$isMergeable ? 'auto' : colors.common.activeBorder};
+				border-color: ${props.$isMergeable ? 'auto' : colors[props.$currentPlayer].noneActiveBox};
+				z-index: 3;
+			`}
 	}
 	${FakeHover} {
-		width: ${(props) => (props.direction === 'horizontal' ? 'calc(100% + 44px)' : '100%')};
-		height: ${(props) => (props.direction === 'horizontal' ? '100%' : 'calc(100% + 44px)')};
+		${(props) =>
+			props.direction === 'horizontal'
+				? css`
+						width: calc(100% + 44px);
+						height: 100%;
+				  `
+				: css`
+						width: 100%;
+						height: calc(100% + 44px);
+				  `}
 	}
 	${BoxSide} {
 		width: ${(props) =>
@@ -363,7 +374,7 @@ const PartialCover = styled.div<PartialCoverProps>`
 	width: 50%;
 	height: 50%;
 	position: absolute;
-	opacity: 0;
+	opacity: 1;
 	background-color: ${(props) =>
 		props.$winner
 			? colors[props.$winner].noneActiveBox
@@ -386,17 +397,31 @@ const PartialCover = styled.div<PartialCoverProps>`
 			: css`
 					bottom: 0;
 			  `};
-	${(props) =>
-		props.$winner
-			? resultTransition.slideInFromSide({
-					seqDirection: props.$seqDirection,
-					aniDirection: props.$aniDirection,
-					winner: props.$winner,
-			  })
-			: resultTransition.spinAndZoom({
-					seqDirection: props.$seqDirection,
-					aniDirection: props.$aniDirection,
-			  })}
+	&.Win {
+		${(props) =>
+			props.$winner &&
+			resultTransition.slideInFromSide({
+				seqDirection: 'normal',
+				aniDirection: props.$aniDirection,
+				winner: props.$winner,
+			})}
+	}
+	&.Draw {
+		${(props) => {
+			return resultTransition.spinAndZoom({
+				seqDirection: 'normal',
+				aniDirection: props.$aniDirection,
+			});
+		}}
+	}
+	&.Start {
+		${(props) => {
+			return resultTransition.spinAndZoom({
+				seqDirection: 'reverse',
+				aniDirection: props.$aniDirection,
+			});
+		}};
+	}
 	@media screen and (max-width: 1024px) {
 		background-color: ${(props) =>
 			props.$winner
@@ -418,75 +443,28 @@ const LetterOnBoard = styled.div`
 	align-items: center;
 `;
 
+const StartButton = styled.button`
+	position: relative;
+`;
+
 const BoardCoverLayout = styled.div<{ $winner: PlayerElement | undefined }>`
 	width: 100%;
 	height: 100%;
-	position: relative;
+	position: absolute;
 	top: 0;
 	left: 0;
 	z-index: 4;
 	overflow: hidden;
 	color: ${(props) => (props.$winner ? colors.common.emphaticYellow : '#eaeaea')};
 	> ${LetterOnBoard} {
-		.SlideDown {
+		&.SlideDown {
 			${resultTransition.boardTransition('player', 'normal')};
+		}
+		&.SlideUp {
+			${resultTransition.boardTransition('player', 'reverse')};
 		}
 	}
 `;
-
-const BoardCover = ({ playState, isPlayerWin }: BoardCoverProps) => {
-	const winner = (Object.entries(isPlayerWin) as Array<[PlayerElement, boolean]>).find(
-		(entry) => entry[1]
-	)?.[0];
-	const partialCovers = (seqDirection: seqDirection, winner: PlayerElement | undefined) => {
-		const aniDrections: Array<HorizontalPos | VerticalPos> = ['left', 'right', 'up', 'down'];
-		return aniDrections.map((direction, id) => (
-			<PartialCover
-				key={id}
-				$seqDirection={seqDirection}
-				$aniDirection={direction}
-				$winner={winner}
-			/>
-		));
-	};
-	const createContent = (element: JSX.Element, winner: PlayerElement | undefined) => (
-		<BoardCoverLayout $winner={winner}>{element}</BoardCoverLayout>
-	);
-	switch (playState) {
-		case 'draw': {
-			return createContent(
-				<>
-					{partialCovers('normal', winner)}
-					<LetterOnBoard className="SlideDown">Draw</LetterOnBoard>
-				</>,
-				winner
-			);
-		}
-		case 'win':
-			return createContent(
-				<>
-					{partialCovers('normal', winner)}
-					<LetterOnBoard className="SlideDown">
-						<div>
-							<div>Winners</div>
-							<div>{winner}</div>
-						</div>
-					</LetterOnBoard>
-				</>,
-				winner
-			);
-		case 'ready':
-			return createContent(
-				<>
-					{partialCovers('reverse', winner)}
-					<LetterOnBoard>Start</LetterOnBoard>
-				</>,
-				winner
-			);
-		default:
-			return null;
-	}
-};
 
 const BoxCollection = ({ direction, borderId, isLast = false }: BoxCollectionProps) => {
 	const {
@@ -498,13 +476,12 @@ const BoxCollection = ({ direction, borderId, isLast = false }: BoxCollectionPro
 		setCurrentPlayer,
 		players,
 		setPlayers,
-		gameState,
+		gameState: { playState },
 		setGameState,
 		setSeconds,
 	} = useHomeContext();
 	const opponentPlayer = getOppositeElement(currentPlayer);
 	const onBoxClick = (sideId: number) => {
-		const { playState } = gameState;
 		const formattedSelected: Selected = !selected[direction].some(
 			(item) => item.border === borderId && item.side === sideId
 		)
@@ -1620,64 +1597,54 @@ const BoxCollection = ({ direction, borderId, isLast = false }: BoxCollectionPro
 
 	return (
 		<>
-			{Array(5)
-				.fill(undefined)
-				.map((_, sideId) => {
-					const foundSelected = selected[direction].find(
-						(item) => item.border === borderId && item.side === sideId
-					);
-					const foundOwnable = players[currentPlayer].ownableSelecteds[direction].some(
-						(item) => item.border === borderId && item.side === sideId
-					);
-					return (
-						<BoxWrapper key={sideId} direction={direction} $isLast={isLast}>
-							<BoxHover
-								onClick={() => {
-									onBoxClick(sideId);
-								}}
-								direction={direction}
-								$isSelected={!!foundSelected?.isSelected}
-								$currentPlayer={currentPlayer}
-								$owner={foundSelected ? foundSelected.owner : currentPlayer}
-								$isMergeable={foundSelected ? foundSelected.isMergeable : false}
-								$isOwnable={foundOwnable}
-							>
-								<FakeHover />
-								<BoxSide />
-							</BoxHover>
-						</BoxWrapper>
-					);
-				})}
+			{Array.from({ length: 5 }, (_, sideId) => {
+				const foundSelected = selected[direction].find(
+					(item) => item.border === borderId && item.side === sideId
+				);
+				const foundOwnable = players[currentPlayer].ownableSelecteds[direction].some(
+					(item) => item.border === borderId && item.side === sideId
+				);
+				return (
+					<BoxWrapper key={sideId} direction={direction} $isLast={isLast}>
+						<BoxHover
+							onClick={() => {
+								onBoxClick(sideId);
+							}}
+							direction={direction}
+							$isSelected={!!foundSelected?.isSelected}
+							$currentPlayer={currentPlayer}
+							$owner={foundSelected ? foundSelected.owner : currentPlayer}
+							$isMergeable={foundSelected ? foundSelected.isMergeable : false}
+							$isOwnable={foundOwnable}
+							$playState={playState}
+						>
+							<FakeHover />
+							<BoxSide />
+						</BoxHover>
+					</BoxWrapper>
+				);
+			})}
 		</>
 	);
 };
 
 const BorderBox = ({ direction }: BorderBoxProps) => {
-	const {
-		gameState: { isPlayerWin, playState },
-	} = useHomeContext();
-	switch (playState) {
-		case 'playing':
-			return Array.from({ length: 5 }, (_, borderId) => (
-				<BoxStyle key={borderId} direction={direction}>
-					<BoxCollection direction={direction} borderId={borderId} />
-					{borderId === 4 ? (
-						<BoxCollection direction={direction} isLast={borderId === 4} borderId={borderId + 1} />
-					) : null}
-				</BoxStyle>
-			));
-		case 'ready':
-		case 'draw':
-		case 'win':
-			return <BoardCover playState={playState} isPlayerWin={isPlayerWin} />;
-		default:
-			return null;
-	}
+	return Array.from({ length: 5 }, (_, borderId) => (
+		<BoxStyle key={borderId} direction={direction}>
+			<BoxCollection direction={direction} borderId={borderId} />
+			{borderId === 4 ? (
+				<BoxCollection direction={direction} isLast={borderId === 4} borderId={borderId + 1} />
+			) : null}
+		</BoxStyle>
+	));
 };
 
 const PlayerCard = ({ player }: { player: PlayerElement }) => {
-	const { players, boxes, gameState } = useHomeContext();
-	const { isPlayerWin, playState } = gameState;
+	const {
+		players,
+		boxes,
+		gameState: { isPlayerWin, playState },
+	} = useHomeContext();
 	return (
 		<PlayerCardStyle $player={player} $playState={playState}>
 			{playState === 'win' ? (
@@ -1725,22 +1692,100 @@ const TitleContainer = () => {
 	}
 };
 
-const Board = () => {
-	const { boxes, currentPlayer, setCurrentPlayer, gameState, seconds, setSeconds } =
-		useHomeContext();
-	const { isPlayerWin, playState } = gameState;
+const BoardCover = ({ playState, isPlayerWin }: BoardCoverProps) => {
+	const { setGameState } = useHomeContext();
+	const [seqState, setSeqState] = useState<'Start' | ''>('');
 	const winner = (Object.entries(isPlayerWin) as Array<[PlayerElement, boolean]>).find(
 		(entry) => entry[1]
 	)?.[0];
-	const player = playState === 'win' && winner ? winner : currentPlayer;
+	const partialCovers = ({
+		playState,
+		winner,
+	}: {
+		playState: 'Win' | 'Draw' | 'Start' | 'Playing' | '';
+		winner: PlayerElement | undefined;
+	}) => {
+		const aniDrections: Array<HorizontalPos | VerticalPos> = ['left', 'right', 'up', 'down'];
+		return aniDrections.map((direction, id) => (
+			<PartialCover
+				key={id}
+				className={playState}
+				$seqState={playState}
+				$aniDirection={direction}
+				$winner={winner}
+			/>
+		));
+	};
+	const createContent = (element: JSX.Element, winner: PlayerElement | undefined) => (
+		<BoardCoverLayout $winner={winner}>{element}</BoardCoverLayout>
+	);
+	const onStartClick = () => {
+		setSeqState('Start');
+		setGameState((p) => ({ ...p, playState: 'playing' }));
+	};
+	switch (playState) {
+		case 'draw': {
+			return createContent(
+				<>
+					{partialCovers({ winner, playState: 'Draw' })}
+					<LetterOnBoard className="SlideDown">Draw</LetterOnBoard>
+				</>,
+				winner
+			);
+		}
+		case 'win':
+			return createContent(
+				<>
+					{partialCovers({ winner, playState: 'Win' })}
+					<LetterOnBoard className="SlideDown">
+						<div>
+							<div>Winners</div>
+							<div>{winner}</div>
+						</div>
+					</LetterOnBoard>
+				</>,
+				winner
+			);
+		case 'ready':
+			return createContent(
+				<>
+					{partialCovers({ winner, playState: seqState })}
+					<LetterOnBoard className={seqState === 'Start' ? 'SlideUp' : ''}>
+						<StartButton onClick={onStartClick}>Start</StartButton>
+					</LetterOnBoard>
+				</>,
+				winner
+			);
+		default:
+			return null;
+	}
+};
+
+const Board = () => {
+	const {
+		boxes,
+		currentPlayer,
+		setCurrentPlayer,
+		gameState: { isPlayerWin, playState },
+		seconds,
+		setSeconds,
+	} = useHomeContext();
+	const [lazyPlayState, setLazyPlayState] = useState<PlayState>(playState);
 	useEffect(() => {
-		const interval = setInterval(() => {
-			playState === 'playing' && setSeconds((p) => p - 1);
-		}, 1000);
+		const interval =
+			playState === 'playing' &&
+			setInterval(() => {
+				playState === 'playing' && setSeconds((p) => p - 1);
+				console.log('run');
+			}, 1000);
+		const timeout = setTimeout(() => {
+			setLazyPlayState(playState);
+		}, 600);
 		return () => {
-			clearInterval(interval);
+			interval && clearInterval(interval);
+			timeout && clearTimeout(timeout);
 		};
-	}, []);
+	}, [playState]);
 	useEffect(() => {
 		if (seconds <= 0) {
 			setSeconds(30);
@@ -1777,12 +1822,27 @@ const Board = () => {
 								</Boxes>
 							)
 						)}
-						<BoardBordersContainer $borderDirection="column">
-							<BoardBordersContainer $borderDirection="row">
-								<BorderBox direction="vertical" />
+						{/* playState와 lazyPlayState가 'playing'인 시간의 합집합 */}
+						{(playState === 'playing' || lazyPlayState === 'playing') && (
+							<BoardBordersContainer $borderDirection="column">
+								<BoardBordersContainer $borderDirection="row">
+									<BorderBox direction="vertical" />
+								</BoardBordersContainer>
+								<BorderBox direction="horizontal" />
 							</BoardBordersContainer>
-							<BorderBox direction="horizontal" />
-						</BoardBordersContainer>
+						)}
+						{/* playState와 lazyPlayState가 'playing'인 시간의 교집합의 여집합 */}
+						{(playState !== 'playing' || lazyPlayState !== 'playing') && (
+							<BoardCover
+								playState={
+									/* 여집합 구간의 0.6초간은 lazyPlayState가 여전히 'playing'이기 때문에 이 시간동안만 playState를 대신 써줌 */
+									lazyPlayState === 'playing'
+										? (playState as Exclude<PlayState, 'playing'>)
+										: (lazyPlayState as Exclude<PlayState, 'playing'>)
+								}
+								isPlayerWin={isPlayerWin}
+							/>
+						)}
 					</BoardItemsContainer>
 				</BoardItemsWrapper>
 				<PlayerCard player="player2" />

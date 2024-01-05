@@ -13,7 +13,6 @@ const GlobalStyle = createGlobalStyle`${css`
 		margin: 0 auto;
 		padding: 0;
 		color: #eaeaea;
-		background-color: rebeccapurple;
 	}
 	li {
 		list-style: none;
@@ -28,6 +27,17 @@ const GlobalStyle = createGlobalStyle`${css`
 			outline: none;
 			color: #eaeaea;
 		}
+	}
+	button {
+		border: none;
+		background-color: transparent;
+		color: inherit;
+		appearance: inherit;
+		padding: 0;
+		padding-block: 0;
+		padding-inline: 0;
+		cursor: default;
+		font: inherit;
 	}
 	:root {
 		--bgColor-dark: #101010;
