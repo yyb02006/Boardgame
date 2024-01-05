@@ -33,9 +33,11 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 		}))
 	);
 	const [gameState, setGameState] = useState<GameState>({
-		playState: 'playing',
+		playState: 'ready',
 		isPlayerWin: { player1: false, player2: false },
 	});
+
+	const [seconds, setSeconds] = useState<Seconds>(30);
 
 	const contextValue: HomeContextType = {
 		currentPlayer,
@@ -48,11 +50,11 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 		setBoxes,
 		gameState,
 		setGameState,
+		seconds,
+		setSeconds,
 	};
 
-	return (
-		<AppContext.Provider value={contextValue}>{children}</AppContext.Provider>
-	);
+	return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
 }
 
 function useHomeContext() {

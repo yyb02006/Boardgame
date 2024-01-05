@@ -4,7 +4,9 @@ type PlayerElement = 'player1' | 'player2';
 
 type Ownable = Record<PlayerElement, boolean>;
 
-type PlayState = 'win' | 'draw' | 'playing';
+type PlayState = 'win' | 'draw' | 'playing' | 'ready';
+
+type Seconds = number;
 
 interface PlayerInfo {
 	boxCount: number;
@@ -39,6 +41,8 @@ interface HomeContextType {
 	setBoxes: React.Dispatch<React.SetStateAction<boxes>>;
 	gameState: GameState;
 	setGameState: React.Dispatch<React.SetStateAction<GameState>>;
+	seconds: Seconds;
+	setSeconds: React.Dispatch<React.SetStateAction<Seconds>>;
 }
 
 interface BorderState {

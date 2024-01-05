@@ -8,6 +8,8 @@ type Position = HorizontalPos | VerticalPos;
 
 type NestedArray<T> = T[][];
 
+type seqDirection = 'reverse' | 'normal';
+
 interface DirectionInterface {
 	direction: Direction;
 }
@@ -109,6 +111,7 @@ interface ShouldAbortProps extends BorderAndSide {
 	direction: Direction;
 	originalSelecteds: Selected;
 	currentPlayer: PlayerElement;
+	playState: PlayState;
 }
 
 interface CreateBorderOrSideProps extends BorderAndSide {
@@ -129,6 +132,12 @@ interface IsBlockedProps {
 interface CanClickWhenBlockedProps extends IsBlockedProps {}
 
 /** Styled Components Types */
+
+interface PartialCoverProps {
+	$seqDirection: seqDirection;
+	$aniDirection: HorizontalPos | VerticalPos;
+	$winner: PlayerElement | undefined;
+}
 
 interface PlayerProps {
 	$currentPlayer: PlayerElement;
@@ -175,4 +184,9 @@ interface BoxCollectionProps {
 
 interface BorderBoxProps {
 	direction: Direction;
+}
+
+interface BoardCoverProps {
+	playState: Exclude<PlayState, 'playing'>;
+	isPlayerWin: Record<PlayerElement, boolean>;
 }

@@ -1,8 +1,5 @@
 /** 두 배열이 공통요소를 가지고 있는지 판단하는 함수 */
-export function haveCommonElements(
-	firstArray: number[],
-	secondArray: number[]
-) {
+export function haveCommonElements(firstArray: number[], secondArray: number[]) {
 	for (const firstElement of firstArray) {
 		for (const secondElement of secondArray) {
 			if (firstElement === secondElement) {
@@ -17,9 +14,7 @@ export function haveCommonElements(
 export function isNumArrayEqual(arr1: number[], arr2: number[]) {
 	if (arr1.length !== arr2.length) return false;
 	for (let i = 0; i < arr1.length; i++) {
-		if (
-			sortByOrder(arr1, 'ascending')[i] !== sortByOrder(arr2, 'ascending')[i]
-		) {
+		if (sortByOrder(arr1, 'ascending')[i] !== sortByOrder(arr2, 'ascending')[i]) {
 			return false;
 		}
 	}
@@ -32,16 +27,11 @@ export function getNumArrayCommonElements(arr1: number[], arr2: number[]) {
 }
 
 /** 중첩된 배열에서 비교배열과 공통요소를 가지고 있는 2차 배열을 모두 리턴하는 함수 */
-export function findCommonElementInNestedArray(
-	compareArray: number[],
-	nestedArray: number[][]
-) {
+export function findCommonElementInNestedArray(compareArray: number[], nestedArray: number[][]) {
 	const newNestedArray = [...nestedArray];
 	const resultArray = newNestedArray.reduce<number[][]>(
 		(prevArray, currentElement) =>
-			haveCommonElements(currentElement, compareArray)
-				? [...prevArray, currentElement]
-				: prevArray,
+			haveCommonElements(currentElement, compareArray) ? [...prevArray, currentElement] : prevArray,
 		[]
 	);
 
@@ -49,10 +39,7 @@ export function findCommonElementInNestedArray(
 }
 
 /** 파라미터1 : 정렬할 배열, 파라미터2 : 오름차순/내림차순 방법 */
-export function sortByOrder(
-	array: number[],
-	method: 'ascending' | 'descending'
-) {
+export function sortByOrder(array: number[], method: 'ascending' | 'descending') {
 	const newArray = array.slice();
 	if (method === 'ascending') {
 		return newArray.sort((a, b) => a - b);
@@ -105,9 +92,7 @@ export function compareAndFilterSelecteds(
 export function getOppositeElement(element: PlayerElement): PlayerElement;
 export function getOppositeElement(element: HorizontalPos): HorizontalPos;
 export function getOppositeElement(element: Direction): Direction;
-export function getOppositeElement(
-	element: Direction | HorizontalPos | PlayerElement
-) {
+export function getOppositeElement(element: Direction | HorizontalPos | PlayerElement) {
 	switch (element) {
 		case 'horizontal':
 		case 'vertical':
