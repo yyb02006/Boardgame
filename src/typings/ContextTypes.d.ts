@@ -30,7 +30,18 @@ type Boxes = Array<{
 	owner: PlayerElement | undefined;
 }>;
 
+interface InitialData {
+	initialCurrentPlayer: PlayerElement;
+	initialPlayers: Players;
+	initialSelected: Selected;
+	initialBoxes: Boxes;
+	initialGameState: GameState;
+	initialSeconds: Seconds;
+}
+
 interface HomeContextType {
+	initialData: InitialData;
+	initializeIngame: () => void;
 	currentPlayer: PlayerElement;
 	setCurrentPlayer: React.Dispatch<React.SetStateAction<PlayerElement>>;
 	players: Players;

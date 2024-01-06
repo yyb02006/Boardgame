@@ -12,6 +12,8 @@ type SeqDirection = 'reverse' | 'normal';
 
 type SeqPlayState = 'paused' | 'running';
 
+type PartialCoverClass = 'Draw' | 'Win' | 'Start' | '';
+
 interface DirectionInterface {
 	direction: Direction;
 }
@@ -138,7 +140,6 @@ interface CanClickWhenBlockedProps extends IsBlockedProps {}
 interface PartialCoverProps {
 	$aniDirection: HorizontalPos | VerticalPos;
 	$winner: PlayerElement | undefined;
-	$seqState: 'Win' | 'Draw' | 'Start' | 'Playing' | '';
 }
 
 interface PlayerProps {

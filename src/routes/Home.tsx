@@ -9,6 +9,7 @@ import {
 	getNumArrayCommonElements,
 } from '../libs/utils';
 import { HomeProvider, useHomeContext } from './HomeContext';
+import { log } from 'console';
 
 const colors = {
 	player1: {
@@ -45,7 +46,7 @@ const colorChange = (player: 'player1' | 'player2' | 'common', name: string) => 
 
 const resultTransition = {
 	boardTransition: (name: string, seqDirection: 'reverse' | 'normal') => css`
-		@keyframes board_${name} {
+		@keyframes board_${name}_${seqDirection} {
 			from {
 				transform: translateY(-200px);
 				opacity: 0;
@@ -55,7 +56,8 @@ const resultTransition = {
 				opacity: 1;
 			}
 		}
-		animation: ${`board_` + name} 0.5s ease-in-out ${seqDirection} forwards;
+		animation: ${`board_${name}_${seqDirection}`} 0.5s ease-in-out forwards;
+		animation-direction: ${seqDirection};
 	`,
 	spinAndZoom: ({
 		seqDirection,
@@ -63,31 +65,33 @@ const resultTransition = {
 	}: {
 		seqDirection: 'reverse' | 'normal';
 		aniDirection: HorizontalPos | VerticalPos;
-	}) => css`
-		@keyframes box_${aniDirection} {
-			from {
-				opacity: 0;
-				${aniDirection === 'left' || aniDirection === 'right'
-					? css`
-							transform: translateX(${aniDirection === 'left' ? '-100px' : '100px'});
-					  `
-					: css`
-							transform: translateY(${aniDirection === 'up' ? '-100px' : '100px'});
-					  `}
+	}) => {
+		return css`
+			@keyframes box_${aniDirection}_${seqDirection} {
+				from {
+					opacity: 0;
+					${aniDirection === 'left' || aniDirection === 'right'
+						? css`
+								transform: translateX(${aniDirection === 'left' ? '-100px' : '100px'});
+						  `
+						: css`
+								transform: translateY(${aniDirection === 'up' ? '-100px' : '100px'});
+						  `}
+				}
+				to {
+					opacity: 1;
+					${aniDirection === 'left' || aniDirection === 'right'
+						? css`
+								transform: translateX(0);
+						  `
+						: css`
+								transform: translateY(0);
+						  `}
+				}
 			}
-			to {
-				opacity: 1;
-				${aniDirection === 'left' || aniDirection === 'right'
-					? css`
-							transform: translateX(0);
-					  `
-					: css`
-							transform: translateY(0);
-					  `}
-			}
-		}
-		animation: ${`box_` + aniDirection} 0.6s ease-in-out forwards ${seqDirection};
-	`,
+			animation: ${`box_${aniDirection}_${seqDirection}`} 0.6s ease-in-out forwards ${seqDirection};
+		`;
+	},
 	slideInFromSide: ({
 		seqDirection,
 		aniDirection,
@@ -113,7 +117,7 @@ const resultTransition = {
 		};
 		const index = directionToIndex(aniDirection);
 		return css`
-			@keyframes box_${aniDirection} {
+			@keyframes box_${aniDirection}_${seqDirection} {
 				from {
 					opacity: 0;
 					transform: translateX(${winner === 'player1' ? '-200px' : '200px'});
@@ -123,7 +127,8 @@ const resultTransition = {
 					transform: translateX(0);
 				}
 			}
-			animation: ${`box_` + aniDirection} 0.5s ease-in-out forwards ${index * 0.12}s ${seqDirection};
+			animation: ${`box_${aniDirection}_${seqDirection}`} 0.5s ease-in-out forwards ${index * 0.12}s
+				${seqDirection};
 		`;
 	},
 };
@@ -404,23 +409,21 @@ const PartialCover = styled.div<PartialCoverProps>`
 				seqDirection: 'normal',
 				aniDirection: props.$aniDirection,
 				winner: props.$winner,
-			})}
+			})};
 	}
 	&.Draw {
-		${(props) => {
-			return resultTransition.spinAndZoom({
+		${(props) =>
+			resultTransition.spinAndZoom({
 				seqDirection: 'normal',
 				aniDirection: props.$aniDirection,
-			});
-		}}
+			})};
 	}
 	&.Start {
-		${(props) => {
-			return resultTransition.spinAndZoom({
+		${(props) =>
+			resultTransition.spinAndZoom({
 				seqDirection: 'reverse',
 				aniDirection: props.$aniDirection,
-			});
-		}};
+			})};
 	}
 	@media screen and (max-width: 1024px) {
 		background-color: ${(props) =>
@@ -1693,69 +1696,89 @@ const TitleContainer = () => {
 };
 
 const BoardCover = ({ playState, isPlayerWin }: BoardCoverProps) => {
-	const { setGameState } = useHomeContext();
+	const { setGameState, initializeIngame } = useHomeContext();
 	const [seqState, setSeqState] = useState<'Start' | ''>('');
+	const letterAnimation = seqState === 'Start' ? 'SlideUp' : 'SlideDown';
 	const winner = (Object.entries(isPlayerWin) as Array<[PlayerElement, boolean]>).find(
 		(entry) => entry[1]
 	)?.[0];
 	const partialCovers = ({
-		playState,
+		partialCoverClass,
 		winner,
 	}: {
-		playState: 'Win' | 'Draw' | 'Start' | 'Playing' | '';
+		partialCoverClass: PartialCoverClass;
 		winner: PlayerElement | undefined;
 	}) => {
 		const aniDrections: Array<HorizontalPos | VerticalPos> = ['left', 'right', 'up', 'down'];
 		return aniDrections.map((direction, id) => (
 			<PartialCover
 				key={id}
-				className={playState}
-				$seqState={playState}
+				className={partialCoverClass}
 				$aniDirection={direction}
 				$winner={winner}
 			/>
 		));
 	};
-	const createContent = (element: JSX.Element, winner: PlayerElement | undefined) => (
-		<BoardCoverLayout $winner={winner}>{element}</BoardCoverLayout>
+	const createContent = ({
+		element,
+		winner,
+		partialCoverClass,
+		letterAnimation,
+	}: {
+		element: JSX.Element;
+		partialCoverClass: PartialCoverClass;
+		winner: PlayerElement | undefined;
+		letterAnimation: 'SlideUp' | 'SlideDown';
+	}) => (
+		<BoardCoverLayout $winner={winner}>
+			{partialCovers({ winner, partialCoverClass })}
+			<LetterOnBoard className={letterAnimation}>{element}</LetterOnBoard>
+		</BoardCoverLayout>
 	);
-	const onStartClick = () => {
+	const onStartClick = (playState: Exclude<PlayState, 'playing'>) => {
 		setSeqState('Start');
 		setGameState((p) => ({ ...p, playState: 'playing' }));
+		if (playState !== 'ready') {
+			initializeIngame();
+		}
 	};
+	const createStartButton = (label: string) => (
+		<StartButton
+			onClick={() => {
+				onStartClick(playState);
+			}}
+		>
+			{label}
+		</StartButton>
+	);
 	switch (playState) {
 		case 'draw': {
-			return createContent(
-				<>
-					{partialCovers({ winner, playState: 'Draw' })}
-					<LetterOnBoard className="SlideDown">Draw</LetterOnBoard>
-				</>,
-				winner
-			);
+			return createContent({
+				element: createStartButton('Draw'),
+				partialCoverClass: seqState === 'Start' ? seqState : 'Draw',
+				winner,
+				letterAnimation,
+			});
 		}
 		case 'win':
-			return createContent(
-				<>
-					{partialCovers({ winner, playState: 'Win' })}
-					<LetterOnBoard className="SlideDown">
-						<div>
-							<div>Winners</div>
-							<div>{winner}</div>
-						</div>
-					</LetterOnBoard>
-				</>,
-				winner
-			);
+			return createContent({
+				element: (
+					<div>
+						{createStartButton('Winner')}
+						<div>{winner}</div>
+					</div>
+				),
+				partialCoverClass: seqState === 'Start' ? seqState : 'Win',
+				winner,
+				letterAnimation,
+			});
 		case 'ready':
-			return createContent(
-				<>
-					{partialCovers({ winner, playState: seqState })}
-					<LetterOnBoard className={seqState === 'Start' ? 'SlideUp' : ''}>
-						<StartButton onClick={onStartClick}>Start</StartButton>
-					</LetterOnBoard>
-				</>,
-				winner
-			);
+			return createContent({
+				element: createStartButton('Start'),
+				partialCoverClass: seqState,
+				winner,
+				letterAnimation,
+			});
 		default:
 			return null;
 	}
@@ -1776,7 +1799,6 @@ const Board = () => {
 			playState === 'playing' &&
 			setInterval(() => {
 				playState === 'playing' && setSeconds((p) => p - 1);
-				console.log('run');
 			}, 1000);
 		const timeout = setTimeout(() => {
 			setLazyPlayState(playState);
