@@ -175,26 +175,26 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 	font-size: 4vw;
 	position: relative;
 	padding: 12px 24px;
-	overflow: hidden;
 	text-align: ${(props) => (props.$player === 'player1' ? 'left' : 'right')};
+	& .FakeLetter {
+		user-select: none;
+		color: transparent;
+	}
 	h3 {
 		font-size: ${`clamp(1rem,2vw,2rem)`};
 		font-weight: 600;
 		margin: 0;
 	}
 	> .Wrapper {
-		position: relative;
+		position: absolute;
+		top: 0;
+		left: 0;
+		padding: 12px 24px;
+		height: 100%;
+		width: 100%;
+		overflow: hidden;
 		> div {
-			position: absolute;
-			top: 0;
-			${(props) =>
-				props.$player === 'player1'
-					? css`
-							left: 0px;
-					  `
-					: css`
-							right: 0px;
-					  `};
+			width: 100%;
 		}
 	}
 	& .SlideIn {
@@ -223,9 +223,7 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 			font-size: 4vw;
 		}
 		> .Wrapper {
-			width: 100%;
 			> div {
-				width: 100%;
 				display: flex;
 				justify-content: space-between;
 			}
@@ -1696,6 +1694,7 @@ const PlayerCard = ({ player }: { player: PlayerElement }) => {
 	};
 	return (
 		<PlayerCardStyle $player={player} $playState={playState}>
+			<span className="FakeLetter">player2</span>
 			{getConditions(playState, lazyPlayState, 'winRender') ? (
 				<div className="Wrapper">
 					<div
@@ -1707,7 +1706,6 @@ const PlayerCard = ({ player }: { player: PlayerElement }) => {
 			) : null}
 			{getConditions(playState, lazyPlayState, 'notWinRender') ? (
 				<div className="Wrapper">
-					&nbsp;
 					<div
 						className={
 							getConditions(playState, lazyPlayState, 'notWinExit') ? 'SlideOut' : 'SlideIn'
