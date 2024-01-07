@@ -120,6 +120,36 @@ const AnimatedComp = styled.div<{ $direction: 'normal' | 'reverse' }>`
 	animation-direction: ${(props) => props.$direction}; */
 `;
 
+/* Arrow function은 클로저함수처럼 렉시컬 스코프를 가지기 때문에, 객체의 메서드로 활용될 때는 전역 스코프를 가지게 된다.
+그래서 메서드로 활용된 Arrow function의 this값은 불안정하다. 전역이 global이냐 window냐에 따라 다르고, strict mode가
+활성화되어있을 경우에는 전역객체에 대한 this는 undefined가 된다. 반면 일반함수(함수 선언형)의 경우 호출되는 방식에
+따라 동적으로 this를 결정하는데, function();과 같은 일반적인 호출에서는 전역객체를 this로 갖고,
+obj.function();처럼 객체의 메서드로 활용되었을 경우에는 해당 객체를 this로 갖는다. */
+const testObj = {
+	a: function a() {
+		return 2;
+	},
+	b: function b() {
+		return 1;
+	},
+	c: function c() {
+		return this.a() + this.b();
+	},
+};
+
+/* 이 코드는 전역객체를 가리키게 된다. 콜백은 스코프적으로 호출된 곳과 아무런 상관이 없다. */
+const obj = {
+	method: function a(callback: (this: unknown) => void) {
+		callback();
+	},
+};
+
+function outer(this: unknown) {
+	console.log(this);
+}
+
+obj.method(outer);
+
 const Test = () => {
 	const [direction, setDirection] = useState<'normal' | 'reverse'>('normal');
 	return (

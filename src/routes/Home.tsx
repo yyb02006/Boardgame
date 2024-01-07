@@ -44,61 +44,43 @@ const colorChange = (player: 'player1' | 'player2' | 'common', name: string) => 
 `;
 
 const resultTransition = {
-	slideIn: (
-		name: string,
-		seqDirection: 'reverse' | 'normal',
-		distance: number = -200,
-		direction: Direction = 'vertical'
-	) => css`
-		@keyframes board_${name}_${seqDirection}_${distance}_${direction} {
-			from {
-				transform: translate(
-					${direction === 'horizontal' ? `${distance}px, 0px` : `0px, ${distance}px`}
-				);
-				opacity: 0;
+	slideIn: function slideIn({ name, seqDirection, distance, direction }: SlideInProps) {
+		return css`
+			@keyframes board_${name}_${seqDirection}_${distance}_${direction} {
+				from {
+					transform: translate(
+						${direction === 'horizontal' ? `${distance}px, 0px` : `0px, ${distance}px`}
+					);
+					opacity: 0;
+				}
+				to {
+					transform: translateY(0px);
+					opacity: 1;
+				}
 			}
-			to {
-				transform: translateY(0px);
-				opacity: 1;
-			}
-		}
-		animation: ${`board_${name}_${seqDirection}_${distance}_${direction}`} 0.5s ease-in-out forwards;
-		animation-direction: ${seqDirection};
-	`,
-	spinAndZoom: ({
+			animation: ${`board_${name}_${seqDirection}_${distance}_${direction}`} 0.5s ease-in-out
+				forwards;
+			animation-direction: ${seqDirection};
+		`;
+	},
+	spinAndZoom: function spinAndZoom({
+		name,
 		seqDirection,
 		aniDirection,
 	}: {
+		name: string;
 		seqDirection: 'reverse' | 'normal';
 		aniDirection: HorizontalPos | VerticalPos;
-	}) => {
-		return css`
-			@keyframes box_${aniDirection}_${seqDirection} {
-				from {
-					opacity: 0;
-					${aniDirection === 'left' || aniDirection === 'right'
-						? css`
-								transform: translateX(${aniDirection === 'left' ? '-100px' : '100px'});
-						  `
-						: css`
-								transform: translateY(${aniDirection === 'up' ? '-100px' : '100px'});
-						  `}
-				}
-				to {
-					opacity: 1;
-					${aniDirection === 'left' || aniDirection === 'right'
-						? css`
-								transform: translateX(0);
-						  `
-						: css`
-								transform: translateY(0);
-						  `}
-				}
-			}
-			animation: ${`box_${aniDirection}_${seqDirection}`} 0.6s ease-in-out forwards ${seqDirection};
-		`;
+	}) {
+		const props: SlideInProps = {
+			name,
+			seqDirection,
+			distance: aniDirection === 'left' || aniDirection === 'up' ? -100 : 100,
+			direction: aniDirection === 'left' || aniDirection === 'right' ? 'horizontal' : 'vertical',
+		};
+		return this.slideIn(props);
 	},
-	slideInFromSide: ({
+	slideInFromSide: function slideInFromSide({
 		seqDirection,
 		aniDirection,
 		winner,
@@ -106,7 +88,7 @@ const resultTransition = {
 		seqDirection: 'reverse' | 'normal';
 		aniDirection: HorizontalPos | VerticalPos;
 		winner: PlayerElement;
-	}) => {
+	}) {
 		const directionToIndex = (aniDirection: HorizontalPos | VerticalPos) => {
 			switch (aniDirection) {
 				case 'left':
@@ -122,19 +104,15 @@ const resultTransition = {
 			}
 		};
 		const index = directionToIndex(aniDirection);
+		const test = this.slideIn({
+			name: winner,
+			seqDirection,
+			distance: winner === 'player1' ? -200 : 200,
+			direction: 'horizontal',
+		});
 		return css`
-			@keyframes box_${aniDirection}_${seqDirection} {
-				from {
-					opacity: 0;
-					transform: translateX(${winner === 'player1' ? '-200px' : '200px'});
-				}
-				to {
-					opacity: 1;
-					transform: translateX(0);
-				}
-			}
-			animation: ${`box_${aniDirection}_${seqDirection}`} 0.5s ease-in-out forwards ${index * 0.12}s
-				${seqDirection};
+			${test}
+			animation-delay: ${index * 0.12}s;
 		`;
 	},
 };
@@ -230,21 +208,21 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 	}
 	& .SlideIn {
 		${(props) =>
-			resultTransition.slideIn(
-				'playerCard',
-				'normal',
-				props.$player === 'player1' ? -200 : 200,
-				'horizontal'
-			)}
+			resultTransition.slideIn({
+				name: 'playerCard',
+				seqDirection: 'normal',
+				distance: props.$player === 'player1' ? -200 : 200,
+				direction: 'horizontal',
+			})}
 	}
 	& .SlideOut {
 		${(props) =>
-			resultTransition.slideIn(
-				'playerCard',
-				'reverse',
-				props.$player === 'player1' ? 200 : -200,
-				'horizontal'
-			)}
+			resultTransition.slideIn({
+				name: 'playerCard',
+				seqDirection: 'reverse',
+				distance: props.$player === 'player1' ? 200 : -200,
+				direction: 'horizontal',
+			})}
 	}
 	@media screen and (max-width: 1024px) {
 		margin: ${(props) => (props.$player === 'player1' ? '0 0 20px 0' : '20px 0 0 0 ')};
@@ -455,6 +433,7 @@ const PartialCover = styled.div<PartialCoverProps>`
 	&.Draw {
 		${(props) =>
 			resultTransition.spinAndZoom({
+				name: 'draw',
 				seqDirection: 'normal',
 				aniDirection: props.$aniDirection,
 			})};
@@ -462,6 +441,7 @@ const PartialCover = styled.div<PartialCoverProps>`
 	&.Start {
 		${(props) =>
 			resultTransition.spinAndZoom({
+				name: 'start',
 				seqDirection: 'reverse',
 				aniDirection: props.$aniDirection,
 			})};
@@ -502,10 +482,20 @@ const BoardCoverLayout = styled.div<{ $winner: PlayerElement | undefined }>`
 	color: ${(props) => (props.$winner ? colors.common.emphaticYellow : '#eaeaea')};
 	> ${LetterOnBoard} {
 		&.SlideDown {
-			${resultTransition.slideIn('player', 'normal')};
+			${resultTransition.slideIn({
+				name: 'player',
+				seqDirection: 'normal',
+				distance: -200,
+				direction: 'vertical',
+			})};
 		}
 		&.SlideUp {
-			${resultTransition.slideIn('player', 'reverse')};
+			${resultTransition.slideIn({
+				name: 'player',
+				seqDirection: 'reverse',
+				distance: -200,
+				direction: 'vertical',
+			})};
 		}
 	}
 `;
