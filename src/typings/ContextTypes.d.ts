@@ -54,6 +54,8 @@ interface HomeContextType {
 	setGameState: React.Dispatch<React.SetStateAction<GameState>>;
 	seconds: Seconds;
 	setSeconds: React.Dispatch<React.SetStateAction<Seconds>>;
+	lazyPlayState: PlayState;
+	setLazyPlayState: React.Dispatch<React.SetStateAction<PlayState>>;
 }
 
 interface BorderState {

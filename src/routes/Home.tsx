@@ -9,7 +9,6 @@ import {
 	getNumArrayCommonElements,
 } from '../libs/utils';
 import { HomeProvider, useHomeContext } from './HomeContext';
-import { log } from 'console';
 
 const colors = {
 	player1: {
@@ -45,10 +44,17 @@ const colorChange = (player: 'player1' | 'player2' | 'common', name: string) => 
 `;
 
 const resultTransition = {
-	boardTransition: (name: string, seqDirection: 'reverse' | 'normal') => css`
-		@keyframes board_${name}_${seqDirection} {
+	slideIn: (
+		name: string,
+		seqDirection: 'reverse' | 'normal',
+		distance: number = -200,
+		direction: Direction = 'vertical'
+	) => css`
+		@keyframes board_${name}_${seqDirection}_${distance}_${direction} {
 			from {
-				transform: translateY(-200px);
+				transform: translate(
+					${direction === 'horizontal' ? `${distance}px, 0px` : `0px, ${distance}px`}
+				);
 				opacity: 0;
 			}
 			to {
@@ -56,7 +62,7 @@ const resultTransition = {
 				opacity: 1;
 			}
 		}
-		animation: ${`board_${name}_${seqDirection}`} 0.5s ease-in-out forwards;
+		animation: ${`board_${name}_${seqDirection}_${distance}_${direction}`} 0.5s ease-in-out forwards;
 		animation-direction: ${seqDirection};
 	`,
 	spinAndZoom: ({
@@ -188,22 +194,57 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 	background-color: ${(props) =>
 		props.$player === 'player1' ? colors.player1.noneActiveBox : colors.player2.noneActiveBox};
 	margin: ${(props) => (props.$player === 'player1' ? '0 40px 0 0' : '0 0 0 40px')};
-	padding: 12px 24px;
 	font-size: 4vw;
+	position: relative;
+	padding: 12px 24px;
+	overflow: hidden;
+	text-align: ${(props) => (props.$player === 'player1' ? 'left' : 'right')};
 	h3 {
 		font-size: ${`clamp(1rem,2vw,2rem)`};
 		font-weight: 600;
 		margin: 0;
 	}
-	> div {
+	> .Wrapper {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		> div {
+			position: absolute;
+			${(props) =>
+				props.$player === 'player1'
+					? css`
+							left: 0px;
+					  `
+					: css`
+							right: 0px;
+					  `}
+			${(props) =>
+				props.$playState === 'win'
+					? css`
+							display: flex;
+							justify-content: center;
+							align-items: center;
+					  `
+					: null}
+		}
+	}
+	& .SlideIn {
 		${(props) =>
-			props.$playState === 'win'
-				? css`
-						display: flex;
-						justify-content: center;
-						align-items: center;
-				  `
-				: null}
+			resultTransition.slideIn(
+				'playerCard',
+				'normal',
+				props.$player === 'player1' ? -200 : 200,
+				'horizontal'
+			)}
+	}
+	& .SlideOut {
+		${(props) =>
+			resultTransition.slideIn(
+				'playerCard',
+				'reverse',
+				props.$player === 'player1' ? 200 : -200,
+				'horizontal'
+			)}
 	}
 	@media screen and (max-width: 1024px) {
 		margin: ${(props) => (props.$player === 'player1' ? '0 0 20px 0' : '20px 0 0 0 ')};
@@ -461,10 +502,10 @@ const BoardCoverLayout = styled.div<{ $winner: PlayerElement | undefined }>`
 	color: ${(props) => (props.$winner ? colors.common.emphaticYellow : '#eaeaea')};
 	> ${LetterOnBoard} {
 		&.SlideDown {
-			${resultTransition.boardTransition('player', 'normal')};
+			${resultTransition.slideIn('player', 'normal')};
 		}
 		&.SlideUp {
-			${resultTransition.boardTransition('player', 'reverse')};
+			${resultTransition.slideIn('player', 'reverse')};
 		}
 	}
 `;
@@ -1647,18 +1688,52 @@ const PlayerCard = ({ player }: { player: PlayerElement }) => {
 		players,
 		boxes,
 		gameState: { isPlayerWin, playState },
+		lazyPlayState,
 	} = useHomeContext();
+	const getConditions = (
+		playState: PlayState,
+		lazyPlayState: PlayState,
+		state: 'winRender' | 'notWinRender' | 'winExit' | 'notWinExit'
+	) => {
+		switch (state) {
+			case 'winRender':
+				return playState === 'win' || lazyPlayState === 'win';
+			case 'notWinRender':
+				return playState !== 'win' || lazyPlayState !== 'win';
+			case 'winExit':
+				return playState !== 'win' && lazyPlayState === 'win';
+			case 'notWinExit':
+				return playState === 'win' && lazyPlayState !== 'win';
+			default:
+				break;
+		}
+	};
 	return (
 		<PlayerCardStyle $player={player} $playState={playState}>
-			{playState === 'win' ? (
-				<div>{isPlayerWin[player] ? 'Win!' : 'Lose...'}</div>
-			) : (
-				<div>
-					{players[player].name}
-					<h3>ownable : {players[player].ownableBoxCount}</h3>
-					<h3>score : {boxes.filter((box) => box.isSurrounded && box.owner === player).length}</h3>
+			{getConditions(playState, lazyPlayState, 'winRender') ? (
+				<div className="Wrapper">
+					<div
+						className={getConditions(playState, lazyPlayState, 'winExit') ? 'SlideOut' : 'SlideIn'}
+					>
+						{isPlayerWin[player] ? 'Win!' : 'Lose...'}
+					</div>
 				</div>
-			)}
+			) : null}
+			{getConditions(playState, lazyPlayState, 'notWinRender') ? (
+				<div className="Wrapper">
+					<div
+						className={
+							getConditions(playState, lazyPlayState, 'notWinExit') ? 'SlideOut' : 'SlideIn'
+						}
+					>
+						{players[player].name}
+						<h3>ownable : {players[player].ownableBoxCount}</h3>
+						<h3>
+							score : {boxes.filter((box) => box.isSurrounded && box.owner === player).length}
+						</h3>
+					</div>
+				</div>
+			) : null}
 		</PlayerCardStyle>
 	);
 };
@@ -1792,8 +1867,9 @@ const Board = () => {
 		gameState: { isPlayerWin, playState },
 		seconds,
 		setSeconds,
+		lazyPlayState,
+		setLazyPlayState,
 	} = useHomeContext();
-	const [lazyPlayState, setLazyPlayState] = useState<PlayState>(playState);
 	useEffect(() => {
 		const interval =
 			playState === 'playing' &&
@@ -1823,27 +1899,16 @@ const Board = () => {
 				<PlayerCard player="player1" />
 				<BoardItemsWrapper>
 					<BoardItemsContainer $currentPlayer={currentPlayer}>
-						{boxes.map((box, id) =>
-							id < 5 || id > 20 || id % 5 === 0 || id % 5 === 4 ? (
-								<Boxes
-									key={box.id}
-									$isSurrounded={box.isSurrounded}
-									$currentPlayer={currentPlayer}
-									$owner={box.owner}
-								>
-									{box.id}
-								</Boxes>
-							) : (
-								<Boxes
-									key={box.id}
-									$isSurrounded={box.isSurrounded}
-									$currentPlayer={currentPlayer}
-									$owner={box.owner}
-								>
-									{box.id}
-								</Boxes>
-							)
-						)}
+						{boxes.map((box, id) => (
+							<Boxes
+								key={box.id}
+								$isSurrounded={box.isSurrounded}
+								$currentPlayer={currentPlayer}
+								$owner={box.owner}
+							>
+								{box.id}
+							</Boxes>
+						))}
 						{/* playState와 lazyPlayState가 'playing'인 시간의 합집합 */}
 						{(playState === 'playing' || lazyPlayState === 'playing') && (
 							<BoardBordersContainer $borderDirection="column">

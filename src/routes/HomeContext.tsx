@@ -40,6 +40,7 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 	const [boxes, setBoxes] = useState<Boxes>(initialData.initialBoxes);
 	const [gameState, setGameState] = useState<GameState>(initialData.initialGameState);
 	const [seconds, setSeconds] = useState<Seconds>(initialData.initialSeconds);
+	const [lazyPlayState, setLazyPlayState] = useState<PlayState>('ready');
 
 	const initializeIngame = () => {
 		setPlayers(initialData.initialPlayers);
@@ -64,6 +65,8 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 		setGameState,
 		seconds,
 		setSeconds,
+		lazyPlayState,
+		setLazyPlayState,
 	};
 
 	return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
