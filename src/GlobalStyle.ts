@@ -13,6 +13,7 @@ const GlobalStyle = createGlobalStyle`${css`
 		margin: 0 auto;
 		padding: 0;
 		color: #eaeaea;
+		overflow-x: hidden;
 	}
 	li {
 		list-style: none;

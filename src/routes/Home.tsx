@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { Children, useEffect, useState } from 'react';
 import styled, { css } from 'styled-components';
 import {
 	compareAndFilterSelecteds,
@@ -54,7 +54,7 @@ const resultTransition = {
 					opacity: 0;
 				}
 				to {
-					transform: translateY(0px);
+					transform: translate(0px);
 					opacity: 1;
 				}
 			}
@@ -184,10 +184,9 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 	}
 	> .Wrapper {
 		position: relative;
-		width: 100%;
-		height: 100%;
 		> div {
 			position: absolute;
+			top: 0;
 			${(props) =>
 				props.$player === 'player1'
 					? css`
@@ -195,15 +194,7 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 					  `
 					: css`
 							right: 0px;
-					  `}
-			${(props) =>
-				props.$playState === 'win'
-					? css`
-							display: flex;
-							justify-content: center;
-							align-items: center;
-					  `
-					: null}
+					  `};
 		}
 	}
 	& .SlideIn {
@@ -227,12 +218,17 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 	@media screen and (max-width: 1024px) {
 		margin: ${(props) => (props.$player === 'player1' ? '0 0 20px 0' : '20px 0 0 0 ')};
 		max-width: 100%;
+		overflow: visible;
 		h3 {
 			font-size: 4vw;
 		}
-		> div {
-			display: flex;
-			justify-content: space-between;
+		> .Wrapper {
+			width: 100%;
+			> div {
+				width: 100%;
+				display: flex;
+				justify-content: space-between;
+			}
 		}
 	}
 `;
@@ -1711,6 +1707,7 @@ const PlayerCard = ({ player }: { player: PlayerElement }) => {
 			) : null}
 			{getConditions(playState, lazyPlayState, 'notWinRender') ? (
 				<div className="Wrapper">
+					&nbsp;
 					<div
 						className={
 							getConditions(playState, lazyPlayState, 'notWinExit') ? 'SlideOut' : 'SlideIn'
