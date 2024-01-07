@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { Children, useEffect, useState } from 'react';
 import styled, { css } from 'styled-components';
 import {
 	compareAndFilterSelecteds,
@@ -54,7 +54,7 @@ const resultTransition = {
 					opacity: 0;
 				}
 				to {
-					transform: translateY(0px);
+					transform: translate(0px);
 					opacity: 1;
 				}
 			}
@@ -175,35 +175,26 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 	font-size: 4vw;
 	position: relative;
 	padding: 12px 24px;
-	overflow: hidden;
 	text-align: ${(props) => (props.$player === 'player1' ? 'left' : 'right')};
+	& .FakeLetter {
+		user-select: none;
+		color: transparent;
+	}
 	h3 {
 		font-size: ${`clamp(1rem,2vw,2rem)`};
 		font-weight: 600;
 		margin: 0;
 	}
 	> .Wrapper {
-		position: relative;
-		width: 100%;
+		position: absolute;
+		top: 0;
+		left: 0;
+		padding: 12px 24px;
 		height: 100%;
+		width: 100%;
+		overflow: hidden;
 		> div {
-			position: absolute;
-			${(props) =>
-				props.$player === 'player1'
-					? css`
-							left: 0px;
-					  `
-					: css`
-							right: 0px;
-					  `}
-			${(props) =>
-				props.$playState === 'win'
-					? css`
-							display: flex;
-							justify-content: center;
-							align-items: center;
-					  `
-					: null}
+			width: 100%;
 		}
 	}
 	& .SlideIn {
@@ -227,12 +218,15 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 	@media screen and (max-width: 1024px) {
 		margin: ${(props) => (props.$player === 'player1' ? '0 0 20px 0' : '20px 0 0 0 ')};
 		max-width: 100%;
+		overflow: visible;
 		h3 {
 			font-size: 4vw;
 		}
-		> div {
-			display: flex;
-			justify-content: space-between;
+		> .Wrapper {
+			> div {
+				display: flex;
+				justify-content: space-between;
+			}
 		}
 	}
 `;
@@ -1700,6 +1694,7 @@ const PlayerCard = ({ player }: { player: PlayerElement }) => {
 	};
 	return (
 		<PlayerCardStyle $player={player} $playState={playState}>
+			<span className="FakeLetter">player2</span>
 			{getConditions(playState, lazyPlayState, 'winRender') ? (
 				<div className="Wrapper">
 					<div
