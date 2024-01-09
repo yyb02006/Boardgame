@@ -2,7 +2,7 @@ import { css } from 'styled-components';
 
 export function slideIn({ name, seqDirection, distance, direction, duration }: SlideInProps) {
 	return css`
-		@keyframes board_${name}_${seqDirection}_${distance}_${direction} {
+		@keyframes slideIn_${name}_${seqDirection}_${distance}_${direction} {
 			from {
 				transform: translate(
 					${direction === 'horizontal' ? `${distance}px, 0px` : `0px, ${distance}px`}
@@ -14,8 +14,8 @@ export function slideIn({ name, seqDirection, distance, direction, duration }: S
 				opacity: 1;
 			}
 		}
-		animation: ${`board_${name}_${seqDirection}_${distance}_${direction}`} ${duration}s ease-in-out
-			forwards;
+		animation: ${`slideIn_${name}_${seqDirection}_${distance}_${direction}`} ${duration}s
+			ease-in-out forwards;
 		animation-direction: ${seqDirection};
 	`;
 }

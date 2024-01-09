@@ -10,20 +10,9 @@ import {
 import styled, { css } from 'styled-components';
 import theme from '#styles/theme';
 import { useHomeContext } from '#routes/HomeContext';
+import { colorBlink } from '#styles/animations';
 
 const { colors } = theme;
-
-const colorBlink = (player: 'player1' | 'player2' | 'common', name: string) => css`
-	@keyframes changeKeyFrames_${name} {
-		from {
-			border-color: ${colors[player].noneActiveBorder};
-		}
-		to {
-			border-color: ${colors.common.ownableBorder};
-		}
-	}
-	animation: ${`changeKeyFrames_` + name} ease-in-out 0.7s infinite alternate;
-`;
 
 const BoxWrapper = styled.div<BoxWrapperProps>`
 	font-size: 1rem;
@@ -80,7 +69,12 @@ const BoxHover = styled.div<BoxHoverProps>`
 	${(props) =>
 		props.$isOwnable &&
 		!props.$isSelected &&
-		colorBlink(props.$currentPlayer, props.$currentPlayer)}
+		colorBlink({
+			name: props.$currentPlayer,
+			startColor: colors[props.$currentPlayer].noneActiveBorder,
+			alternateColor: colors.common.ownableBorder,
+			duration: 0.7,
+		})}
 	z-index: ${(props) => (props.$isSelected ? 2 : 1)};
 	&:hover {
 		${(props) =>
