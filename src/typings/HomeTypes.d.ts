@@ -14,13 +14,6 @@ type SeqPlayState = 'paused' | 'running';
 
 type PartialCoverClass = 'Draw' | 'Win' | 'Start' | '';
 
-interface SlideInProps {
-	name: string;
-	seqDirection: 'reverse' | 'normal';
-	distance: number;
-	direction: Direction;
-}
-
 interface DirectionInterface {
 	direction: Direction;
 }

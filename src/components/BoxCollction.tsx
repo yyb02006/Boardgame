@@ -13,7 +13,7 @@ import { useHomeContext } from '#routes/HomeContext';
 
 const { colors } = theme;
 
-const colorChange = (player: 'player1' | 'player2' | 'common', name: string) => css`
+const colorBlink = (player: 'player1' | 'player2' | 'common', name: string) => css`
 	@keyframes changeKeyFrames_${name} {
 		from {
 			border-color: ${colors[player].noneActiveBorder};
@@ -80,7 +80,7 @@ const BoxHover = styled.div<BoxHoverProps>`
 	${(props) =>
 		props.$isOwnable &&
 		!props.$isSelected &&
-		colorChange(props.$currentPlayer, props.$currentPlayer)}
+		colorBlink(props.$currentPlayer, props.$currentPlayer)}
 	z-index: ${(props) => (props.$isSelected ? 2 : 1)};
 	&:hover {
 		${(props) =>
