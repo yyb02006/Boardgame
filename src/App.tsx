@@ -1,9 +1,9 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
-import Home from './routes/Home';
-import GlobalStyle from './GlobalStyle';
-import Test from './routes/Test';
+import Header from '#components/Header';
+import Home from '#routes/Home';
+import Test from '#routes/Test';
+import GlobalStyle from '#GlobalStyle';
 
 export default function App() {
 	return (
