@@ -14,6 +14,7 @@ const GlobalStyle = createGlobalStyle`${css`
 		padding: 0;
 		color: #eaeaea;
 		overflow-x: hidden;
+		background-color: var(--bgColor-dark);
 	}
 	li {
 		list-style: none;
