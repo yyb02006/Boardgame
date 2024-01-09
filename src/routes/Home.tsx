@@ -1649,7 +1649,6 @@ const BorderBox = ({ direction }: BorderBoxProps) => {
 					) : null}
 				</BoxStyle>
 			))}
-			;
 		</>
 	);
 };
