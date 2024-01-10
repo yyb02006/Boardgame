@@ -36,6 +36,7 @@ const CardStyle = styled.div`
 	color: red;
 	background-color: yellow;
 	position: relative;
+	border-radius: 16% / 10%;
 	&.Forward {
 		${flip('normal')}
 	}
@@ -47,19 +48,20 @@ const CardStyle = styled.div`
 const Card = () => {
 	const [cardState, setCardState] = useState<'forward' | 'reverse'>('forward');
 	const ref = useRef<HTMLDivElement | null>(null);
-	const testRef = useRef({ clientX: 0, clientY: 0 });
-	const onCardOver = (event: React.MouseEvent<HTMLDivElement>) => {
-		event.stopPropagation();
-		const { clientX, clientY } = event;
-		const { left, top } = event.currentTarget.getBoundingClientRect();
-		const box = ref.current;
+	const box = ref.current;
+	const onCardMove = (event: React.MouseEvent<HTMLDivElement>) => {
+		const { clientX, clientY, currentTarget } = event;
+		const { left, top, width, height } = currentTarget.getBoundingClientRect();
+		const normalizedWidth = (clientX - left) / width + 1;
+		const normalizedHeight = (clientY - top) / height + 1;
 		if (box) {
-			box.style.transform = `translateX(${150}px)`;
+			box.style.transform = `scale(${normalizedWidth},${normalizedHeight})`;
 		}
-		console.log();
 	};
-	const onCardOver2 = (event: React.MouseEvent<HTMLDivElement>) => {
-		event.stopPropagation();
+	const onCardLeave = (event: React.MouseEvent<HTMLDivElement>) => {
+		if (box) {
+			box.style.transform = `scale(1)`;
+		}
 	};
 	return (
 		<div
@@ -68,7 +70,7 @@ const Card = () => {
 				console.log('clicked');
 			}}
 		>
-			<CardStyle onMouseMove={onCardOver} ref={ref}></CardStyle>
+			<CardStyle onMouseMove={onCardMove} onMouseLeave={onCardLeave} ref={ref}></CardStyle>
 		</div>
 	);
 };

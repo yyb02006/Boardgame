@@ -152,9 +152,10 @@ obj.method(outer);
 
 /**
  *  이벤트가 일어나는 범위는 자식의 범위까지 포함되고, 이는 자식 요소가 부모 요소를 벗어나 있더라도 인정된다.
- *  onMouseOver이벤트에서 parent요소에 마우스를 이동시켜 onMouseOver를 작동시키고 아래에 있는 child요소에 마우스를 이동시켜도
+ *  마우스이벤트에서 parent요소에 마우스를 이동시켜 이벤트를 작동시키고 아래에 있는 child요소에 마우스를 이동시켜도
  *  parent요소의 onMouseOver가 발생하는 것을 이벤트 버블링이라고 한다. (자식컴포넌트의 이벤트가 상위컴포넌트로 전파)
  *  이벤트 전파가 발생하는 컴포넌트의 nagative event객체에서 stopPropagation메서드 호출로 전파를 막을 수 있다.
+ * 	++ onMouseOver와 onMouseEnter는 엄연히 다른 영역을 가리킨다.
  * */
 const Card = () => {
 	const onCardOver = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -163,13 +164,11 @@ const Card = () => {
 		console.log(left - clientX, top - clientY);
 	};
 	const onCardOver2 = (event: React.MouseEvent<HTMLDivElement>) => {
-		const { clientX, clientY } = event;
-		const { left, top } = event.currentTarget.getBoundingClientRect();
-		console.log(left - clientX, top - clientY);
+		event.stopPropagation();
 	};
 	return (
 		<div
-			onMouseEnter={onCardOver}
+			onMouseOver={onCardOver}
 			style={{
 				width: '200px',
 				height: '320px',
@@ -178,7 +177,7 @@ const Card = () => {
 			}}
 		>
 			<div
-				onMouseEnter={onCardOver2}
+				onMouseOver={onCardOver2}
 				style={{ width: '400px', height: '200px', backgroundColor: 'blue' }}
 			></div>
 			card
@@ -190,6 +189,7 @@ const Test = () => {
 	const [direction, setDirection] = useState<'normal' | 'reverse'>('normal');
 	return (
 		<Layout>
+			<Card />
 			{/* log : One, Two, Three */}
 			<ComponentWithFunction />
 			{/* 애니메이션의 재실행을 위해서는 동적으로 key값을 바꾸거나 class를 분기하면된다. */}
