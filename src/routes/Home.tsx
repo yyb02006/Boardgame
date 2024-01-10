@@ -28,7 +28,7 @@ const resultTransition = {
 		};
 		return slideIn(props);
 	},
-	slideInFromSide: function slideInFromSide({
+	slideInFromSide: ({
 		seqDirection,
 		aniDirection,
 		winner,
@@ -36,7 +36,7 @@ const resultTransition = {
 		seqDirection: 'reverse' | 'normal';
 		aniDirection: HorizontalPos | VerticalPos;
 		winner: PlayerElement;
-	}) {
+	}) => {
 		const directionToIndex = (aniDirection: HorizontalPos | VerticalPos) => {
 			switch (aniDirection) {
 				case 'left':

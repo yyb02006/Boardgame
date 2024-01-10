@@ -137,7 +137,7 @@ const testObj = {
 	},
 };
 
-/* 이 코드는 전역객체를 가리키게 된다. 콜백은 스코프적으로 호출된 곳과 아무런 상관이 없다. */
+/* 이 코드는 전역객체를 가리키게 된다. 콜백은 호출된 곳의 스코프와 아무런 상관이 없다. */
 const obj = {
 	method: function a(callback: (this: unknown) => void) {
 		callback();
@@ -149,6 +149,42 @@ function outer(this: unknown) {
 }
 
 obj.method(outer);
+
+/**
+ *  이벤트가 일어나는 범위는 자식의 범위까지 포함되고, 이는 자식 요소가 부모 요소를 벗어나 있더라도 인정된다.
+ *  onMouseOver이벤트에서 parent요소에 마우스를 이동시켜 onMouseOver를 작동시키고 아래에 있는 child요소에 마우스를 이동시켜도
+ *  parent요소의 onMouseOver가 발생하는 것을 이벤트 버블링이라고 한다. (자식컴포넌트의 이벤트가 상위컴포넌트로 전파)
+ *  이벤트 전파가 발생하는 컴포넌트의 nagative event객체에서 stopPropagation메서드 호출로 전파를 막을 수 있다.
+ * */
+const Card = () => {
+	const onCardOver = (event: React.MouseEvent<HTMLDivElement>) => {
+		const { clientX, clientY } = event;
+		const { left, top } = event.currentTarget.getBoundingClientRect();
+		console.log(left - clientX, top - clientY);
+	};
+	const onCardOver2 = (event: React.MouseEvent<HTMLDivElement>) => {
+		const { clientX, clientY } = event;
+		const { left, top } = event.currentTarget.getBoundingClientRect();
+		console.log(left - clientX, top - clientY);
+	};
+	return (
+		<div
+			onMouseEnter={onCardOver}
+			style={{
+				width: '200px',
+				height: '320px',
+				color: 'red',
+				backgroundColor: 'yellow',
+			}}
+		>
+			<div
+				onMouseEnter={onCardOver2}
+				style={{ width: '400px', height: '200px', backgroundColor: 'blue' }}
+			></div>
+			card
+		</div>
+	);
+};
 
 const Test = () => {
 	const [direction, setDirection] = useState<'normal' | 'reverse'>('normal');
