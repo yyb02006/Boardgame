@@ -1,5 +1,6 @@
 import { capitalizeFirstLetter } from '#libs/utils';
-import React, { useRef, useState } from 'react';
+import { throttle } from 'lodash';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
 
 const flip = (seqDirection: 'normal' | 'reverse') => {
@@ -46,39 +47,68 @@ const CardStyle = styled.div`
 	}
 `;
 
+const CardShadow = styled.div`
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	border-radius: 8%/5%;
+	box-shadow: inset 0px 0px 24px 4px #818305;
+`;
+
 const CardWrapper = styled.div`
+	position: relative;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 	width: 200px;
 	height: 320px;
+	border-radius: 8%/5%;
 `;
 
 const Card = () => {
 	const [cardState, setCardState] = useState<'forward' | 'reverse'>('forward');
 	const ref = useRef<HTMLDivElement | null>(null);
-	const onCardMove = (event: React.MouseEvent<HTMLDivElement>) => {
+	/**
+	 *  throttle함수와 이벤트풀링으로 인해 event콜백 함수가 호출된 시점과 event가 발생한 시점이 서로 달라
+	 *  currentTarget을 null로 뱉어내는 에러를 해결하기 위해서는 currentTarget을 따로 불러와야 하며 이렇게 하면
+	 *  풀링으로 이벤트 객체를 재사용하지 않고 최신 currentTarget을 불러온다고 한다.(정확하지 않음)
+	 * */
+	const onCardMove = (
+		event: React.MouseEvent<HTMLDivElement>,
+		currentTarget: EventTarget & HTMLDivElement
+	) => {
 		const box = ref.current;
-		const { clientX, clientY, currentTarget } = event;
+		if (!box) return;
+		const { clientX, clientY } = event;
 		const { left, top, width, height } = currentTarget.getBoundingClientRect();
-		const normalizedWidth = ((clientX - left) / width) * 20;
-		const normalizedHeight = ((clientY - top) / height) * 20;
-		if (box) {
-			box.style.transition = `transform 0.2s linear`;
-			box.style.transform = `rotateX(${normalizedHeight}deg) rotateY(-${normalizedWidth}deg)`;
-		}
+		const normalizedWidth = (clientX - left) / width > 0.5 ? 20 : ((clientX - left) / width) * 40;
+		const normalizedHeight = (clientY - top) / height > 0.5 ? 20 : ((clientY - top) / height) * 40;
+		box.style.transition = `transform 0.15s linear`;
+		box.style.transform = `rotateX(${normalizedHeight}deg) rotateY(-${normalizedWidth}deg)`;
 	};
+	const handleThrottledMouseMove = useRef(throttle(onCardMove, 150));
 	const onCardLeave = () => {
+		/* mouseLeave이후에도 지연된 호출이 작동하는 것을 방지하기 위한 쓰로틀링 타이머 캔슬 */
+		handleThrottledMouseMove.current.cancel();
 		const box = ref.current;
-		if (box) {
-			box.style.transition = `transform 0.5s ease`;
-			box.style.transform = `rotateX(0) rotateY(0)`;
-		}
+		if (!box) return;
+		box.style.transition = `transform 0.5s ease`;
+		box.style.transform = `rotateX(0) rotateY(0)`;
 	};
+
 	return (
 		<div
 			onClick={() => {
 				setCardState((p) => (p === 'forward' ? 'reverse' : 'forward'));
 			}}
 		>
-			<CardWrapper onMouseMove={onCardMove} onMouseLeave={onCardLeave}>
+			<CardWrapper
+				onMouseMove={(e) => {
+					handleThrottledMouseMove.current(e, e.currentTarget);
+				}}
+				onMouseLeave={onCardLeave}
+			>
+				<CardShadow />
 				<CardStyle ref={ref}>Card</CardStyle>
 			</CardWrapper>
 		</div>

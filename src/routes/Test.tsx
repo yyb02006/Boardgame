@@ -30,6 +30,14 @@ const Child = styled.div`
 	}
 `;
 
+const ShadowOnlyElement = styled.div`
+	width: 100px;
+	height: 100px;
+	background-color: red; /* 배경색을 투명하게 설정 */
+	margin: 20px;
+	filter: blur(16px); /* 그림자 스타일 지정 */
+`;
+
 const Middle = styled.div`
 	height: 200px;
 	width: 200px;
@@ -204,6 +212,7 @@ const Test = () => {
 			</AnimatedComp>
 			BorderGame
 			<BoardLayout>
+				<ShadowOnlyElement></ShadowOnlyElement>
 				<Child />
 				<Middle />
 				<Child />
