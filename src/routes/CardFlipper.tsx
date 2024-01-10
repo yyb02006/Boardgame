@@ -47,14 +47,6 @@ const CardStyle = styled.div`
 	}
 `;
 
-const CardShadow = styled.div`
-	width: 100%;
-	height: 100%;
-	position: absolute;
-	border-radius: 8%/5%;
-	box-shadow: inset 0px 0px 24px 4px #818305;
-`;
-
 const CardWrapper = styled.div`
 	position: relative;
 	display: flex;
@@ -63,6 +55,20 @@ const CardWrapper = styled.div`
 	width: 200px;
 	height: 320px;
 	border-radius: 8%/5%;
+	& .InnerShadow {
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		border-radius: 8%/5%;
+		box-shadow: inset 0px 0px 24px 4px #818305;
+	}
+	& .OuterShadow {
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		border-radius: 8%/5%;
+		box-shadow: 0px 0px 8px #595a01;
+	}
 `;
 
 const Card = () => {
@@ -108,7 +114,8 @@ const Card = () => {
 				}}
 				onMouseLeave={onCardLeave}
 			>
-				<CardShadow />
+				<div className="InnerShadow" />
+				<div className="OuterShadow" />
 				<CardStyle ref={ref}>Card</CardStyle>
 			</CardWrapper>
 		</div>
