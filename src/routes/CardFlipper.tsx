@@ -36,7 +36,8 @@ const CardStyle = styled.div`
 	color: red;
 	background-color: yellow;
 	position: relative;
-	border-radius: 16% / 10%;
+	border-radius: 8% / 5%;
+	transform-origin: 0% 0%;
 	&.Forward {
 		${flip('normal')}
 	}
@@ -45,32 +46,41 @@ const CardStyle = styled.div`
 	}
 `;
 
+const CardWrapper = styled.div`
+	width: 200px;
+	height: 320px;
+`;
+
 const Card = () => {
 	const [cardState, setCardState] = useState<'forward' | 'reverse'>('forward');
 	const ref = useRef<HTMLDivElement | null>(null);
-	const box = ref.current;
 	const onCardMove = (event: React.MouseEvent<HTMLDivElement>) => {
+		const box = ref.current;
 		const { clientX, clientY, currentTarget } = event;
 		const { left, top, width, height } = currentTarget.getBoundingClientRect();
-		const normalizedWidth = (clientX - left) / width + 1;
-		const normalizedHeight = (clientY - top) / height + 1;
+		const normalizedWidth = ((clientX - left) / width) * 20;
+		const normalizedHeight = ((clientY - top) / height) * 20;
 		if (box) {
-			box.style.transform = `scale(${normalizedWidth},${normalizedHeight})`;
+			box.style.transition = `transform 0.2s linear`;
+			box.style.transform = `rotateX(${normalizedHeight}deg) rotateY(-${normalizedWidth}deg)`;
 		}
 	};
-	const onCardLeave = (event: React.MouseEvent<HTMLDivElement>) => {
+	const onCardLeave = () => {
+		const box = ref.current;
 		if (box) {
-			box.style.transform = `scale(1)`;
+			box.style.transition = `transform 0.5s ease`;
+			box.style.transform = `rotateX(0) rotateY(0)`;
 		}
 	};
 	return (
 		<div
 			onClick={() => {
 				setCardState((p) => (p === 'forward' ? 'reverse' : 'forward'));
-				console.log('clicked');
 			}}
 		>
-			<CardStyle onMouseMove={onCardMove} onMouseLeave={onCardLeave} ref={ref}></CardStyle>
+			<CardWrapper onMouseMove={onCardMove} onMouseLeave={onCardLeave}>
+				<CardStyle ref={ref}>Card</CardStyle>
+			</CardWrapper>
 		</div>
 	);
 };
