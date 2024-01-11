@@ -10,8 +10,6 @@ const Layout = styled.section`
 	font-size: 5rem;
 	font-weight: 800;
 	position: relative;
-	display: flex;
-	flex-direction: column;
 	padding: 80px 0 0 0;
 `;
 
@@ -193,10 +191,54 @@ const Card = () => {
 	);
 };
 
+/** transform-style:preserve-3d는 자식들의 배치관계를 3D공간에서 이루어지게 해주는 속성이다.
+ *  요소에 3D변환속성을 적용해도 실제로는 2D공간에서 트랜지션을 하는 것 뿐이고, 실제 배치는 z-index와 문서구조에 따른다.
+ *  예를 들어, div요소 2개를 가지고 있는 부모요소가 있을 때, 부모요소에 preserve-3d속성이 없다면,
+ *  translate 3D변환으로는 어떻게 해도 첫째 div를 둘째 div보다 앞으로 끌고 나올 수 없다는 것이다.
+ *  단, preserve-3d를 사용할 때 주의해야할 점은 preserve-3d와 충돌하는 속성들이 있다는 것인데,
+ *  예를 들어 부모요소에 filter속성을 적용하면, 해당 요소가 가지는 컨텍스트가 2D가 되며
+ * 	위치적인 위계가 3D에서 2D로 바뀌어 preserve-3d속성이 무시된다는 것이다.
+ * 	 */
+
+const PerspectiveParent = styled.div`
+	position: relative;
+	width: 400px;
+	height: 400px;
+	background-color: violet;
+	/* 적용하면 FirstChild가 뒤로간다. 즉, 자식의 위계 기준을 문서구조로 고정시키는 요소. */
+	filter: drop-shadow(0px 0px 4px red);
+	/* 요소의 위계의 기준을 문서구조에서 z축 포지션의 3D로 바꿈 이 속성이 적용되면 z-index는 작동하지 않는다. */
+	transform-style: preserve-3d;
+	/* filter에 상관없이 작동. 즉, 요소의 위계기준과는 상관없는 속성이라는 뜻. */
+	perspective: 1000px;
+	& .FirstChild,
+	.SecondChild {
+		width: 200px;
+		height: 200px;
+		position: absolute;
+	}
+	& .FirstChild {
+		left: 0;
+		top: 0;
+		background-color: yellow;
+		transform: translateZ(150px);
+	}
+	& .SecondChild {
+		left: 100px;
+		top: 100px;
+		background-color: green;
+		transform: translateZ(100px);
+	}
+`;
+
 const Test = () => {
 	const [direction, setDirection] = useState<'normal' | 'reverse'>('normal');
 	return (
 		<Layout>
+			<PerspectiveParent>
+				<div className="FirstChild"></div>
+				<div className="SecondChild"></div>
+			</PerspectiveParent>
 			<Card />
 			{/* log : One, Two, Three */}
 			<ComponentWithFunction />
