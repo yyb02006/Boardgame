@@ -10,8 +10,6 @@ const Layout = styled.section`
 	font-size: 5rem;
 	font-weight: 800;
 	position: relative;
-	display: flex;
-	flex-direction: column;
 	padding: 80px 0 0 0;
 `;
 
@@ -28,6 +26,14 @@ const Child = styled.div`
 		font-weight: 600;
 		margin: 0;
 	}
+`;
+
+const ShadowOnlyElement = styled.div`
+	width: 100px;
+	height: 100px;
+	background-color: red; /* 배경색을 투명하게 설정 */
+	margin: 20px;
+	filter: blur(16px); /* 그림자 스타일 지정 */
 `;
 
 const Middle = styled.div`
@@ -137,7 +143,7 @@ const testObj = {
 	},
 };
 
-/* 이 코드는 전역객체를 가리키게 된다. 콜백은 스코프적으로 호출된 곳과 아무런 상관이 없다. */
+/* 이 코드는 전역객체를 가리키게 된다. 콜백은 호출된 곳의 스코프와 아무런 상관이 없다. */
 const obj = {
 	method: function a(callback: (this: unknown) => void) {
 		callback();
@@ -150,10 +156,90 @@ function outer(this: unknown) {
 
 obj.method(outer);
 
+/**
+ *  이벤트가 일어나는 범위는 자식의 범위까지 포함되고, 이는 자식 요소가 부모 요소를 벗어나 있더라도 인정된다.
+ *  마우스이벤트에서 parent요소에 마우스를 이동시켜 이벤트를 작동시키고 아래에 있는 child요소에 마우스를 이동시켜도
+ *  parent요소의 onMouseOver가 발생하는 것을 이벤트 버블링이라고 한다. (자식컴포넌트의 이벤트가 상위컴포넌트로 전파)
+ *  이벤트 전파가 발생하는 컴포넌트의 nagative event객체에서 stopPropagation메서드 호출로 전파를 막을 수 있다.
+ * 	++ onMouseOver와 onMouseEnter는 엄연히 다른 영역을 가리킨다.
+ * */
+const Card = () => {
+	const onCardOver = (event: React.MouseEvent<HTMLDivElement>) => {
+		const { clientX, clientY } = event;
+		const { left, top } = event.currentTarget.getBoundingClientRect();
+		console.log(left - clientX, top - clientY);
+	};
+	const onCardOver2 = (event: React.MouseEvent<HTMLDivElement>) => {
+		event.stopPropagation();
+	};
+	return (
+		<div
+			onMouseOver={onCardOver}
+			style={{
+				width: '200px',
+				height: '320px',
+				color: 'red',
+				backgroundColor: 'yellow',
+			}}
+		>
+			<div
+				onMouseOver={onCardOver2}
+				style={{ width: '400px', height: '200px', backgroundColor: 'blue' }}
+			></div>
+			card
+		</div>
+	);
+};
+
+/** transform-style:preserve-3d는 자식들의 배치관계를 3D공간에서 이루어지게 해주는 속성이다.
+ *  요소에 3D변환속성을 적용해도 실제로는 2D공간에서 트랜지션을 하는 것 뿐이고, 실제 배치는 z-index와 문서구조에 따른다.
+ *  예를 들어, div요소 2개를 가지고 있는 부모요소가 있을 때, 부모요소에 preserve-3d속성이 없다면,
+ *  translate 3D변환으로는 어떻게 해도 첫째 div를 둘째 div보다 앞으로 끌고 나올 수 없다는 것이다.
+ *  단, preserve-3d를 사용할 때 주의해야할 점은 preserve-3d와 충돌하는 속성들이 있다는 것인데,
+ *  예를 들어 부모요소에 filter속성을 적용하면, 해당 요소가 가지는 컨텍스트가 2D가 되며
+ * 	위치적인 위계가 3D에서 2D로 바뀌어 preserve-3d속성이 무시된다는 것이다.
+ * 	 */
+
+const PerspectiveParent = styled.div`
+	position: relative;
+	width: 400px;
+	height: 400px;
+	background-color: violet;
+	/* 적용하면 FirstChild가 뒤로간다. 즉, 자식의 위계 기준을 문서구조로 고정시키는 요소. */
+	filter: drop-shadow(0px 0px 4px red);
+	/* 요소의 위계의 기준을 문서구조에서 z축 포지션의 3D로 바꿈 이 속성이 적용되면 z-index는 작동하지 않는다. */
+	transform-style: preserve-3d;
+	/* filter에 상관없이 작동. 즉, 요소의 위계기준과는 상관없는 속성이라는 뜻. */
+	perspective: 1000px;
+	& .FirstChild,
+	.SecondChild {
+		width: 200px;
+		height: 200px;
+		position: absolute;
+	}
+	& .FirstChild {
+		left: 0;
+		top: 0;
+		background-color: yellow;
+		transform: translateZ(150px);
+	}
+	& .SecondChild {
+		left: 100px;
+		top: 100px;
+		background-color: green;
+		transform: translateZ(100px);
+	}
+`;
+
 const Test = () => {
 	const [direction, setDirection] = useState<'normal' | 'reverse'>('normal');
 	return (
 		<Layout>
+			<PerspectiveParent>
+				<div className="FirstChild"></div>
+				<div className="SecondChild"></div>
+			</PerspectiveParent>
+			<Card />
 			{/* log : One, Two, Three */}
 			<ComponentWithFunction />
 			{/* 애니메이션의 재실행을 위해서는 동적으로 key값을 바꾸거나 class를 분기하면된다. */}
@@ -168,6 +254,7 @@ const Test = () => {
 			</AnimatedComp>
 			BorderGame
 			<BoardLayout>
+				<ShadowOnlyElement></ShadowOnlyElement>
 				<Child />
 				<Middle />
 				<Child />

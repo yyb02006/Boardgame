@@ -107,3 +107,8 @@ export function getOppositeElement(element: Direction | HorizontalPos | PlayerEl
 			throw new Error('Unexpected element type');
 	}
 }
+
+/** 단어의 첫글자를 대문자로 바꿔주는 함수 */
+export function capitalizeFirstLetter(letter: string) {
+	return letter.charAt(0).toUpperCase() + letter.slice(1);
+}
