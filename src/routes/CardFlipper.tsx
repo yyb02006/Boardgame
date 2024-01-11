@@ -1,4 +1,4 @@
-import { capitalizeFirstLetter, shuffleArray } from '#libs/utils';
+import { capitalizeFirstLetter, deepCopy, shuffleArray } from '#libs/utils';
 import { throttle, transform } from 'lodash';
 import React, { useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
@@ -160,6 +160,14 @@ const GameBoardLayout = styled.div`
 `;
 
 const GameBoard = () => {
+	const obj = {
+		a: { b: {}, c: [1, 2, 3, 4] },
+		d: {},
+		e: [1, 2, 3],
+		f: { g: { h: { i: [1, 2, 3, 4, 5, 6], j: 5 }, k: 'string', l: undefined }, m: [1, 2, 3] },
+	};
+	console.log(deepCopy(obj));
+
 	return (
 		<GameBoardLayout>
 			{Array.from({ length: 16 }, (_, id) => (

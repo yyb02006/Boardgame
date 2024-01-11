@@ -113,13 +113,41 @@ export function capitalizeFirstLetter(letter: string) {
 	return letter.charAt(0).toUpperCase() + letter.slice(1);
 }
 
+/** deepCopy */
+export function deepCopy<T>(obj: T): T {
+	if (obj === null || typeof obj !== 'object') {
+		return obj;
+	}
+
+	if (Array.isArray(obj)) {
+		return obj.map(deepCopy) as T;
+	}
+
+	const result: Record<string, unknown> = {};
+	for (const key in obj) {
+		if (Object.prototype.hasOwnProperty.call(obj, key)) {
+			result[key] = Object.keys(obj).length ? deepCopy((obj as Record<string, unknown>)[key]) : {};
+		}
+	}
+
+	return result as T;
+}
+
 /** Fisher-Yates suffle 함수, 1차원까지 깊은 복사 */
-export function shuffleArray(array: unknown[]) {
-	const shuffledArray = [...array];
+export function shuffleArray<T>(array: T[]): T[] {
+	const shuffledArray = deepCopy<T[]>(array);
 	for (let i = shuffledArray.length - 1; i > 0; i--) {
 		const randomIndex = Math.floor(Math.random() * (i + 1));
 		// 노올라운 배열 구조분해 할당
 		[shuffledArray[i], shuffledArray[randomIndex]] = [shuffledArray[randomIndex], shuffledArray[i]];
 	}
 	return shuffledArray;
+}
+
+/** 함수 성능 측정 장난감 */
+export function measurePerformance(func: () => void): number {
+	const start = performance.now();
+	func();
+	const end = performance.now();
+	return end - start;
 }
