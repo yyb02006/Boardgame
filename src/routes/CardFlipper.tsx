@@ -1,6 +1,6 @@
 import { capitalizeFirstLetter, deepCopy, shuffleArray } from '#libs/utils';
 import { throttle, transform } from 'lodash';
-import React, { useRef, useState } from 'react';
+import React, { type ReactNode, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
 
 const Layout = styled.section`
@@ -81,7 +81,15 @@ const CardWrapper = styled(CardCommonStyle)`
 	}
 `;
 
-const Card = () => {
+const GameBoardLayout = styled.div`
+	display: grid;
+	gap: 24px;
+	grid-template-columns: repeat(8, minmax(200px, auto));
+	place-items: center center;
+	place-content: center center;
+`;
+
+const Card = ({ children }: { children: ReactNode }) => {
 	const [cardState, setCardState] = useState<'forward' | 'reverse'>('forward');
 	const ref = useRef<{ flipable: boolean; element: { current: HTMLDivElement | null } }>({
 		flipable: true,
@@ -145,33 +153,24 @@ const Card = () => {
 			<div className="OuterShadow" />
 			<CardStyle ref={ref.current.element}>
 				<div className="Reverse">Rear</div>
-				<div className="Forward">Front</div>
+				<div className="Forward">{children}</div>
 			</CardStyle>
 		</CardWrapper>
 	);
 };
 
-const GameBoardLayout = styled.div`
-	display: grid;
-	gap: 24px;
-	grid-template-columns: repeat(5, minmax(200px, auto));
-	place-items: center center;
-	place-content: center center;
-`;
-
 const GameBoard = () => {
-	const obj = {
-		a: { b: {}, c: [1, 2, 3, 4] },
-		d: {},
-		e: [1, 2, 3],
-		f: { g: { h: { i: [1, 2, 3, 4, 5, 6], j: 5 }, k: 'string', l: undefined }, m: [1, 2, 3] },
-	};
-	console.log(deepCopy(obj));
-
+	const originalArray = Array.from({ length: 12 }, (_, cardId) => ({
+		cardId,
+		isFliped: false,
+		isSelected: false,
+	}));
+	const shuffledArray = shuffleArray([...originalArray, ...deepCopy(originalArray)]);
+	const [cards, setCards] = useState(shuffledArray);
 	return (
 		<GameBoardLayout>
-			{Array.from({ length: 16 }, (_, id) => (
-				<Card key={id} />
+			{cards.map((card, id) => (
+				<Card key={id}>{card.cardId}</Card>
 			))}
 		</GameBoardLayout>
 	);
