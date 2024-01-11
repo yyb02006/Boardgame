@@ -231,6 +231,14 @@ const PerspectiveParent = styled.div`
 	}
 `;
 
+/** 거꾸로 매달린 피셔-예이츠 셔플  */
+function fysReverse(array: number[]) {
+	for (let i = 0; i < array.length - 1; i++) {
+		const randomIndex = Math.floor(Math.random() * (array.length - i) + i);
+		[array[i], array[randomIndex]] = [array[randomIndex], array[i]];
+	}
+}
+
 const Test = () => {
 	const [direction, setDirection] = useState<'normal' | 'reverse'>('normal');
 	return (

@@ -112,3 +112,14 @@ export function getOppositeElement(element: Direction | HorizontalPos | PlayerEl
 export function capitalizeFirstLetter(letter: string) {
 	return letter.charAt(0).toUpperCase() + letter.slice(1);
 }
+
+/** Fisher-Yates suffle 함수, 1차원까지 깊은 복사 */
+export function shuffleArray(array: unknown[]) {
+	const shuffledArray = [...array];
+	for (let i = shuffledArray.length - 1; i > 0; i--) {
+		const randomIndex = Math.floor(Math.random() * (i + 1));
+		// 노올라운 배열 구조분해 할당
+		[shuffledArray[i], shuffledArray[randomIndex]] = [shuffledArray[randomIndex], shuffledArray[i]];
+	}
+	return shuffledArray;
+}
