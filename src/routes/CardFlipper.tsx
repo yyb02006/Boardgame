@@ -1,22 +1,7 @@
-import { capitalizeFirstLetter } from '#libs/utils';
+import { capitalizeFirstLetter, deepCopy, shuffleArray } from '#libs/utils';
 import { throttle, transform } from 'lodash';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
-
-const flip = (seqDirection: 'normal' | 'reverse') => {
-	return css`
-		@keyframes flip_${seqDirection} {
-			from {
-				transform: rotate3d(0, 1, 0, 0deg);
-			}
-			to {
-				transform: rotate3d(0, 1, 0, 180deg);
-			}
-		}
-		animation: ${`flip_${seqDirection}`} 2s ease-in forwards ${seqDirection};
-		transform-origin: center;
-	`;
-};
 
 const Layout = styled.section`
 	height: 100vh;
@@ -25,6 +10,7 @@ const Layout = styled.section`
 	font-weight: 800;
 	position: relative;
 	padding: 80px 120px 40px 120px;
+	perspective: 2000px;
 	@media screen and (max-width: 1024px) {
 		display: flex;
 		flex-direction: column;
@@ -32,26 +18,28 @@ const Layout = styled.section`
 	}
 `;
 
-const CardStyle = styled.div`
+const CardCommonStyle = styled.div`
 	width: 200px;
 	height: 320px;
-	color: red;
-	background-color: yellow;
 	position: relative;
 	border-radius: 8% / 5%;
+`;
+
+const CardStyle = styled(CardCommonStyle)`
 	transform-origin: 0% 0%;
-	display: flex;
-	justify-content: center;
 	font-size: 3vw;
+	color: red;
 	transform-style: preserve-3d;
 	& .Forward,
 	.Reverse {
 		position: absolute;
 		width: 100%;
 		height: 100%;
-		border-radius: 8% / 5%;
+		border-radius: inherit;
 		backface-visibility: hidden;
 		transition: filter 0.3s ease;
+		display: flex;
+		justify-content: center;
 	}
 	& .Forward {
 		background-color: yellow;
@@ -63,15 +51,10 @@ const CardStyle = styled.div`
 	}
 `;
 
-const CardWrapper = styled.div`
-	position: relative;
+const CardWrapper = styled(CardCommonStyle)`
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	width: 200px;
-	height: 320px;
-	border-radius: 8%/5%;
-	perspective: 2000px;
 	& .InnerShadow {
 		width: 100%;
 		height: 100%;
@@ -144,6 +127,9 @@ const Card = () => {
 		box.element.current.style.transition = `transform 0.5s ease, transform-origin 0.5s ease`;
 		box.element.current.style.transformOrigin = `center`;
 		box.element.current.style.transform = `rotateY(180deg)`;
+		setTimeout(() => {
+			setCardState((p) => (p === 'forward' ? 'reverse' : 'forward'));
+		}, 155);
 	};
 	return (
 		<CardWrapper
@@ -152,7 +138,7 @@ const Card = () => {
 			}}
 			onMouseLeave={onCardLeave}
 			onClick={() => {
-				onFlip();
+				cardState === 'forward' && onFlip();
 			}}
 		>
 			<div className="InnerShadow" />
@@ -165,10 +151,36 @@ const Card = () => {
 	);
 };
 
+const GameBoardLayout = styled.div`
+	display: grid;
+	gap: 24px;
+	grid-template-columns: repeat(5, minmax(200px, auto));
+	place-items: center center;
+	place-content: center center;
+`;
+
+const GameBoard = () => {
+	const obj = {
+		a: { b: {}, c: [1, 2, 3, 4] },
+		d: {},
+		e: [1, 2, 3],
+		f: { g: { h: { i: [1, 2, 3, 4, 5, 6], j: 5 }, k: 'string', l: undefined }, m: [1, 2, 3] },
+	};
+	console.log(deepCopy(obj));
+
+	return (
+		<GameBoardLayout>
+			{Array.from({ length: 16 }, (_, id) => (
+				<Card key={id} />
+			))}
+		</GameBoardLayout>
+	);
+};
+
 const CardFlipper = () => {
 	return (
 		<Layout>
-			<Card></Card>
+			<GameBoard />
 		</Layout>
 	);
 };
