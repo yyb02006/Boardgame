@@ -151,3 +151,14 @@ export function measurePerformance(func: () => void): number {
 	const end = performance.now();
 	return end - start;
 }
+
+/** 변수를 받아 padding속성 리터럴을 만들어주는 함수  */
+export function getPaddingFromOption(padding: {
+	top: number;
+	right: number;
+	bottom: number;
+	left: number;
+}) {
+	const { top, right, bottom, left } = padding;
+	return `${top}px ${right}px ${bottom}px ${left}px`;
+}
