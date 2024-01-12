@@ -42,7 +42,8 @@ const GlobalStyle = createGlobalStyle`${css`
 		font: inherit;
 	}
 	:root {
-		--bgColor-dark: #101010;
+		--bgColor-dark: #202020;
+		--color-royalBlue: #4444dd;
 		--bgGradient-purple-navy: linear-gradient(135deg, #6e1af5 0%, #110981 100%);
 		--globalNavSize: 80px;
 	}

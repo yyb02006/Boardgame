@@ -1,4 +1,6 @@
-const colors = {
+import { css } from 'styled-components';
+
+export const colors = {
 	player1: {
 		noneActiveBorder: '#1696eb',
 		noneActiveBox: '#1a4de6',
@@ -19,6 +21,11 @@ const colors = {
 	},
 };
 
-const theme = { colors };
+export const fullWidthHeight = css`
+	width: 100%;
+	height: 100%;
+`;
+
+const theme = { colors, fullWidthHeight };
 
 export default theme;

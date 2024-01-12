@@ -1,7 +1,25 @@
-import { capitalizeFirstLetter, deepCopy, shuffleArray } from '#libs/utils';
-import { throttle, transform } from 'lodash';
-import React, { useRef, useState } from 'react';
+import { capitalizeFirstLetter, deepCopy, getPaddingFromOption, shuffleArray } from '#libs/utils';
+import { fullWidthHeight } from '#styles/theme';
+import { throttle } from 'lodash';
+import React, { type ReactNode, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
+
+const layoutOption = {
+	padding: {
+		lg: { top: 80, right: 120, bottom: 40, left: 120 },
+		sm: { top: 80, right: 0, bottom: 40, left: 0 },
+	},
+};
+
+const cardOption = {
+	gap: 24,
+	borderRadius: `8% / 5%`,
+	layoutRules: {
+		generous: { lg: [8, 3], md: [6, 4], sm: [4, 6] },
+		standard: { lg: [6, 3], md: [6, 3], sm: [3, 6] },
+		scant: { lg: [4, 3], md: [4, 3], sm: [3, 4] },
+	},
+};
 
 const Layout = styled.section`
 	height: 100vh;
@@ -9,32 +27,27 @@ const Layout = styled.section`
 	font-size: 5rem;
 	font-weight: 800;
 	position: relative;
-	padding: 80px 120px 40px 120px;
+	padding: ${() => getPaddingFromOption(layoutOption.padding.lg)};
 	perspective: 2000px;
 	@media screen and (max-width: 1024px) {
 		display: flex;
 		flex-direction: column;
-		padding: 80px 0 40px 0;
+		padding: ${() => getPaddingFromOption(layoutOption.padding.sm)};
 	}
 `;
 
-const CardCommonStyle = styled.div`
-	width: 200px;
-	height: 320px;
-	position: relative;
-	border-radius: 8% / 5%;
-`;
-
-const CardStyle = styled(CardCommonStyle)`
+const CardStyle = styled.div`
+	${fullWidthHeight}
 	transform-origin: 0% 0%;
 	font-size: 3vw;
 	color: red;
 	transform-style: preserve-3d;
+	position: relative;
+	border-radius: ${cardOption.borderRadius};
 	& .Forward,
 	.Reverse {
 		position: absolute;
-		width: 100%;
-		height: 100%;
+		${fullWidthHeight}
 		border-radius: inherit;
 		backface-visibility: hidden;
 		transition: filter 0.3s ease;
@@ -43,30 +56,30 @@ const CardStyle = styled(CardCommonStyle)`
 	}
 	& .Forward {
 		background-color: yellow;
+		cursor: pointer;
 	}
 	& .Reverse {
-		background-color: #4444dd;
+		background-color: var(--color-royalBlue);
 		color: pink;
 		transform: rotateY(180deg);
 	}
 `;
 
-const CardWrapper = styled(CardCommonStyle)`
+const CardWrapper = styled.div`
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	& .InnerShadow {
-		width: 100%;
-		height: 100%;
+	position: relative;
+	border-radius: ${cardOption.borderRadius};
+	aspect-ratio: 1/1.6;
+	& .InnerShadow,
+	.OuterShadow {
+		${fullWidthHeight}
 		position: absolute;
-		border-radius: 8%/5%;
-		box-shadow: inset 0px 0px 24px 4px #000000;
+		border-radius: ${cardOption.borderRadius};
 	}
-	& .OuterShadow {
-		width: 100%;
-		height: 100%;
-		position: absolute;
-		border-radius: 8%/5%;
+	& .InnerShadow {
+		box-shadow: inset 0px 0px 24px 4px #000000;
 	}
 	&:hover {
 		& .OuterShadow {
@@ -81,9 +94,35 @@ const CardWrapper = styled(CardCommonStyle)`
 	}
 `;
 
-const Card = () => {
+const GameBoardLayout = styled.div<GameBoardLayoutProps>`
+	height: 100%;
+	display: grid;
+	grid-template-columns: ${(props) => `repeat(${props.$cardLayout.lg[0]}, auto)`};
+	grid-template-rows: ${(props) => `repeat(${props.$cardLayout.lg[1]}, 1fr)`};
+	place-content: center center;
+	place-items: center center;
+	gap: ${cardOption.gap}px;
+	${CardWrapper} {
+		/* grid가 item의 크기를 예측하게 하려면 사이즈가 명시적이어야함 (%단위 X) */
+		height: calc(
+			(
+				${(props) => {
+					const { top, bottom } = layoutOption.padding.lg;
+					const {
+						$cardLayout: {
+							lg: [_, rows],
+						},
+					} = props;
+					return `(100vh - ${(rows - 1) * cardOption.gap + top + bottom}px) / ${rows}`;
+				}}
+			)
+		);
+	}
+`;
+
+const Card = ({ children }: { children: ReactNode }) => {
 	const [cardState, setCardState] = useState<'forward' | 'reverse'>('forward');
-	const ref = useRef<{ flipable: boolean; element: { current: HTMLDivElement | null } }>({
+	const cardRef = useRef<{ flipable: boolean; element: { current: HTMLDivElement | null } }>({
 		flipable: true,
 		element: { current: null },
 	});
@@ -99,14 +138,18 @@ const Card = () => {
 		const {
 			element: { current },
 			flipable,
-		} = ref.current;
+		} = cardRef.current;
 		if (!current || !flipable) return;
 		const { clientX, clientY } = event;
 		const { left, top, width, height } = currentTarget.getBoundingClientRect();
-		const normalizedWidth = (clientX - left) / width > 0.5 ? 20 : ((clientX - left) / width) * 40;
-		const normalizedHeight = (clientY - top) / height > 0.5 ? 20 : ((clientY - top) / height) * 40;
-		current.style.transition = `transform 0.15s linear`;
-		current.style.transform = `rotateX(${normalizedHeight}deg) rotateY(-${normalizedWidth}deg)`;
+		const normalizedMouseX = (clientX - left) / width;
+		const normalizedMouseY = (clientY - top) / height;
+		const rotateClamp = (normalizedMouse: number) => {
+			return normalizedMouse > 0.5 ? 20 : normalizedMouse * 40;
+		};
+		current.style.cssText = `transition: transform 0.15s linear; transform: rotateX(${rotateClamp(
+			normalizedMouseY
+		)}deg) rotateY(-${rotateClamp(normalizedMouseX)}deg);`;
 	};
 	const handleThrottledMouseMove = useRef(throttle(onCardMove, 150));
 	const onCardLeave = () => {
@@ -115,18 +158,15 @@ const Card = () => {
 		const {
 			element: { current },
 			flipable,
-		} = ref.current;
+		} = cardRef.current;
 		if (!current || !flipable) return;
-		current.style.transition = `transform 0.5s ease`;
-		current.style.transform = `rotateX(0) rotateY(0)`;
+		current.style.cssText = `transition: transform 0.5s ease; transform: rotateX(0) rotateY(0);`;
 	};
 	const onFlip = () => {
-		const box = ref.current;
-		if (!box.element.current) return;
-		box.flipable = false;
-		box.element.current.style.transition = `transform 0.5s ease, transform-origin 0.5s ease`;
-		box.element.current.style.transformOrigin = `center`;
-		box.element.current.style.transform = `rotateY(180deg)`;
+		const card = cardRef.current;
+		if (!card.element.current) return;
+		card.flipable = false;
+		card.element.current.style.cssText = `transition: transform 0.5s ease, transform-origin 0.5s ease; transform-origin:center; transform:rotateY(180deg);`;
 		setTimeout(() => {
 			setCardState((p) => (p === 'forward' ? 'reverse' : 'forward'));
 		}, 155);
@@ -143,35 +183,26 @@ const Card = () => {
 		>
 			<div className="InnerShadow" />
 			<div className="OuterShadow" />
-			<CardStyle ref={ref.current.element}>
+			<CardStyle ref={cardRef.current.element}>
 				<div className="Reverse">Rear</div>
-				<div className="Forward">Front</div>
+				<div className="Forward">{children}</div>
 			</CardStyle>
 		</CardWrapper>
 	);
 };
 
-const GameBoardLayout = styled.div`
-	display: grid;
-	gap: 24px;
-	grid-template-columns: repeat(5, minmax(200px, auto));
-	place-items: center center;
-	place-content: center center;
-`;
-
 const GameBoard = () => {
-	const obj = {
-		a: { b: {}, c: [1, 2, 3, 4] },
-		d: {},
-		e: [1, 2, 3],
-		f: { g: { h: { i: [1, 2, 3, 4, 5, 6], j: 5 }, k: 'string', l: undefined }, m: [1, 2, 3] },
-	};
-	console.log(deepCopy(obj));
-
+	const originalArray = Array.from({ length: 12 }, (_, cardId) => ({
+		cardId,
+		isFliped: false,
+		isSelected: false,
+	}));
+	const shuffledArray = shuffleArray([...originalArray, ...deepCopy(originalArray)]);
+	const [cards, setCards] = useState(shuffledArray);
 	return (
-		<GameBoardLayout>
-			{Array.from({ length: 16 }, (_, id) => (
-				<Card key={id} />
+		<GameBoardLayout $cardLayout={cardOption.layoutRules.generous}>
+			{cards.map((card, id) => (
+				<Card key={id}>{card.cardId}</Card>
 			))}
 		</GameBoardLayout>
 	);

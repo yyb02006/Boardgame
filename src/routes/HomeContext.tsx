@@ -1,3 +1,4 @@
+import useLazyState from '#hooks/useLazyState';
 import React, { createContext, useContext, useState } from 'react';
 
 const AppContext = createContext<HomeContextType | undefined>(undefined);
@@ -40,7 +41,7 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 	const [boxes, setBoxes] = useState<Boxes>(initialData.initialBoxes);
 	const [gameState, setGameState] = useState<GameState>(initialData.initialGameState);
 	const [seconds, setSeconds] = useState<Seconds>(initialData.initialSeconds);
-	const [lazyPlayState, setLazyPlayState] = useState<PlayState>('ready');
+	const lazyPlayState = useLazyState(600, gameState.playState, 'ready');
 
 	const initializeIngame = () => {
 		setPlayers(initialData.initialPlayers);
@@ -66,7 +67,6 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 		seconds,
 		setSeconds,
 		lazyPlayState,
-		setLazyPlayState,
 	};
 
 	return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
