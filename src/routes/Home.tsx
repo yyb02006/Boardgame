@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styled, { css } from 'styled-components';
 import { getOppositeElement } from '#libs/utils';
 import { HomeProvider, useHomeContext } from '#routes/HomeContext';
-import theme from '#styles/theme';
+import theme, { fullWidthHeight } from '#styles/theme';
 import BoxCollection from '#components/BoxCollction';
 import { slideIn } from '#styles/animations';
 
@@ -108,10 +108,9 @@ const BoardLayout = styled.div`
 	justify-content: space-between;
 	height: auto;
 	@media screen and (max-width: 1024px) {
+		${fullWidthHeight}
 		flex-direction: column;
 		align-items: center;
-		width: 100%;
-		height: 100%;
 	}
 `;
 
@@ -135,12 +134,11 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 		margin: 0;
 	}
 	> .Wrapper {
+		${fullWidthHeight}
 		position: absolute;
 		top: 0;
 		left: 0;
 		padding: 12px 24px;
-		height: 100%;
-		width: 100%;
 		overflow: hidden;
 		> div {
 			width: 100%;
@@ -224,9 +222,8 @@ const Boxes = styled.div<BoxesProps>`
 `;
 
 const BoardBordersContainer = styled.div<BoardBordersContainerProps>`
+	${fullWidthHeight}
 	position: absolute;
-	width: 100%;
-	height: 100%;
 	display: flex;
 	flex-direction: ${(props) => props.$borderDirection};
 	justify-content: space-between;
@@ -304,8 +301,7 @@ const PartialCover = styled.div<PartialCoverProps>`
 `;
 
 const LetterOnBoard = styled.div`
-	width: 100%;
-	height: 100%;
+	${fullWidthHeight}
 	position: relative;
 	font-size: ${'clamp(4rem,6vw,8rem)'};
 	padding-bottom: 40px;
@@ -319,8 +315,7 @@ const StartButton = styled.button`
 `;
 
 const BoardCoverLayout = styled.div<{ $winner: PlayerElement | undefined }>`
-	width: 100%;
-	height: 100%;
+	${fullWidthHeight}
 	position: absolute;
 	top: 0;
 	left: 0;

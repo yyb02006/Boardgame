@@ -51,6 +51,7 @@ const CardStyle = styled.div`
 	}
 	& .Forward {
 		background-color: yellow;
+		cursor: pointer;
 	}
 	& .Reverse {
 		background-color: var(--color-royalBlue);
@@ -111,7 +112,7 @@ const GameBoardLayout = styled.div<{ $rows: number; $columns: number }>`
 
 const Card = ({ children }: { children: ReactNode }) => {
 	const [cardState, setCardState] = useState<'forward' | 'reverse'>('forward');
-	const ref = useRef<{ flipable: boolean; element: { current: HTMLDivElement | null } }>({
+	const cardRef = useRef<{ flipable: boolean; element: { current: HTMLDivElement | null } }>({
 		flipable: true,
 		element: { current: null },
 	});
@@ -127,14 +128,18 @@ const Card = ({ children }: { children: ReactNode }) => {
 		const {
 			element: { current },
 			flipable,
-		} = ref.current;
+		} = cardRef.current;
 		if (!current || !flipable) return;
 		const { clientX, clientY } = event;
 		const { left, top, width, height } = currentTarget.getBoundingClientRect();
-		const normalizedWidth = (clientX - left) / width > 0.5 ? 20 : ((clientX - left) / width) * 40;
-		const normalizedHeight = (clientY - top) / height > 0.5 ? 20 : ((clientY - top) / height) * 40;
-		current.style.transition = `transform 0.15s linear`;
-		current.style.transform = `rotateX(${normalizedHeight}deg) rotateY(-${normalizedWidth}deg)`;
+		const normalizedMouseX = (clientX - left) / width;
+		const normalizedMouseY = (clientY - top) / height;
+		const rotateClamp = (normalizedMouse: number) => {
+			return normalizedMouse > 0.5 ? 20 : normalizedMouse * 40;
+		};
+		current.style.cssText = `transition: transform 0.15s linear; transform: rotateX(${rotateClamp(
+			normalizedMouseY
+		)}deg) rotateY(-${rotateClamp(normalizedMouseX)}deg);`;
 	};
 	const handleThrottledMouseMove = useRef(throttle(onCardMove, 150));
 	const onCardLeave = () => {
@@ -143,18 +148,15 @@ const Card = ({ children }: { children: ReactNode }) => {
 		const {
 			element: { current },
 			flipable,
-		} = ref.current;
+		} = cardRef.current;
 		if (!current || !flipable) return;
-		current.style.transition = `transform 0.5s ease`;
-		current.style.transform = `rotateX(0) rotateY(0)`;
+		current.style.cssText = `transition: transform 0.5s ease; transform: rotateX(0) rotateY(0);`;
 	};
 	const onFlip = () => {
-		const box = ref.current;
-		if (!box.element.current) return;
-		box.flipable = false;
-		box.element.current.style.transition = `transform 0.5s ease, transform-origin 0.5s ease`;
-		box.element.current.style.transformOrigin = `center`;
-		box.element.current.style.transform = `rotateY(180deg)`;
+		const card = cardRef.current;
+		if (!card.element.current) return;
+		card.flipable = false;
+		card.element.current.style.cssText = `transition: transform 0.5s ease, transform-origin 0.5s ease; transform-origin:center; transform:rotateY(180deg);`;
 		setTimeout(() => {
 			setCardState((p) => (p === 'forward' ? 'reverse' : 'forward'));
 		}, 155);
@@ -171,7 +173,7 @@ const Card = ({ children }: { children: ReactNode }) => {
 		>
 			<div className="InnerShadow" />
 			<div className="OuterShadow" />
-			<CardStyle ref={ref.current.element}>
+			<CardStyle ref={cardRef.current.element}>
 				<div className="Reverse">Rear</div>
 				<div className="Forward">{children}</div>
 			</CardStyle>
