@@ -14,6 +14,11 @@ const layoutOption = {
 const cardOption = {
 	gap: 24,
 	borderRadius: `8% / 5%`,
+	layoutRules: {
+		generous: { lg: [8, 3], md: [6, 4], sm: [4, 6] },
+		standard: { lg: [6, 3], md: [6, 3], sm: [3, 6] },
+		scant: { lg: [4, 3], md: [4, 3], sm: [3, 4] },
+	},
 };
 
 const Layout = styled.section`
@@ -89,11 +94,11 @@ const CardWrapper = styled.div`
 	}
 `;
 
-const GameBoardLayout = styled.div<{ $rows: number; $columns: number }>`
+const GameBoardLayout = styled.div<GameBoardLayoutProps>`
 	height: 100%;
 	display: grid;
-	grid-template-columns: repeat(8, auto);
-	grid-template-rows: repeat(3, minmax(0, 1fr));
+	grid-template-columns: ${(props) => `repeat(${props.$cardLayout.lg[0]}, auto)`};
+	grid-template-rows: ${(props) => `repeat(${props.$cardLayout.lg[1]}, 1fr)`};
 	place-content: center center;
 	place-items: center center;
 	gap: ${cardOption.gap}px;
@@ -103,7 +108,12 @@ const GameBoardLayout = styled.div<{ $rows: number; $columns: number }>`
 			(
 				${(props) => {
 					const { top, bottom } = layoutOption.padding.lg;
-					return `(100vh - ${(props.$rows - 1) * cardOption.gap + top + bottom}px) / 3`;
+					const {
+						$cardLayout: {
+							lg: [_, rows],
+						},
+					} = props;
+					return `(100vh - ${(rows - 1) * cardOption.gap + top + bottom}px) / ${rows}`;
 				}}
 			)
 		);
@@ -190,7 +200,7 @@ const GameBoard = () => {
 	const shuffledArray = shuffleArray([...originalArray, ...deepCopy(originalArray)]);
 	const [cards, setCards] = useState(shuffledArray);
 	return (
-		<GameBoardLayout $rows={3} $columns={8}>
+		<GameBoardLayout $cardLayout={cardOption.layoutRules.generous}>
 			{cards.map((card, id) => (
 				<Card key={id}>{card.cardId}</Card>
 			))}
