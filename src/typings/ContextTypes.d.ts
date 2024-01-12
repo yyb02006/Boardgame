@@ -55,7 +55,6 @@ interface HomeContextType {
 	seconds: Seconds;
 	setSeconds: React.Dispatch<React.SetStateAction<Seconds>>;
 	lazyPlayState: PlayState;
-	setLazyPlayState: React.Dispatch<React.SetStateAction<PlayState>>;
 }
 
 interface BorderState {

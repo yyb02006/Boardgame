@@ -545,7 +545,6 @@ const Board = () => {
 		seconds,
 		setSeconds,
 		lazyPlayState,
-		setLazyPlayState,
 	} = useHomeContext();
 	useEffect(() => {
 		const interval =
@@ -553,12 +552,8 @@ const Board = () => {
 			setInterval(() => {
 				playState === 'playing' && setSeconds((p) => p - 1);
 			}, 1000);
-		const timeout = setTimeout(() => {
-			setLazyPlayState(playState);
-		}, 600);
 		return () => {
 			interval && clearInterval(interval);
-			timeout && clearTimeout(timeout);
 		};
 	}, [playState]);
 	useEffect(() => {
