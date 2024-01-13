@@ -79,10 +79,12 @@ const ComponentWithFunction = styled.div`
 	}
 `;
 
-/* 애니메이션이 실행될 때 animation-direction속성을 'reverse' 변경하면,
-애니메이션은 바뀐 direction으로 키프레임이 실행된 상태에서 진행된다.
-ex) 4초간 애니메이션을 실행하고 'reverse'상태가 되면 'reverse'로 4초간 실행된 시점으로 박스가 순간이동한다.
-keyframes라는 이름을 생각하면 알 수 있는 부분. */
+/**
+ * 애니메이션이 실행될 때 animation-direction속성을 'reverse' 변경하면,
+ * 애니메이션은 바뀐 direction으로 키프레임이 실행된 상태에서 진행된다.
+ * ex) 4초간 애니메이션을 실행하고 'reverse'상태가 되면 'reverse'로 4초간 실행된 시점으로 박스가 순간이동한다.
+ * keyframes라는 이름을 생각하면 알 수 있는 부분.
+ */
 const AnimatedComp = styled.div<{ $direction: 'normal' | 'reverse' }>`
 	width: 200px;
 	height: 200px;
@@ -126,11 +128,13 @@ const AnimatedComp = styled.div<{ $direction: 'normal' | 'reverse' }>`
 	animation-direction: ${(props) => props.$direction}; */
 `;
 
-/* Arrow function은 클로저함수처럼 렉시컬 스코프를 가지기 때문에, 객체의 메서드로 활용될 때는 전역 스코프를 가지게 된다.
-그래서 메서드로 활용된 Arrow function의 this값은 불안정하다. 전역이 global이냐 window냐에 따라 다르고, strict mode가
-활성화되어있을 경우에는 전역객체에 대한 this는 undefined가 된다. 반면 일반함수(함수 선언형)의 경우 호출되는 방식에
-따라 동적으로 this를 결정하는데, function();과 같은 일반적인 호출에서는 전역객체를 this로 갖고,
-obj.function();처럼 객체의 메서드로 활용되었을 경우에는 해당 객체를 this로 갖는다. */
+/**
+ * Arrow function은 클로저함수처럼 렉시컬 스코프를 가지기 때문에, 객체의 메서드로 활용될 때는 전역 스코프를 가지게 된다.
+ * 그래서 메서드로 활용된 Arrow function의 this값은 불안정하다. 전역이 global이냐 window냐에 따라 다르고, strict mode가
+ * 활성화되어있을 경우에는 전역객체에 대한 this는 undefined가 된다. 반면 일반함수(함수 선언형)의 경우 호출되는 방식에
+ * 따라 동적으로 this를 결정하는데, function();과 같은 일반적인 호출에서는 전역객체를 this로 갖고,
+ * obj.function();처럼 객체의 메서드로 활용되었을 경우에는 해당 객체를 this로 갖는다.
+ */
 const testObj = {
 	a: function a() {
 		return 2;
@@ -157,11 +161,11 @@ function outer(this: unknown) {
 obj.method(outer);
 
 /**
- *  이벤트가 일어나는 범위는 자식의 범위까지 포함되고, 이는 자식 요소가 부모 요소를 벗어나 있더라도 인정된다.
- *  마우스이벤트에서 parent요소에 마우스를 이동시켜 이벤트를 작동시키고 아래에 있는 child요소에 마우스를 이동시켜도
- *  parent요소의 onMouseOver가 발생하는 것을 이벤트 버블링이라고 한다. (자식컴포넌트의 이벤트가 상위컴포넌트로 전파)
- *  이벤트 전파가 발생하는 컴포넌트의 nagative event객체에서 stopPropagation메서드 호출로 전파를 막을 수 있다.
- * 	++ onMouseOver와 onMouseEnter는 엄연히 다른 영역을 가리킨다.
+ * 이벤트가 일어나는 범위는 자식의 범위까지 포함되고, 이는 자식 요소가 부모 요소를 벗어나 있더라도 인정된다.
+ * 마우스이벤트에서 parent요소에 마우스를 이동시켜 이벤트를 작동시키고 아래에 있는 child요소에 마우스를 이동시켜도
+ * parent요소의 onMouseOver가 발생하는 것을 이벤트 버블링이라고 한다. (자식컴포넌트의 이벤트가 상위컴포넌트로 전파)
+ * 이벤트 전파가 발생하는 컴포넌트의 nagative event객체에서 stopPropagation메서드 호출로 전파를 막을 수 있다.
+ * ++ onMouseOver와 onMouseEnter는 엄연히 다른 영역을 가리킨다.
  * */
 const Card = () => {
 	const onCardOver = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -191,14 +195,15 @@ const Card = () => {
 	);
 };
 
-/** transform-style:preserve-3d는 자식들의 배치관계를 3D공간에서 이루어지게 해주는 속성이다.
- *  요소에 3D변환속성을 적용해도 실제로는 2D공간에서 트랜지션을 하는 것 뿐이고, 실제 배치는 z-index와 문서구조에 따른다.
- *  예를 들어, div요소 2개를 가지고 있는 부모요소가 있을 때, 부모요소에 preserve-3d속성이 없다면,
- *  translate 3D변환으로는 어떻게 해도 첫째 div를 둘째 div보다 앞으로 끌고 나올 수 없다는 것이다.
- *  단, preserve-3d를 사용할 때 주의해야할 점은 preserve-3d와 충돌하는 속성들이 있다는 것인데,
- *  예를 들어 부모요소에 filter속성을 적용하면, 해당 요소가 가지는 컨텍스트가 2D가 되며
- * 	위치적인 위계가 3D에서 2D로 바뀌어 preserve-3d속성이 무시된다는 것이다.
- * 	 */
+/**
+ * transform-style:preserve-3d는 자식들의 배치관계를 3D공간에서 이루어지게 해주는 속성이다.
+ * 요소에 3D변환속성을 적용해도 실제로는 2D공간에서 트랜지션을 하는 것 뿐이고, 실제 배치는 z-index와 문서구조에 따른다.
+ * 예를 들어, div요소 2개를 가지고 있는 부모요소가 있을 때, 부모요소에 preserve-3d속성이 없다면,
+ * translate 3D변환으로는 어떻게 해도 첫째 div를 둘째 div보다 앞으로 끌고 나올 수 없다는 것이다.
+ * 단, preserve-3d를 사용할 때 주의해야할 점은 preserve-3d와 충돌하는 속성들이 있다는 것인데,
+ * 예를 들어 부모요소에 filter속성을 적용하면, 해당 요소가 가지는 컨텍스트가 2D가 되며
+ * 위치적인 위계가 3D에서 2D로 바뀌어 preserve-3d속성이 무시된다는 것이다.
+ * */
 
 const PerspectiveParent = styled.div`
 	position: relative;
@@ -239,7 +244,14 @@ function fysReverse(array: number[]) {
 	}
 }
 
+/**
+ * 이런 게 있을 거라고 타입스크립트에게 알려줄 수 있음.
+ * declare function interfaced(arg: string): string;
+ */
+
 const Test = () => {
+	/* 정의한 적 없지만 실행 가능, 런타임 에러
+	interfaced('dd'); */
 	const [direction, setDirection] = useState<'normal' | 'reverse'>('normal');
 	return (
 		<Layout>
