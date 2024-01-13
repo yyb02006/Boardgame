@@ -1,7 +1,7 @@
 import useLazyState from '#hooks/useLazyState';
 import React, { createContext, useContext, useState } from 'react';
 
-const AppContext = createContext<HomeContextType | undefined>(undefined);
+const HomeContext = createContext<HomeContext | undefined>(undefined);
 
 function HomeProvider({ children }: { children: React.ReactNode }) {
 	const initialPlayer = (name: PlayerElement) => ({
@@ -11,48 +11,60 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 		ownableSelecteds: { horizontal: [], vertical: [] },
 		isWin: false,
 	});
-	const initialData: InitialData = {
-		initialCurrentPlayer: 'player1',
-		initialPlayers: {
+	const [
+		initialCurrentPlayer,
+		initialPlayers,
+		initialSelected,
+		initialBoxes,
+		initialGameState,
+		initialSeconds,
+	]: [...InitialHomeData] = [
+		'player1',
+		{
 			player1: initialPlayer('player1'),
 			player2: initialPlayer('player2'),
 		},
-		initialSelected: {
+		{
 			vertical: [],
 			horizontal: [],
 		},
-		initialBoxes: Array.from({ length: 25 }, (_, id) => ({
+		Array.from({ length: 25 }, (_, id) => ({
 			id,
 			isPartialSurrounded: false,
 			isSurrounded: false,
 			owner: undefined,
 		})),
-		initialGameState: {
+		{
 			playState: 'ready',
 			isPlayerWin: { player1: false, player2: false },
 		},
-		initialSeconds: 30,
-	};
-	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>(
-		initialData.initialCurrentPlayer
-	);
-	const [players, setPlayers] = useState<Players>(initialData.initialPlayers);
-	const [selected, setSelected] = useState<Selected>(initialData.initialSelected);
-	const [boxes, setBoxes] = useState<Boxes>(initialData.initialBoxes);
-	const [gameState, setGameState] = useState<GameState>(initialData.initialGameState);
-	const [seconds, setSeconds] = useState<Seconds>(initialData.initialSeconds);
+		30,
+	];
+	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>(initialCurrentPlayer);
+	const [players, setPlayers] = useState<Players>(initialPlayers);
+	const [selected, setSelected] = useState<Selected>(initialSelected);
+	const [boxes, setBoxes] = useState<Boxes>(initialBoxes);
+	const [gameState, setGameState] = useState<GameState>(initialGameState);
+	const [seconds, setSeconds] = useState<Seconds>(initialSeconds);
 	const lazyPlayState = useLazyState(600, gameState.playState, 'ready');
 
 	const initializeIngame = () => {
-		setPlayers(initialData.initialPlayers);
-		setBoxes(initialData.initialBoxes);
-		setCurrentPlayer(initialData.initialCurrentPlayer);
-		setSelected(initialData.initialSelected);
-		setSeconds(initialData.initialSeconds);
+		setPlayers(initialPlayers);
+		setBoxes(initialBoxes);
+		setCurrentPlayer(initialCurrentPlayer);
+		setSelected(initialSelected);
+		setSeconds(initialSeconds);
 	};
 
-	const contextValue: HomeContextType = {
-		initialData,
+	const contextValue: HomeContext = {
+		initialData: {
+			initialCurrentPlayer,
+			initialPlayers,
+			initialSelected,
+			initialBoxes,
+			initialGameState,
+			initialSeconds,
+		},
 		initializeIngame,
 		currentPlayer,
 		setCurrentPlayer,
@@ -69,14 +81,14 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 		lazyPlayState,
 	};
 
-	return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
+	return <HomeContext.Provider value={contextValue}>{children}</HomeContext.Provider>;
 }
 
 function useHomeContext() {
-	const contextValue = useContext(AppContext);
+	const contextValue = useContext(HomeContext);
 	/** undefined예외처리 */
 	if (contextValue === undefined) {
-		throw new Error('useAppContext must be used within an AppProvider');
+		throw new Error('useHomeContext must be used within an HomeProvider');
 	}
 	return contextValue;
 }

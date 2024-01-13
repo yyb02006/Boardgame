@@ -30,22 +30,22 @@ type Boxes = Array<{
 	owner: PlayerElement | undefined;
 }>;
 
-interface InitialData {
-	initialCurrentPlayer: PlayerElement;
-	initialPlayers: Players;
-	initialSelected: Selected;
-	initialBoxes: Boxes;
-	initialGameState: GameState;
-	initialSeconds: Seconds;
-}
+type InitialHomeData = [PlayerElement, Players, Selected, Boxes, GameState, Seconds];
 
 interface CardFilpperContext {
 	gameState: Exclude<PlayState, 'draw'>;
 	setGameState: React.Dispatch<React.SetStateAction<Exclude<PlayState, 'draw'>>>;
 }
 
-interface HomeContextType {
-	initialData: InitialData;
+interface HomeContext {
+	initialData: {
+		initialCurrentPlayer: PlayerElement;
+		initialPlayers: Players;
+		initialSelected: Selected;
+		initialBoxes: Boxes;
+		initialGameState: GameState;
+		initialSeconds: Seconds;
+	};
 	initializeIngame: () => void;
 	currentPlayer: PlayerElement;
 	setCurrentPlayer: React.Dispatch<React.SetStateAction<PlayerElement>>;
