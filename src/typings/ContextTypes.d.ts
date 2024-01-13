@@ -39,6 +39,11 @@ interface InitialData {
 	initialSeconds: Seconds;
 }
 
+interface CardFilpperContext {
+	gameState: Exclude<PlayState, 'draw'>;
+	setGameState: React.Dispatch<React.SetStateAction<Exclude<PlayState, 'draw'>>>;
+}
+
 interface HomeContextType {
 	initialData: InitialData;
 	initializeIngame: () => void;
