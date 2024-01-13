@@ -1,13 +1,16 @@
 import React, { createContext, useState, useContext } from 'react';
 
-const CardFlipperContext = createContext<CardFilpperContext | undefined>(undefined);
+const CardFlipperContext = createContext<CardFlipperContext | undefined>(undefined);
 
 export function CardFlipperProvider({ children }: { children: React.ReactNode }) {
-	const [initialGameState]: [Exclude<PlayState, 'draw'>] = ['ready'];
-	const [gameState, setGameState] = useState<Exclude<PlayState, 'draw'>>(initialGameState);
-	const contextValue: CardFilpperContext = {
+	const [initialGameState]: [CardFlipperGameState] = [{ playState: 'ready', quantity: null }];
+	const [gameState, setGameState] = useState<CardFlipperGameState>(initialGameState);
+	const [cards, setCards] = useState<Card[] | null>(null);
+	const contextValue: CardFlipperContext = {
 		gameState,
 		setGameState,
+		cards,
+		setCards,
 	};
 	return <CardFlipperContext.Provider value={contextValue}>{children}</CardFlipperContext.Provider>;
 }

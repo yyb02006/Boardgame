@@ -1,3 +1,5 @@
+type CardQuantity = 'generous' | 'standard' | 'scant';
+
 /** Function Props Types */
 
 /** Styled Components Types */

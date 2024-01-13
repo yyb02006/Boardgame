@@ -1,8 +1,9 @@
 import { capitalizeFirstLetter, deepCopy, getPaddingFromOption, shuffleArray } from '#libs/utils';
 import { fullWidthHeight } from '#styles/theme';
 import { throttle } from 'lodash';
-import React, { type ReactNode, useRef, useState } from 'react';
+import React, { type ReactNode, useRef, useState, useContext } from 'react';
 import styled, { css } from 'styled-components';
+import { CardFlipperProvider, useCardFlipperContext } from './CardFlipperContext';
 
 const layoutOption = {
 	padding: {
@@ -15,9 +16,9 @@ const cardOption = {
 	gap: 24,
 	borderRadius: `8% / 5%`,
 	layoutRules: {
-		generous: { lg: [8, 3], md: [6, 4], sm: [4, 6] },
-		standard: { lg: [6, 3], md: [6, 3], sm: [3, 6] },
-		scant: { lg: [4, 3], md: [4, 3], sm: [3, 4] },
+		generous: { amount: 24, lg: [8, 3], md: [6, 4], sm: [4, 6] },
+		standard: { amount: 18, lg: [6, 3], md: [6, 3], sm: [3, 6] },
+		scant: { amount: 12, lg: [4, 3], md: [4, 3], sm: [3, 4] },
 	},
 };
 
@@ -94,7 +95,8 @@ const CardWrapper = styled.div`
 	}
 `;
 
-const GameBoardLayout = styled.div<GameBoardLayoutProps>`
+const GameBoardLayout = styled.section<GameBoardLayoutProps>`
+	position: relative;
 	height: 100%;
 	display: grid;
 	grid-template-columns: ${(props) => `repeat(${props.$cardLayout.lg[0]}, auto)`};
@@ -117,6 +119,38 @@ const GameBoardLayout = styled.div<GameBoardLayoutProps>`
 				}}
 			)
 		);
+	}
+	@media screen and (max-width: 1024px) {
+		grid-template-columns: ${(props) => `repeat(${props.$cardLayout.md[0]}, auto)`};
+		grid-template-rows: ${(props) => `repeat(${props.$cardLayout.md[1]}, 1fr)`};
+	}
+	@media screen and (max-width: 640px) {
+		grid-template-columns: ${(props) => `repeat(${props.$cardLayout.sm[0]}, auto)`};
+		grid-template-rows: ${(props) => `repeat(${props.$cardLayout.sm[1]}, 1fr)`};
+	}
+`;
+
+const LobbyLayout = styled.div`
+	background-color: var(--bgColor-dark);
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 32px;
+	position: absolute;
+	transition: transform 1s ease background-color 1s ease;
+	& .button {
+		border-radius: 12px;
+		width: 15vw;
+		padding: 8px 0;
+		font-size: 2rem;
+		background-color: yellow;
+		color: red;
+		&:hover {
+			background-color: violet;
+		}
 	}
 `;
 
@@ -191,28 +225,62 @@ const Card = ({ children }: { children: ReactNode }) => {
 	);
 };
 
-const GameBoard = () => {
-	const originalArray = Array.from({ length: 12 }, (_, cardId) => ({
-		cardId,
-		isFliped: false,
-		isSelected: false,
-	}));
-	const shuffledArray = shuffleArray([...originalArray, ...deepCopy(originalArray)]);
-	const [cards, setCards] = useState(shuffledArray);
+const Lobby = () => {
+	const { setCards, setGameState } = useCardFlipperContext();
+	const { layoutRules } = cardOption;
+	const getOriginalCardSets = (length: number) =>
+		Array.from({ length }, (_, cardId) => ({
+			cardId,
+			isFliped: false,
+			isSelected: false,
+		}));
+	const onAmountClick = (quantity: CardQuantity) => {
+		const { amount } = cardOption.layoutRules[quantity];
+		const cardsHalf = getOriginalCardSets(amount / 2);
+		const shuffledCards = shuffleArray([...cardsHalf, ...deepCopy(cardsHalf)]);
+		setCards(shuffledCards);
+		setGameState({ playState: 'playing', quantity });
+	};
 	return (
-		<GameBoardLayout $cardLayout={cardOption.layoutRules.generous}>
-			{cards.map((card, id) => (
-				<Card key={id}>{card.cardId}</Card>
-			))}
+		<LobbyLayout>
+			<div>Choose the quantity of cards.</div>
+			{(Object.keys(layoutRules) as CardQuantity[]).map((key, id) => {
+				const { amount } = layoutRules[key];
+				return (
+					<button
+						key={key}
+						className="button"
+						onClick={() => {
+							onAmountClick(key);
+						}}
+					>{`${amount}`}</button>
+				);
+			})}
+		</LobbyLayout>
+	);
+};
+
+const GameBoard = () => {
+	const {
+		gameState: { quantity },
+		cards,
+	} = useCardFlipperContext();
+	return (
+		<GameBoardLayout
+			$cardLayout={quantity ? cardOption.layoutRules[quantity] : cardOption.layoutRules.generous}
+		>
+			{cards === null ? <Lobby /> : cards.map((card, id) => <Card key={id}>{card.cardId}</Card>)}
 		</GameBoardLayout>
 	);
 };
 
 const CardFlipper = () => {
 	return (
-		<Layout>
-			<GameBoard />
-		</Layout>
+		<CardFlipperProvider>
+			<Layout>
+				<GameBoard />
+			</Layout>
+		</CardFlipperProvider>
 	);
 };
 
