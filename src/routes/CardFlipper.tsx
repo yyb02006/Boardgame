@@ -12,7 +12,7 @@ const layoutOption = {
 	},
 };
 
-const cardOption = {
+const cardOptions: CardOption = {
 	gap: 24,
 	borderRadius: `8% / 5%`,
 	layoutRules: {
@@ -21,6 +21,11 @@ const cardOption = {
 		scant: { amount: 12, lg: [4, 3], md: [4, 3], sm: [3, 4] },
 	},
 };
+
+const createGridAutoTemplate = (props: [number, number]) => css`
+	grid-template-columns: ${`repeat(${props[0]}, auto)`};
+	grid-template-rows: ${`repeat(${props[1]}, auto)`};
+`;
 
 const Layout = styled.section`
 	height: 100vh;
@@ -44,7 +49,7 @@ const CardStyle = styled.div`
 	color: red;
 	transform-style: preserve-3d;
 	position: relative;
-	border-radius: ${cardOption.borderRadius};
+	border-radius: ${cardOptions.borderRadius};
 	& .Forward,
 	.Reverse {
 		position: absolute;
@@ -71,13 +76,13 @@ const CardWrapper = styled.div`
 	justify-content: center;
 	align-items: center;
 	position: relative;
-	border-radius: ${cardOption.borderRadius};
+	border-radius: ${cardOptions.borderRadius};
 	aspect-ratio: 1/1.6;
 	& .InnerShadow,
 	.OuterShadow {
 		${fullWidthHeight}
 		position: absolute;
-		border-radius: ${cardOption.borderRadius};
+		border-radius: ${cardOptions.borderRadius};
 	}
 	& .InnerShadow {
 		box-shadow: inset 0px 0px 24px 4px #000000;
@@ -99,34 +104,20 @@ const GameBoardLayout = styled.section<GameBoardLayoutProps>`
 	position: relative;
 	height: 100%;
 	display: grid;
-	grid-template-columns: ${(props) => `repeat(${props.$cardLayout.lg[0]}, auto)`};
-	grid-template-rows: ${(props) => `repeat(${props.$cardLayout.lg[1]}, 1fr)`};
+	${(props) => createGridAutoTemplate(props.$cardLayout.lg)}
 	place-content: center center;
 	place-items: center center;
-	gap: ${cardOption.gap}px;
+	gap: 24px;
 	${CardWrapper} {
-		/* grid가 item의 크기를 예측하게 하려면 사이즈가 명시적이어야함 (%단위 X) */
-		height: calc(
-			(
-				${(props) => {
-					const { top, bottom } = layoutOption.padding.lg;
-					const {
-						$cardLayout: {
-							lg: [_, rows],
-						},
-					} = props;
-					return `(100vh - ${(rows - 1) * cardOption.gap + top + bottom}px) / ${rows}`;
-				}}
-			)
-		);
+		width: 8vw;
 	}
 	@media screen and (max-width: 1024px) {
-		grid-template-columns: ${(props) => `repeat(${props.$cardLayout.md[0]}, auto)`};
-		grid-template-rows: ${(props) => `repeat(${props.$cardLayout.md[1]}, 1fr)`};
+		${(props) => createGridAutoTemplate(props.$cardLayout.md)}
+		gap: 18px;
 	}
 	@media screen and (max-width: 640px) {
-		grid-template-columns: ${(props) => `repeat(${props.$cardLayout.sm[0]}, auto)`};
-		grid-template-rows: ${(props) => `repeat(${props.$cardLayout.sm[1]}, 1fr)`};
+		${(props) => createGridAutoTemplate(props.$cardLayout.sm)}
+		gap: 12px;
 	}
 `;
 
@@ -140,16 +131,22 @@ const LobbyLayout = styled.div`
 	justify-content: center;
 	gap: 32px;
 	position: absolute;
-	transition: transform 1s ease background-color 1s ease;
+	font-size: 4rem;
+	padding-bottom: 120px;
 	& .button {
 		border-radius: 12px;
 		width: 15vw;
 		padding: 8px 0;
-		font-size: 2rem;
+		font-size: 0.5em;
 		background-color: yellow;
 		color: red;
+		transition:
+			background-color 0.2s ease,
+			color 0.2s ease,
+			transform 0.5s ease;
 		&:hover {
-			background-color: violet;
+			background-color: var(--color-royalBlue);
+			color: violet;
 		}
 	}
 `;
@@ -227,7 +224,7 @@ const Card = ({ children }: { children: ReactNode }) => {
 
 const Lobby = () => {
 	const { setCards, setGameState } = useCardFlipperContext();
-	const { layoutRules } = cardOption;
+	const { layoutRules } = cardOptions;
 	const getOriginalCardSets = (length: number) =>
 		Array.from({ length }, (_, cardId) => ({
 			cardId,
@@ -235,7 +232,7 @@ const Lobby = () => {
 			isSelected: false,
 		}));
 	const onAmountClick = (quantity: CardQuantity) => {
-		const { amount } = cardOption.layoutRules[quantity];
+		const { amount } = cardOptions.layoutRules[quantity];
 		const cardsHalf = getOriginalCardSets(amount / 2);
 		const shuffledCards = shuffleArray([...cardsHalf, ...deepCopy(cardsHalf)]);
 		setCards(shuffledCards);
@@ -267,7 +264,7 @@ const GameBoard = () => {
 	} = useCardFlipperContext();
 	return (
 		<GameBoardLayout
-			$cardLayout={quantity ? cardOption.layoutRules[quantity] : cardOption.layoutRules.generous}
+			$cardLayout={quantity ? cardOptions.layoutRules[quantity] : cardOptions.layoutRules.generous}
 		>
 			{cards === null ? <Lobby /> : cards.map((card, id) => <Card key={id}>{card.cardId}</Card>)}
 		</GameBoardLayout>
