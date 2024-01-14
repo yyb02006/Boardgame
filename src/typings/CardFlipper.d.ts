@@ -14,6 +14,11 @@ interface CardOption {
 
 /** Styled Components Types */
 
+interface SetQuantityButton {
+	$index: number;
+	$isRun: boolean;
+}
+
 interface GameBoardLayoutProps {
 	$cardLayout: Record<BreakPoints, [number, number]>;
 }

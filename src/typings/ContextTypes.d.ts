@@ -20,6 +20,7 @@ interface CardFlipperContext {
 	setGameState: React.Dispatch<React.SetStateAction<CardFlipperGameState>>;
 	cards: Card[] | null;
 	setCards: React.Dispatch<React.SetStateAction<Card[] | null>>;
+	lazyPlayState: Exclude<PlayState, 'draw'>;
 }
 
 /* BorderGame's Context Types */

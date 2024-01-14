@@ -4,6 +4,7 @@ import { throttle } from 'lodash';
 import React, { type ReactNode, useRef, useState, useContext } from 'react';
 import styled, { css } from 'styled-components';
 import { CardFlipperProvider, useCardFlipperContext } from './CardFlipperContext';
+import { slideIn } from '#styles/animations';
 
 const layoutOption = {
 	padding: {
@@ -35,6 +36,7 @@ const Layout = styled.section`
 	position: relative;
 	padding: ${() => getPaddingFromOption(layoutOption.padding.lg)};
 	perspective: 2000px;
+	overflow-y: hidden;
 	@media screen and (max-width: 1024px) {
 		display: flex;
 		flex-direction: column;
@@ -121,29 +123,87 @@ const GameBoardLayout = styled.section<GameBoardLayoutProps>`
 	}
 `;
 
+const TitleWord = styled.div<SetQuantityButton>`
+	display: inline-block;
+	${(props) =>
+		props.$isRun &&
+		slideIn({
+			direction: 'vertical',
+			distance: 900,
+			duration: 0.35,
+			name: `drop`,
+			seqDirection: 'reverse',
+			isFaded: false,
+			delay: 0.25,
+		})}
+	& .Inner {
+		display: inline-block;
+		${(props) => css`
+			@keyframes shake_title_${props.$index} {
+				from {
+					transform: rotate(0);
+				}
+				to {
+					transform: ${props.$index % 2 === 1 ? 'rotate(50deg)' : 'rotate(-50deg)'};
+				}
+			}
+		`}
+		${(props) =>
+			props.$isRun && `animation: shake_title_${props.$index} 0.35s 0.25s ease-in forwards;`};
+	}
+`;
+
 const LobbyLayout = styled.div`
+	${fullWidthHeight}
 	background-color: var(--bgColor-dark);
-	width: 100%;
-	height: 100%;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
 	gap: 32px;
 	position: absolute;
-	font-size: 4rem;
+	font-size: 3rem;
 	padding-bottom: 120px;
-	& .button {
+	text-align: center;
+`;
+
+const SetQuantityButton = styled.button<SetQuantityButton>`
+	border-radius: 12px;
+	width: max(300px, 15vw);
+	${(props) =>
+		props.$isRun &&
+		slideIn({
+			direction: 'vertical',
+			distance: 800,
+			duration: 0.45,
+			name: `drop`,
+			seqDirection: 'reverse',
+			isFaded: false,
+			delay: (3 - props.$index) / 20,
+		})}
+	& .Inner {
+		${fullWidthHeight}
 		border-radius: 12px;
-		width: 15vw;
 		padding: 8px 0;
-		font-size: 0.5em;
+		font-size: 0.7em;
 		background-color: yellow;
 		color: red;
+		${(props) => css`
+			@keyframes shake_button_${props.$index} {
+				from {
+					transform: rotate(0);
+				}
+				to {
+					transform: ${props.$index === 1 ? 'rotate(50deg)' : 'rotate(-50deg)'};
+				}
+			}
+		`}
+		${(props) =>
+			props.$isRun &&
+			`animation: shake_button_${props.$index} 0.45s ${(3 - props.$index) / 20}s ease-in forwards;`}
 		transition:
-			background-color 0.2s ease,
-			color 0.2s ease,
-			transform 0.5s ease;
+		background-color 0.2s ease,
+		color 0.2s ease;
 		&:hover {
 			background-color: var(--color-royalBlue);
 			color: violet;
@@ -223,7 +283,11 @@ const Card = ({ children }: { children: ReactNode }) => {
 };
 
 const Lobby = () => {
-	const { setCards, setGameState } = useCardFlipperContext();
+	const {
+		setCards,
+		setGameState,
+		gameState: { playState },
+	} = useCardFlipperContext();
 	const { layoutRules } = cardOptions;
 	const getOriginalCardSets = (length: number) =>
 		Array.from({ length }, (_, cardId) => ({
@@ -240,17 +304,27 @@ const Lobby = () => {
 	};
 	return (
 		<LobbyLayout>
-			<div>Choose the quantity of cards.</div>
+			<div className="Title">
+				{'Choose the quantity of cards.'.split(' ').map((word, id, source) => (
+					<TitleWord key={word} $index={id} $isRun={playState === 'playing'}>
+						<span className="Inner">{word}</span>
+						{id < source.length - 1 && <span>&nbsp;</span>}
+					</TitleWord>
+				))}
+			</div>
 			{(Object.keys(layoutRules) as CardQuantity[]).map((key, id) => {
 				const { amount } = layoutRules[key];
 				return (
-					<button
+					<SetQuantityButton
 						key={key}
-						className="button"
+						$index={id}
+						$isRun={playState === 'playing'}
 						onClick={() => {
 							onAmountClick(key);
 						}}
-					>{`${amount}`}</button>
+					>
+						<div className="Inner">{`${amount}`}</div>
+					</SetQuantityButton>
 				);
 			})}
 		</LobbyLayout>
@@ -259,14 +333,19 @@ const Lobby = () => {
 
 const GameBoard = () => {
 	const {
-		gameState: { quantity },
+		gameState: { quantity, playState },
 		cards,
+		lazyPlayState,
 	} = useCardFlipperContext();
 	return (
 		<GameBoardLayout
 			$cardLayout={quantity ? cardOptions.layoutRules[quantity] : cardOptions.layoutRules.generous}
 		>
-			{cards === null ? <Lobby /> : cards.map((card, id) => <Card key={id}>{card.cardId}</Card>)}
+			{playState === 'ready' || lazyPlayState === 'ready' || cards === null ? (
+				<Lobby />
+			) : (
+				cards.map((card, id) => <Card key={id}>{card.cardId}</Card>)
+			)}
 		</GameBoardLayout>
 	);
 };

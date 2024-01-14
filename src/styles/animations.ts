@@ -1,20 +1,34 @@
 import { css } from 'styled-components';
 
-export function slideIn({ name, seqDirection, distance, direction, duration }: SlideInProps) {
+export function slideIn({
+	name,
+	seqDirection,
+	distance,
+	direction,
+	duration,
+	isFaded = true,
+	delay = 0,
+}: SlideInProps) {
 	return css`
 		@keyframes slideIn_${name}_${seqDirection}_${distance}_${direction} {
 			from {
 				transform: translate(
 					${direction === 'horizontal' ? `${distance}px, 0px` : `0px, ${distance}px`}
 				);
-				opacity: 0;
+				${isFaded &&
+				css`
+					opacity: 0;
+				`}
 			}
 			to {
 				transform: translate(0px);
-				opacity: 1;
+				${isFaded &&
+				css`
+					opacity: 1;
+				`}
 			}
 		}
-		animation: ${`slideIn_${name}_${seqDirection}_${distance}_${direction}`} ${duration}s
+		animation: ${`slideIn_${name}_${seqDirection}_${distance}_${direction}`} ${duration}s ${delay}s
 			ease-in-out forwards;
 		animation-direction: ${seqDirection};
 	`;
