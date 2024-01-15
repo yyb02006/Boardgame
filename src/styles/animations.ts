@@ -34,6 +34,32 @@ export function slideIn({
 	`;
 }
 
+export function rotate({
+	name,
+	degree,
+	duration,
+	delay,
+	timingFunc,
+}: {
+	name: string;
+	degree: number;
+	duration: number;
+	delay: number;
+	timingFunc: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out';
+}) {
+	return css`
+		@keyframes rotate_${name}_${degree} {
+			from {
+				transform: rotate(0);
+			}
+			to {
+				transform: ${`rotate(${degree}deg)`};
+			}
+		}
+		animation: ${`rotate_${name}_${degree}`} ${duration}s ${delay}s ${timingFunc} forwards;
+	`;
+}
+
 export function colorBlink({ name, startColor, alternateColor, duration }: ColorBlinkProps) {
 	return css`
 		@keyframes colorBlink_${name} {

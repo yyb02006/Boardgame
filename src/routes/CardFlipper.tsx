@@ -4,7 +4,7 @@ import { throttle } from 'lodash';
 import React, { type ReactNode, useRef, useState, useContext } from 'react';
 import styled, { css } from 'styled-components';
 import { CardFlipperProvider, useCardFlipperContext } from './CardFlipperContext';
-import { slideIn } from '#styles/animations';
+import { rotate, slideIn } from '#styles/animations';
 
 const layoutOption = {
 	padding: {
@@ -138,18 +138,15 @@ const TitleWord = styled.div<SetQuantityButton>`
 		})}
 	& .Inner {
 		display: inline-block;
-		${(props) => css`
-			@keyframes shake_title_${props.$index} {
-				from {
-					transform: rotate(0);
-				}
-				to {
-					transform: ${props.$index % 2 === 1 ? 'rotate(50deg)' : 'rotate(-50deg)'};
-				}
-			}
-		`}
 		${(props) =>
-			props.$isRun && `animation: shake_title_${props.$index} 0.35s 0.25s ease-in forwards;`};
+			props.$isRun &&
+			rotate({
+				name: 'letter',
+				duration: 0.4,
+				delay: 0.2,
+				degree: props.$index % 2 === 1 ? 50 : -50,
+				timingFunc: 'ease-in',
+			})}
 	}
 `;
 
@@ -170,6 +167,7 @@ const LobbyLayout = styled.div`
 const SetQuantityButton = styled.button<SetQuantityButton>`
 	border-radius: 12px;
 	width: max(300px, 15vw);
+	cursor: pointer;
 	${(props) =>
 		props.$isRun &&
 		slideIn({
@@ -188,19 +186,15 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 		font-size: 0.7em;
 		background-color: yellow;
 		color: red;
-		${(props) => css`
-			@keyframes shake_button_${props.$index} {
-				from {
-					transform: rotate(0);
-				}
-				to {
-					transform: ${props.$index === 1 ? 'rotate(50deg)' : 'rotate(-50deg)'};
-				}
-			}
-		`}
 		${(props) =>
 			props.$isRun &&
-			`animation: shake_button_${props.$index} 0.45s ${(3 - props.$index) / 20}s ease-in forwards;`}
+			rotate({
+				name: 'button',
+				duration: 0.45,
+				delay: (3 - props.$index) / 20,
+				degree: props.$index % 2 === 1 ? 50 : -50,
+				timingFunc: 'ease-in',
+			})}
 		transition:
 		background-color 0.2s ease,
 		color 0.2s ease;
