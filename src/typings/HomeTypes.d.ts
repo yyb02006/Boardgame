@@ -178,7 +178,7 @@ interface BoxHoverProps extends DirectionInterface {
 	$playState: PlayState;
 }
 
-/** Routes Components Types */
+/** React Components Types */
 
 interface BoxCollectionProps {
 	direction: Direction;

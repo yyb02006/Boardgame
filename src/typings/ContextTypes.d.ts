@@ -1,25 +1,42 @@
+type PlayState = 'win' | 'draw' | 'playing' | 'ready';
+
+type Seconds = number;
+
+/* CardFlipper's Context Types */
+
+type PrevCard = [number] | [];
+
+interface Card {
+	cardId: number;
+	order: 1 | 2;
+	isChecked: boolean;
+	isFlipped: boolean;
+}
+
+interface CardFlipperGameState {
+	playState: Exclude<PlayState, 'draw'>;
+	quantity: CardQuantity | null;
+}
+
+interface CardFlipperContext {
+	gameState: CardFlipperGameState;
+	setGameState: React.Dispatch<React.SetStateAction<CardFlipperGameState>>;
+	cards: Card[] | null;
+	setCards: React.Dispatch<React.SetStateAction<Card[] | null>>;
+	prevCard: PrevCard;
+	setPrevCard: React.Dispatch<React.SetStateAction<PrevCard>>;
+	wait: boolean;
+	setWait: React.Dispatch<React.SetStateAction<boolean>>;
+	lazyPlayState: Exclude<PlayState, 'draw'>;
+}
+
+/* BorderGame's Context Types */
+
 type Selected = Record<Direction, BorderState[]>;
 
 type PlayerElement = 'player1' | 'player2';
 
 type Ownable = Record<PlayerElement, boolean>;
-
-type PlayState = 'win' | 'draw' | 'playing' | 'ready';
-
-type Seconds = number;
-
-interface PlayerInfo {
-	boxCount: number;
-	ownableBoxCount: number;
-	name: string;
-	ownableSelecteds: Selected;
-	isWin: boolean;
-}
-
-interface GameState {
-	playState: PlayState;
-	isPlayerWin: Record<PlayerElement, boolean>;
-}
 
 type Players = Record<PlayerElement, PlayerInfo>;
 
@@ -32,9 +49,17 @@ type Boxes = Array<{
 
 type InitialHomeData = [PlayerElement, Players, Selected, Boxes, GameState, Seconds];
 
-interface CardFilpperContext {
-	gameState: Exclude<PlayState, 'draw'>;
-	setGameState: React.Dispatch<React.SetStateAction<Exclude<PlayState, 'draw'>>>;
+interface PlayerInfo {
+	boxCount: number;
+	ownableBoxCount: number;
+	name: string;
+	ownableSelecteds: Selected;
+	isWin: boolean;
+}
+
+interface GameState {
+	playState: PlayState;
+	isPlayerWin: Record<PlayerElement, boolean>;
 }
 
 interface HomeContext {

@@ -4,6 +4,8 @@ interface SlideInProps {
 	distance: number;
 	direction: Direction;
 	duration: number;
+	isFaded?: boolean;
+	delay?: number;
 }
 
 interface ColorBlinkProps {

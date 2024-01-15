@@ -1,8 +1,10 @@
 import { capitalizeFirstLetter, deepCopy, getPaddingFromOption, shuffleArray } from '#libs/utils';
 import { fullWidthHeight } from '#styles/theme';
-import { throttle } from 'lodash';
-import React, { type ReactNode, useRef, useState } from 'react';
+import { setWith, throttle } from 'lodash';
+import React, { type ReactNode, useRef, useState, useContext, useEffect } from 'react';
 import styled, { css } from 'styled-components';
+import { CardFlipperProvider, useCardFlipperContext } from './CardFlipperContext';
+import { rotate, slideIn } from '#styles/animations';
 
 const layoutOption = {
 	padding: {
@@ -11,15 +13,20 @@ const layoutOption = {
 	},
 };
 
-const cardOption = {
+const cardOptions: CardOption = {
 	gap: 24,
 	borderRadius: `8% / 5%`,
 	layoutRules: {
-		generous: { lg: [8, 3], md: [6, 4], sm: [4, 6] },
-		standard: { lg: [6, 3], md: [6, 3], sm: [3, 6] },
-		scant: { lg: [4, 3], md: [4, 3], sm: [3, 4] },
+		generous: { amount: 24, lg: [8, 3], md: [6, 4], sm: [4, 6] },
+		standard: { amount: 18, lg: [6, 3], md: [6, 3], sm: [3, 6] },
+		scant: { amount: 12, lg: [4, 3], md: [4, 3], sm: [3, 4] },
 	},
 };
+
+const createGridAutoTemplate = (props: [number, number]) => css`
+	grid-template-columns: ${`repeat(${props[0]}, auto)`};
+	grid-template-rows: ${`repeat(${props[1]}, auto)`};
+`;
 
 const Layout = styled.section`
 	height: 100vh;
@@ -29,6 +36,7 @@ const Layout = styled.section`
 	position: relative;
 	padding: ${() => getPaddingFromOption(layoutOption.padding.lg)};
 	perspective: 2000px;
+	overflow-y: hidden;
 	@media screen and (max-width: 1024px) {
 		display: flex;
 		flex-direction: column;
@@ -39,11 +47,11 @@ const Layout = styled.section`
 const CardStyle = styled.div`
 	${fullWidthHeight}
 	transform-origin: 0% 0%;
-	font-size: 3vw;
+	font-size: 2vw;
 	color: red;
 	transform-style: preserve-3d;
 	position: relative;
-	border-radius: ${cardOption.borderRadius};
+	border-radius: ${cardOptions.borderRadius};
 	& .Forward,
 	.Reverse {
 		position: absolute;
@@ -53,15 +61,18 @@ const CardStyle = styled.div`
 		transition: filter 0.3s ease;
 		display: flex;
 		justify-content: center;
+		align-items: center;
+		user-select: none;
 	}
 	& .Forward {
 		background-color: yellow;
-		cursor: pointer;
 	}
 	& .Reverse {
+		font-size: 1.5em;
 		background-color: var(--color-royalBlue);
 		color: pink;
 		transform: rotateY(180deg);
+		cursor: default;
 	}
 `;
 
@@ -70,13 +81,14 @@ const CardWrapper = styled.div`
 	justify-content: center;
 	align-items: center;
 	position: relative;
-	border-radius: ${cardOption.borderRadius};
+	border-radius: ${cardOptions.borderRadius};
+	cursor: pointer;
 	aspect-ratio: 1/1.6;
 	& .InnerShadow,
 	.OuterShadow {
 		${fullWidthHeight}
 		position: absolute;
-		border-radius: ${cardOption.borderRadius};
+		border-radius: ${cardOptions.borderRadius};
 	}
 	& .InnerShadow {
 		box-shadow: inset 0px 0px 24px 4px #000000;
@@ -94,34 +106,112 @@ const CardWrapper = styled.div`
 	}
 `;
 
-const GameBoardLayout = styled.div<GameBoardLayoutProps>`
+const GameBoardLayout = styled.section<GameBoardLayoutProps>`
+	position: relative;
 	height: 100%;
 	display: grid;
-	grid-template-columns: ${(props) => `repeat(${props.$cardLayout.lg[0]}, auto)`};
-	grid-template-rows: ${(props) => `repeat(${props.$cardLayout.lg[1]}, 1fr)`};
+	${(props) => createGridAutoTemplate(props.$cardLayout.lg)}
 	place-content: center center;
 	place-items: center center;
-	gap: ${cardOption.gap}px;
+	gap: 24px;
 	${CardWrapper} {
-		/* grid가 item의 크기를 예측하게 하려면 사이즈가 명시적이어야함 (%단위 X) */
-		height: calc(
-			(
-				${(props) => {
-					const { top, bottom } = layoutOption.padding.lg;
-					const {
-						$cardLayout: {
-							lg: [_, rows],
-						},
-					} = props;
-					return `(100vh - ${(rows - 1) * cardOption.gap + top + bottom}px) / ${rows}`;
-				}}
-			)
-		);
+		width: 8vw;
+	}
+	@media screen and (max-width: 1024px) {
+		${(props) => createGridAutoTemplate(props.$cardLayout.md)}
+		gap: 18px;
+	}
+	@media screen and (max-width: 640px) {
+		${(props) => createGridAutoTemplate(props.$cardLayout.sm)}
+		gap: 12px;
 	}
 `;
 
-const Card = ({ children }: { children: ReactNode }) => {
-	const [cardState, setCardState] = useState<'forward' | 'reverse'>('forward');
+const TitleWord = styled.div<SetQuantityButton>`
+	display: inline-block;
+	${(props) =>
+		props.$isRun &&
+		slideIn({
+			direction: 'vertical',
+			distance: 900,
+			duration: 0.35,
+			name: `drop`,
+			seqDirection: 'reverse',
+			isFaded: false,
+			delay: 0.25,
+		})}
+	& .Inner {
+		display: inline-block;
+		${(props) =>
+			props.$isRun &&
+			rotate({
+				name: 'letter',
+				duration: 0.4,
+				delay: 0.2,
+				degree: props.$index % 2 === 1 ? 50 : -50,
+				timingFunc: 'ease-in',
+			})}
+	}
+`;
+
+const LobbyLayout = styled.div`
+	${fullWidthHeight}
+	background-color: var(--bgColor-dark);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 32px;
+	position: absolute;
+	font-size: 3rem;
+	padding-bottom: 120px;
+	text-align: center;
+`;
+
+const SetQuantityButton = styled.button<SetQuantityButton>`
+	border-radius: 12px;
+	width: max(300px, 15vw);
+	cursor: pointer;
+	${(props) =>
+		props.$isRun &&
+		slideIn({
+			direction: 'vertical',
+			distance: 800,
+			duration: 0.45,
+			name: `drop`,
+			seqDirection: 'reverse',
+			isFaded: false,
+			delay: (3 - props.$index) / 20,
+		})}
+	& .Inner {
+		${fullWidthHeight}
+		border-radius: 12px;
+		padding: 8px 0;
+		font-size: 0.7em;
+		background-color: yellow;
+		color: red;
+		${(props) =>
+			props.$isRun &&
+			rotate({
+				name: 'button',
+				duration: 0.45,
+				delay: (3 - props.$index) / 20,
+				degree: props.$index % 2 === 1 ? 50 : -50,
+				timingFunc: 'ease-in',
+			})}
+		transition:
+		background-color 0.2s ease,
+		color 0.2s ease;
+		&:hover {
+			background-color: var(--color-royalBlue);
+			color: violet;
+		}
+	}
+`;
+
+const Card = ({ cardId, order, isChecked, isFlipped }: CardProps) => {
+	const { cards, setCards, prevCard, setPrevCard, wait, setWait } = useCardFlipperContext();
+	const newWait = useRef(false);
 	const cardRef = useRef<{ flipable: boolean; element: { current: HTMLDivElement | null } }>({
 		flipable: true,
 		element: { current: null },
@@ -131,15 +221,15 @@ const Card = ({ children }: { children: ReactNode }) => {
 	 *  currentTarget을 null로 뱉어내는 에러를 해결하기 위해서는 currentTarget을 따로 불러와야 하며 이렇게 하면
 	 *  풀링으로 이벤트 객체를 재사용하지 않고 최신 currentTarget을 불러온다고 한다.(정확하지 않음)
 	 * */
+
 	const onCardMove = (
 		event: React.MouseEvent<HTMLDivElement>,
 		currentTarget: EventTarget & HTMLDivElement
 	) => {
 		const {
 			element: { current },
-			flipable,
 		} = cardRef.current;
-		if (!current || !flipable) return;
+		if (!current || isFlipped || wait || newWait.current) return;
 		const { clientX, clientY } = event;
 		const { left, top, width, height } = currentTarget.getBoundingClientRect();
 		const normalizedMouseX = (clientX - left) / width;
@@ -151,68 +241,182 @@ const Card = ({ children }: { children: ReactNode }) => {
 			normalizedMouseY
 		)}deg) rotateY(-${rotateClamp(normalizedMouseX)}deg);`;
 	};
-	const handleThrottledMouseMove = useRef(throttle(onCardMove, 150));
+	const handleThrottledMouseMove = throttle(onCardMove, 150);
 	const onCardLeave = () => {
-		/* mouseLeave이후에도 지연된 호출이 작동하는 것을 방지하기 위한 쓰로틀링 타이머 캔슬 */
-		handleThrottledMouseMove.current.cancel();
 		const {
 			element: { current },
-			flipable,
 		} = cardRef.current;
-		if (!current || !flipable) return;
+		/* mouseLeave이후에도 지연된 호출이 작동하는 것을 방지하기 위한 쓰로틀링 타이머 캔슬 */
+		handleThrottledMouseMove.cancel();
+		if (!current || isFlipped || wait || newWait.current) return;
 		current.style.cssText = `transition: transform 0.5s ease; transform: rotateX(0) rotateY(0);`;
 	};
-	const onFlip = () => {
-		const card = cardRef.current;
+	const flip = <T extends HTMLElement>(
+		card: {
+			flipable: boolean;
+			element: { current: T | null };
+		},
+		direction: 'forward' | 'reverse'
+	) => {
 		if (!card.element.current) return;
-		card.flipable = false;
-		card.element.current.style.cssText = `transition: transform 0.5s ease, transform-origin 0.5s ease; transform-origin:center; transform:rotateY(180deg);`;
-		setTimeout(() => {
-			setCardState((p) => (p === 'forward' ? 'reverse' : 'forward'));
-		}, 155);
+		card.element.current.style.cssText = `transition: transform 0.5s ease, transform-origin 0.5s ease; transform-origin:center; transform:rotateY(${
+			direction === 'forward' ? 0 : 180
+		}deg);`;
+		if (direction === 'forward') {
+			newWait.current = true;
+			setTimeout(() => {
+				newWait.current = false;
+			}, 500);
+		}
 	};
+	const onCardClick = () => {
+		const card = cardRef.current;
+		if (!card.element.current || isFlipped || wait) return;
+		handleThrottledMouseMove.cancel();
+		const [prevId] = prevCard;
+		setCards((p) => {
+			if (p === null) return null;
+			return p.map((arr) =>
+				arr.cardId === cardId && arr.order === order ? { ...arr, isFlipped: true } : arr
+			);
+		});
+		if (prevCard.length > 0) {
+			if (prevId === cardId) {
+				setCards((p) => {
+					if (p === null) return null;
+					return p.map((arr) => (arr.cardId === cardId ? { ...arr, isChecked: true } : arr));
+				});
+			} else {
+				setWait(true);
+				setTimeout(() => {
+					setCards((p) => {
+						if (p === null) return null;
+						return p.map((arr) =>
+							arr.cardId === cardId || arr.cardId === prevId ? { ...arr, isFlipped: false } : arr
+						);
+					});
+					setWait(false);
+				}, 500);
+			}
+			setPrevCard([]);
+		} else {
+			setPrevCard([cardId]);
+		}
+	};
+	useEffect(() => {
+		isFlipped
+			? flip<HTMLDivElement>(cardRef.current, 'reverse')
+			: flip<HTMLDivElement>(cardRef.current, 'forward');
+	}, [isFlipped]);
 	return (
 		<CardWrapper
 			onMouseMove={(e) => {
-				handleThrottledMouseMove.current(e, e.currentTarget);
+				handleThrottledMouseMove(e, e.currentTarget);
 			}}
 			onMouseLeave={onCardLeave}
-			onClick={() => {
-				cardState === 'forward' && onFlip();
-			}}
+			onClick={onCardClick}
 		>
 			<div className="InnerShadow" />
 			<div className="OuterShadow" />
 			<CardStyle ref={cardRef.current.element}>
-				<div className="Reverse">Rear</div>
-				<div className="Forward">{children}</div>
+				<div className="Reverse">{cardId + 1}</div>
+				<div className="Forward">Front</div>
 			</CardStyle>
 		</CardWrapper>
 	);
 };
 
-const GameBoard = () => {
-	const originalArray = Array.from({ length: 12 }, (_, cardId) => ({
-		cardId,
-		isFliped: false,
-		isSelected: false,
-	}));
-	const shuffledArray = shuffleArray([...originalArray, ...deepCopy(originalArray)]);
-	const [cards, setCards] = useState(shuffledArray);
+const Lobby = () => {
+	const {
+		setCards,
+		setGameState,
+		gameState: { playState },
+	} = useCardFlipperContext();
+	const { layoutRules } = cardOptions;
+	const getOriginalCardSets = (length: number): Card[] =>
+		Array.from({ length }, (_, cardId) => ({
+			cardId,
+			order: 1,
+			isChecked: false,
+			isFlipped: false,
+		}));
+	const onAmountClick = (quantity: CardQuantity) => {
+		const { amount } = cardOptions.layoutRules[quantity];
+		const cardsHalf = getOriginalCardSets(amount / 2);
+		const shuffledCards = shuffleArray([
+			...cardsHalf,
+			...deepCopy(cardsHalf).map((arr) => ({ ...arr, order: 2 }) satisfies Card),
+		]);
+		setCards(shuffledCards);
+		setGameState({ playState: 'playing', quantity });
+	};
 	return (
-		<GameBoardLayout $cardLayout={cardOption.layoutRules.generous}>
-			{cards.map((card, id) => (
-				<Card key={id}>{card.cardId}</Card>
-			))}
+		<LobbyLayout>
+			<div className="Title">
+				{'Choose the quantity of cards.'.split(' ').map((word, id, source) => (
+					<TitleWord key={word} $index={id} $isRun={playState === 'playing'}>
+						<span className="Inner">{word}</span>
+						{id < source.length - 1 && <span>&nbsp;</span>}
+					</TitleWord>
+				))}
+			</div>
+			{(Object.keys(layoutRules) as CardQuantity[]).map((key, id) => {
+				const { amount } = layoutRules[key];
+				return (
+					<SetQuantityButton
+						key={key}
+						$index={id}
+						$isRun={playState === 'playing'}
+						onClick={() => {
+							onAmountClick(key);
+						}}
+					>
+						<div className="Inner">{`${amount}`}</div>
+					</SetQuantityButton>
+				);
+			})}
+		</LobbyLayout>
+	);
+};
+
+const GameBoard = () => {
+	const {
+		gameState: { quantity, playState },
+		cards,
+		lazyPlayState,
+	} = useCardFlipperContext();
+	return (
+		<GameBoardLayout
+			$cardLayout={quantity ? cardOptions.layoutRules[quantity] : cardOptions.layoutRules.generous}
+		>
+			{playState === 'ready' || lazyPlayState === 'ready' || cards === null ? (
+				<Lobby />
+			) : (
+				cards.map((card, id) => {
+					// console.log('executed');
+					const { cardId, order, isChecked, isFlipped } = card;
+					return (
+						<Card
+							key={`${cardId}_${order}`}
+							cardId={cardId}
+							order={order}
+							isChecked={isChecked}
+							isFlipped={isFlipped}
+						/>
+					);
+				})
+			)}
 		</GameBoardLayout>
 	);
 };
 
 const CardFlipper = () => {
 	return (
-		<Layout>
-			<GameBoard />
-		</Layout>
+		<CardFlipperProvider>
+			<Layout>
+				<GameBoard />
+			</Layout>
+		</CardFlipperProvider>
 	);
 };
 
