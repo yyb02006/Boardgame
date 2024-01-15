@@ -23,4 +23,6 @@ interface GameBoardLayoutProps {
 	$cardLayout: Record<BreakPoints, [number, number]>;
 }
 
-/** Routes Components Types */
+/** React Components Types */
+
+interface CardProps extends Card {}

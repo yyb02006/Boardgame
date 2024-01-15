@@ -4,10 +4,13 @@ type Seconds = number;
 
 /* CardFlipper's Context Types */
 
+type PrevCard = [number] | [];
+
 interface Card {
 	cardId: number;
-	isFliped: boolean;
-	isSelected: boolean;
+	order: 1 | 2;
+	isChecked: boolean;
+	isFlipped: boolean;
 }
 
 interface CardFlipperGameState {
@@ -20,6 +23,10 @@ interface CardFlipperContext {
 	setGameState: React.Dispatch<React.SetStateAction<CardFlipperGameState>>;
 	cards: Card[] | null;
 	setCards: React.Dispatch<React.SetStateAction<Card[] | null>>;
+	prevCard: PrevCard;
+	setPrevCard: React.Dispatch<React.SetStateAction<PrevCard>>;
+	wait: boolean;
+	setWait: React.Dispatch<React.SetStateAction<boolean>>;
 	lazyPlayState: Exclude<PlayState, 'draw'>;
 }
 
