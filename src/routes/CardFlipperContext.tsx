@@ -1,5 +1,5 @@
 import useLazyState from '#hooks/useLazyState';
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useRef } from 'react';
 
 const CardFlipperContext = createContext<CardFlipperContext | undefined>(undefined);
 
@@ -8,7 +8,7 @@ export function CardFlipperProvider({ children }: { children: React.ReactNode })
 	const [gameState, setGameState] = useState<CardFlipperGameState>(initialGameState);
 	const [cards, setCards] = useState<Card[] | null>(null);
 	const [prevCard, setPrevCard] = useState<PrevCard>([]);
-	const [wait, setWait] = useState(false);
+	const [isUnmatchedCardFlipping, setIsUnmatchedCardFlipping] = useState(false);
 	const lazyPlayState = useLazyState(600, gameState.playState, 'ready');
 	const contextValue: CardFlipperContext = {
 		gameState,
@@ -17,8 +17,8 @@ export function CardFlipperProvider({ children }: { children: React.ReactNode })
 		setCards,
 		prevCard,
 		setPrevCard,
-		wait,
-		setWait,
+		isUnmatchedCardFlipping,
+		setIsUnmatchedCardFlipping,
 		lazyPlayState,
 	};
 	return <CardFlipperContext.Provider value={contextValue}>{children}</CardFlipperContext.Provider>;

@@ -25,8 +25,8 @@ interface CardFlipperContext {
 	setCards: React.Dispatch<React.SetStateAction<Card[] | null>>;
 	prevCard: PrevCard;
 	setPrevCard: React.Dispatch<React.SetStateAction<PrevCard>>;
-	wait: boolean;
-	setWait: React.Dispatch<React.SetStateAction<boolean>>;
+	isUnmatchedCardFlipping: boolean;
+	setIsUnmatchedCardFlipping: React.Dispatch<React.SetStateAction<boolean>>;
 	lazyPlayState: Exclude<PlayState, 'draw'>;
 }
 

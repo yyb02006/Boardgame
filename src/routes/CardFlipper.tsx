@@ -1,7 +1,7 @@
 import { capitalizeFirstLetter, deepCopy, getPaddingFromOption, shuffleArray } from '#libs/utils';
 import { fullWidthHeight } from '#styles/theme';
 import { setWith, throttle } from 'lodash';
-import React, { type ReactNode, useRef, useState, useContext, useEffect } from 'react';
+import React, { type ReactNode, useRef, useState, useContext, useEffect, useCallback } from 'react';
 import styled, { css } from 'styled-components';
 import { CardFlipperProvider, useCardFlipperContext } from './CardFlipperContext';
 import { rotate, slideIn } from '#styles/animations';
@@ -209,27 +209,29 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 	}
 `;
 
-const Card = ({ cardId, order, isChecked, isFlipped }: CardProps) => {
-	const { cards, setCards, prevCard, setPrevCard, wait, setWait } = useCardFlipperContext();
-	const newWait = useRef(false);
+const Card = ({ cardId, order, isFlipped }: CardProps) => {
+	const { setCards, prevCard, setPrevCard, isUnmatchedCardFlipping, setIsUnmatchedCardFlipping } =
+		useCardFlipperContext();
+	const flipForwardPresence = useRef(false);
 	const cardRef = useRef<{ flipable: boolean; element: { current: HTMLDivElement | null } }>({
 		flipable: true,
 		element: { current: null },
 	});
-	/**
-	 *  throttle함수와 이벤트풀링으로 인해 event콜백 함수가 호출된 시점과 event가 발생한 시점이 서로 달라
-	 *  currentTarget을 null로 뱉어내는 에러를 해결하기 위해서는 currentTarget을 따로 불러와야 하며 이렇게 하면
-	 *  풀링으로 이벤트 객체를 재사용하지 않고 최신 currentTarget을 불러온다고 한다.(정확하지 않음)
-	 * */
+	/*
+	throttle함수와 이벤트풀링으로 인해 event콜백 함수가 호출된 시점과 event가 발생한 시점이 서로 달라
+	currentTarget을 null로 뱉어내는 에러를 해결하기 위해서는 currentTarget을 따로 불러와야 하며 이렇게 하면
+	풀링으로 이벤트 객체를 재사용하지 않고 최신 currentTarget을 불러온다고 한다.(정확하지 않음)
+	*/
+	const getCardElement = (card: typeof cardRef) => {
+		return card.current.element.current;
+	};
 
 	const onCardMove = (
 		event: React.MouseEvent<HTMLDivElement>,
 		currentTarget: EventTarget & HTMLDivElement
 	) => {
-		const {
-			element: { current },
-		} = cardRef.current;
-		if (!current || isFlipped || wait || newWait.current) return;
+		const current = getCardElement(cardRef);
+		if (!current || isFlipped || isUnmatchedCardFlipping || flipForwardPresence.current) return;
 		const { clientX, clientY } = event;
 		const { left, top, width, height } = currentTarget.getBoundingClientRect();
 		const normalizedMouseX = (clientX - left) / width;
@@ -241,16 +243,16 @@ const Card = ({ cardId, order, isChecked, isFlipped }: CardProps) => {
 			normalizedMouseY
 		)}deg) rotateY(-${rotateClamp(normalizedMouseX)}deg);`;
 	};
-	const handleThrottledMouseMove = throttle(onCardMove, 150);
+
+	const handleThrottledMouseMove = useCallback(throttle(onCardMove, 150), [onCardMove]);
+
 	const onCardLeave = () => {
-		const {
-			element: { current },
-		} = cardRef.current;
-		/* mouseLeave이후에도 지연된 호출이 작동하는 것을 방지하기 위한 쓰로틀링 타이머 캔슬 */
+		const current = getCardElement(cardRef);
+		if (!current || isFlipped || isUnmatchedCardFlipping || flipForwardPresence.current) return;
 		handleThrottledMouseMove.cancel();
-		if (!current || isFlipped || wait || newWait.current) return;
 		current.style.cssText = `transition: transform 0.5s ease; transform: rotateX(0) rotateY(0);`;
 	};
+
 	const flip = <T extends HTMLElement>(
 		card: {
 			flipable: boolean;
@@ -258,20 +260,22 @@ const Card = ({ cardId, order, isChecked, isFlipped }: CardProps) => {
 		},
 		direction: 'forward' | 'reverse'
 	) => {
-		if (!card.element.current) return;
-		card.element.current.style.cssText = `transition: transform 0.5s ease, transform-origin 0.5s ease; transform-origin:center; transform:rotateY(${
+		const { current } = card.element;
+		if (!current) return;
+		current.style.cssText = `transition: transform 0.5s ease, transform-origin 0.5s ease; transform-origin:center; transform:rotateY(${
 			direction === 'forward' ? 0 : 180
 		}deg);`;
 		if (direction === 'forward') {
-			newWait.current = true;
+			flipForwardPresence.current = true;
 			setTimeout(() => {
-				newWait.current = false;
+				flipForwardPresence.current = false;
 			}, 500);
 		}
 	};
+
 	const onCardClick = () => {
-		const card = cardRef.current;
-		if (!card.element.current || isFlipped || wait) return;
+		const current = getCardElement(cardRef);
+		if (!current || isFlipped || isUnmatchedCardFlipping || flipForwardPresence.current) return;
 		handleThrottledMouseMove.cancel();
 		const [prevId] = prevCard;
 		setCards((p) => {
@@ -287,7 +291,7 @@ const Card = ({ cardId, order, isChecked, isFlipped }: CardProps) => {
 					return p.map((arr) => (arr.cardId === cardId ? { ...arr, isChecked: true } : arr));
 				});
 			} else {
-				setWait(true);
+				setIsUnmatchedCardFlipping(true);
 				setTimeout(() => {
 					setCards((p) => {
 						if (p === null) return null;
@@ -295,7 +299,7 @@ const Card = ({ cardId, order, isChecked, isFlipped }: CardProps) => {
 							arr.cardId === cardId || arr.cardId === prevId ? { ...arr, isFlipped: false } : arr
 						);
 					});
-					setWait(false);
+					setIsUnmatchedCardFlipping(false);
 				}, 500);
 			}
 			setPrevCard([]);
@@ -303,11 +307,21 @@ const Card = ({ cardId, order, isChecked, isFlipped }: CardProps) => {
 			setPrevCard([cardId]);
 		}
 	};
+
 	useEffect(() => {
 		isFlipped
 			? flip<HTMLDivElement>(cardRef.current, 'reverse')
 			: flip<HTMLDivElement>(cardRef.current, 'forward');
 	}, [isFlipped]);
+
+	// throttle함수가 재생성될 때, 이전 throttle함수의 타이머 취소
+	const prevThrottle = useRef<typeof handleThrottledMouseMove>();
+	useEffect(() => {
+		if (prevThrottle.current) {
+			prevThrottle.current.cancel();
+		}
+		prevThrottle.current = handleThrottledMouseMove;
+	}, [handleThrottledMouseMove, onCardMove]);
 	return (
 		<CardWrapper
 			onMouseMove={(e) => {
