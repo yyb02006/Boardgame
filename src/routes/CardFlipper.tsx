@@ -163,7 +163,7 @@ const TitleWord = styled.div<SetQuantityButton>`
 	}
 `;
 
-const LobbyLayout = styled.div`
+const LobbyLayout = styled.section`
 	${fullWidthHeight}
 	background-color: var(--bgColor-dark);
 	display: flex;
@@ -171,9 +171,6 @@ const LobbyLayout = styled.div`
 	align-items: center;
 	justify-content: center;
 	gap: 32px;
-	position: absolute;
-	left: 0;
-	top: 0;
 	font-size: 3rem;
 	padding-bottom: 120px;
 	text-align: center;
@@ -216,6 +213,23 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 		&:hover {
 			background-color: var(--color-royalBlue);
 			color: violet;
+		}
+	}
+`;
+
+const ResultScreenLayout = styled.section`
+	${fullWidthHeight}
+	color: yellow;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	padding-bottom: 120px;
+	& > button {
+		cursor: pointer;
+		color: var(--color-royalBlue);
+		&:hover {
+			color: red;
 		}
 	}
 `;
@@ -424,6 +438,24 @@ const GameBoard = () => {
 	);
 };
 
+const ResultScreen = () => {
+	const { flipCount, initializeGameData } = useCardFlipperContext();
+	const flipCountRef = useRef(flipCount);
+	return (
+		<ResultScreenLayout>
+			<div>Win!</div>
+			<div>flipCount : {flipCountRef.current}</div>
+			<button
+				onClick={() => {
+					initializeGameData();
+				}}
+			>
+				again?
+			</button>
+		</ResultScreenLayout>
+	);
+};
+
 const GameContainer = () => {
 	const { cards, setGameState, flipCount, lazyPlayState } = useCardFlipperContext();
 	useLayoutEffect(() => {
@@ -436,6 +468,8 @@ const GameContainer = () => {
 			return <Lobby />;
 		case 'playing':
 			return <GameBoard />;
+		case 'win':
+			return <ResultScreen />;
 		default:
 			return null;
 	}

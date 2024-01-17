@@ -30,6 +30,7 @@ interface CardFlipperContext {
 	flipCount: number;
 	setFlipCount: React.Dispatch<React.SetStateAction<number>>;
 	lazyPlayState: Exclude<PlayState, 'draw'>;
+	initializeGameData: () => void;
 }
 
 /* BorderGame's Context Types */
