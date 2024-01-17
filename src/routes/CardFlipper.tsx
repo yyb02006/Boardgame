@@ -213,24 +213,16 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 	const { setCards, prevCard, setPrevCard, isUnmatchedCardFlipping, setIsUnmatchedCardFlipping } =
 		useCardFlipperContext();
 	const flipForwardPresence = useRef(false);
-	const cardRef = useRef<{ flipable: boolean; element: { current: HTMLDivElement | null } }>({
-		flipable: true,
-		element: { current: null },
-	});
-	/*
-	throttle함수와 이벤트풀링으로 인해 event콜백 함수가 호출된 시점과 event가 발생한 시점이 서로 달라
-	currentTarget을 null로 뱉어내는 에러를 해결하기 위해서는 currentTarget을 따로 불러와야 하며 이렇게 하면
-	풀링으로 이벤트 객체를 재사용하지 않고 최신 currentTarget을 불러온다고 한다.(정확하지 않음)
+	const cardRef = useRef<HTMLDivElement | null>(null);
+	/* 
+	element.current까지 구조분해 해버리면 current의 원시값이 null일때,
+	더 이상 cardRef.current.element.current를 참조하지 않게 됨
 	*/
-	const getCardElement = (card: typeof cardRef) => {
-		return card.current.element.current;
-	};
-
 	const onCardMove = (
 		event: React.MouseEvent<HTMLDivElement>,
 		currentTarget: EventTarget & HTMLDivElement
 	) => {
-		const current = getCardElement(cardRef);
+		const { current } = cardRef;
 		if (!current || isFlipped || isUnmatchedCardFlipping || flipForwardPresence.current) return;
 		const { clientX, clientY } = event;
 		const { left, top, width, height } = currentTarget.getBoundingClientRect();
@@ -247,22 +239,15 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 	const handleThrottledMouseMove = useCallback(throttle(onCardMove, 150), [onCardMove]);
 
 	const onCardLeave = () => {
-		const current = getCardElement(cardRef);
+		const { current } = cardRef;
 		if (!current || isFlipped || isUnmatchedCardFlipping || flipForwardPresence.current) return;
 		handleThrottledMouseMove.cancel();
 		current.style.cssText = `transition: transform 0.5s ease; transform: rotateX(0) rotateY(0);`;
 	};
 
-	const flip = <T extends HTMLElement>(
-		card: {
-			flipable: boolean;
-			element: { current: T | null };
-		},
-		direction: 'forward' | 'reverse'
-	) => {
-		const { current } = card.element;
-		if (!current) return;
-		current.style.cssText = `transition: transform 0.5s ease, transform-origin 0.5s ease; transform-origin:center; transform:rotateY(${
+	const flip = <T extends HTMLElement>(card: T | null, direction: 'forward' | 'reverse') => {
+		if (!card) return;
+		card.style.cssText = `transition: transform 0.5s ease, transform-origin 0.5s ease; transform-origin:center; transform:rotateY(${
 			direction === 'forward' ? 0 : 180
 		}deg);`;
 		if (direction === 'forward') {
@@ -274,7 +259,7 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 	};
 
 	const onCardClick = () => {
-		const current = getCardElement(cardRef);
+		const { current } = cardRef;
 		if (!current || isFlipped || isUnmatchedCardFlipping || flipForwardPresence.current) return;
 		handleThrottledMouseMove.cancel();
 		const [prevId] = prevCard;
@@ -314,7 +299,7 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 			: flip<HTMLDivElement>(cardRef.current, 'forward');
 	}, [isFlipped]);
 
-	// throttle함수가 재생성될 때, 이전 throttle함수의 타이머 취소
+	// throttle함수가 재생성될 때, 이전 throttle함수의 타이머 취소 커스텀훅으로 ㄱㄱ
 	const prevThrottle = useRef<typeof handleThrottledMouseMove>();
 	useEffect(() => {
 		if (prevThrottle.current) {
@@ -325,6 +310,11 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 	return (
 		<CardWrapper
 			onMouseMove={(e) => {
+				/*
+				throttle함수를 사용할 때 이벤트풀링으로 인해 event콜백 함수가 호출된 시점과 event가 발생한 시점이 서로 달라
+				event.currentTarget을 null로 뱉어내는 에러를 해결하기 위해서는 currentTarget을 따로 불러와야 하며 이렇게 하면
+				풀링으로 이벤트 객체를 재사용하지 않고 최신 currentTarget을 불러온다고 한다.(정확하지 않음)
+				*/
 				handleThrottledMouseMove(e, e.currentTarget);
 			}}
 			onMouseLeave={onCardLeave}
@@ -332,7 +322,7 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 		>
 			<div className="InnerShadow" />
 			<div className="OuterShadow" />
-			<CardStyle ref={cardRef.current.element}>
+			<CardStyle ref={cardRef}>
 				<div className="Reverse">{cardId + 1}</div>
 				<div className="Forward">Front</div>
 			</CardStyle>
