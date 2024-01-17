@@ -1,7 +1,15 @@
 import { capitalizeFirstLetter, deepCopy, getPaddingFromOption, shuffleArray } from '#libs/utils';
 import { fullWidthHeight } from '#styles/theme';
 import { setWith, throttle } from 'lodash';
-import React, { type ReactNode, useRef, useState, useContext, useEffect, useCallback } from 'react';
+import React, {
+	type ReactNode,
+	useRef,
+	useState,
+	useContext,
+	useEffect,
+	useCallback,
+	useLayoutEffect,
+} from 'react';
 import styled, { css } from 'styled-components';
 import { CardFlipperProvider, useCardFlipperContext } from './CardFlipperContext';
 import { rotate, slideIn } from '#styles/animations';
@@ -232,7 +240,9 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 		currentTarget: EventTarget & HTMLDivElement
 	) => {
 		const { current } = cardRef;
+		console.log('Move', flipForwardPresence.current);
 		if (!current || isFlipped || isUnmatchedCardFlipping || flipForwardPresence.current) return;
+		console.log('Move');
 		const { clientX, clientY } = event;
 		const { left, top, width, height } = currentTarget.getBoundingClientRect();
 		const normalizedMouseX = (clientX - left) / width;
@@ -249,7 +259,9 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 
 	const onCardLeave = () => {
 		const { current } = cardRef;
+		console.log('Leave', flipForwardPresence.current);
 		if (!current || isFlipped || isUnmatchedCardFlipping || flipForwardPresence.current) return;
+		console.log('Leave');
 		handleThrottledMouseMove.cancel();
 		current.style.cssText = `transition: transform 0.5s ease; transform: rotateX(0) rotateY(0);`;
 	};
@@ -262,6 +274,7 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 		if (direction === 'forward') {
 			flipForwardPresence.current = true;
 			setTimeout(() => {
+				handleThrottledMouseMove.cancel();
 				flipForwardPresence.current = false;
 			}, 500);
 		}
@@ -413,7 +426,12 @@ const GameBoard = () => {
 };
 
 const GameContainer = () => {
-	const { lazyPlayState } = useCardFlipperContext();
+	const { cards, setGameState, flipCount, lazyPlayState } = useCardFlipperContext();
+	useLayoutEffect(() => {
+		cards?.some((arr) => !arr.isChecked) === false &&
+			setGameState((p) => ({ ...p, playState: 'win' }));
+	}, [flipCount]);
+	// console.log('Container Rendered');
 	switch (lazyPlayState) {
 		case 'ready':
 			return <Lobby />;
