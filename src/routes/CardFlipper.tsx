@@ -227,6 +227,7 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 		setPrevCard,
 		isUnmatchedCardFlipping,
 		setIsUnmatchedCardFlipping,
+		flipCount,
 		setFlipCount,
 	} = useCardFlipperContext();
 	const flipForwardPresence = useRef(false);
@@ -240,9 +241,7 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 		currentTarget: EventTarget & HTMLDivElement
 	) => {
 		const { current } = cardRef;
-		console.log('Move', flipForwardPresence.current);
 		if (!current || isFlipped || isUnmatchedCardFlipping || flipForwardPresence.current) return;
-		console.log('Move');
 		const { clientX, clientY } = event;
 		const { left, top, width, height } = currentTarget.getBoundingClientRect();
 		const normalizedMouseX = (clientX - left) / width;
@@ -259,9 +258,7 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 
 	const onCardLeave = () => {
 		const { current } = cardRef;
-		console.log('Leave', flipForwardPresence.current);
 		if (!current || isFlipped || isUnmatchedCardFlipping || flipForwardPresence.current) return;
-		console.log('Leave');
 		handleThrottledMouseMove.cancel();
 		current.style.cssText = `transition: transform 0.5s ease; transform: rotateX(0) rotateY(0);`;
 	};
@@ -317,9 +314,11 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 	};
 
 	useEffect(() => {
-		isFlipped
-			? flip<HTMLDivElement>(cardRef.current, 'reverse')
-			: flip<HTMLDivElement>(cardRef.current, 'forward');
+		if (flipCount) {
+			isFlipped
+				? flip<HTMLDivElement>(cardRef.current, 'reverse')
+				: flip<HTMLDivElement>(cardRef.current, 'forward');
+		}
 	}, [isFlipped]);
 
 	useThrottleClear(handleThrottledMouseMove, [onCardMove]);
