@@ -55,8 +55,8 @@ const CardStyle = styled.div`
 	border-radius: ${cardOptions.borderRadius};
 	& .Forward,
 	.Reverse {
-		position: absolute;
 		${fullWidthHeight}
+		position: absolute;
 		border-radius: inherit;
 		backface-visibility: hidden;
 		transition: filter 0.3s ease;
@@ -164,6 +164,8 @@ const LobbyLayout = styled.div`
 	justify-content: center;
 	gap: 32px;
 	position: absolute;
+	left: 0;
+	top: 0;
 	font-size: 3rem;
 	padding-bottom: 120px;
 	text-align: center;
@@ -211,8 +213,14 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 `;
 
 const Card = ({ cardId, order, isFlipped }: CardProps) => {
-	const { setCards, prevCard, setPrevCard, isUnmatchedCardFlipping, setIsUnmatchedCardFlipping } =
-		useCardFlipperContext();
+	const {
+		setCards,
+		prevCard,
+		setPrevCard,
+		isUnmatchedCardFlipping,
+		setIsUnmatchedCardFlipping,
+		setFlipCount,
+	} = useCardFlipperContext();
 	const flipForwardPresence = useRef(false);
 	const cardRef = useRef<HTMLDivElement | null>(null);
 	/* 
@@ -270,6 +278,7 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 				arr.cardId === cardId && arr.order === order ? { ...arr, isFlipped: true } : arr
 			);
 		});
+		setFlipCount((p) => p + 1);
 		if (prevCard.length > 0) {
 			if (prevId === cardId) {
 				setCards((p) => {
@@ -301,8 +310,6 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 	}, [isFlipped]);
 
 	useThrottleClear(handleThrottledMouseMove, [onCardMove]);
-
-	// throttle함수가 재생성될 때, 이전 throttle함수의 타이머 취소 커스텀훅으로 ㄱㄱ
 	return (
 		<CardWrapper
 			onMouseMove={(e) => {
@@ -381,40 +388,47 @@ const Lobby = () => {
 
 const GameBoard = () => {
 	const {
-		gameState: { quantity, playState },
+		gameState: { quantity },
 		cards,
-		lazyPlayState,
 	} = useCardFlipperContext();
 	return (
 		<GameBoardLayout
 			$cardLayout={quantity ? cardOptions.layoutRules[quantity] : cardOptions.layoutRules.generous}
 		>
-			{playState === 'ready' || lazyPlayState === 'ready' || cards === null ? (
-				<Lobby />
-			) : (
-				cards.map((card, id) => {
-					// console.log('executed');
-					const { cardId, order, isChecked, isFlipped } = card;
-					return (
-						<Card
-							key={`${cardId}_${order}`}
-							cardId={cardId}
-							order={order}
-							isChecked={isChecked}
-							isFlipped={isFlipped}
-						/>
-					);
-				})
-			)}
+			{cards?.map((card) => {
+				// console.log('executed');
+				const { cardId, order, isChecked, isFlipped } = card;
+				return (
+					<Card
+						key={`${cardId}_${order}`}
+						cardId={cardId}
+						order={order}
+						isChecked={isChecked}
+						isFlipped={isFlipped}
+					/>
+				);
+			})}
 		</GameBoardLayout>
 	);
+};
+
+const GameContainer = () => {
+	const { lazyPlayState } = useCardFlipperContext();
+	switch (lazyPlayState) {
+		case 'ready':
+			return <Lobby />;
+		case 'playing':
+			return <GameBoard />;
+		default:
+			return null;
+	}
 };
 
 const CardFlipper = () => {
 	return (
 		<CardFlipperProvider>
 			<Layout>
-				<GameBoard />
+				<GameContainer />
 			</Layout>
 		</CardFlipperProvider>
 	);

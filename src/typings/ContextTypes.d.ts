@@ -27,6 +27,8 @@ interface CardFlipperContext {
 	setPrevCard: React.Dispatch<React.SetStateAction<PrevCard>>;
 	isUnmatchedCardFlipping: boolean;
 	setIsUnmatchedCardFlipping: React.Dispatch<React.SetStateAction<boolean>>;
+	flipCount: number;
+	setFlipCount: React.Dispatch<React.SetStateAction<number>>;
 	lazyPlayState: Exclude<PlayState, 'draw'>;
 }
 

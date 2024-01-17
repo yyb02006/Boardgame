@@ -9,6 +9,7 @@ export function CardFlipperProvider({ children }: { children: React.ReactNode })
 	const [cards, setCards] = useState<Card[] | null>(null);
 	const [prevCard, setPrevCard] = useState<PrevCard>([]);
 	const [isUnmatchedCardFlipping, setIsUnmatchedCardFlipping] = useState(false);
+	const [flipCount, setFlipCount] = useState(0);
 	const lazyPlayState = useLazyState(600, gameState.playState, 'ready');
 	const contextValue: CardFlipperContext = {
 		gameState,
@@ -19,6 +20,8 @@ export function CardFlipperProvider({ children }: { children: React.ReactNode })
 		setPrevCard,
 		isUnmatchedCardFlipping,
 		setIsUnmatchedCardFlipping,
+		flipCount,
+		setFlipCount,
 		lazyPlayState,
 	};
 	return <CardFlipperContext.Provider value={contextValue}>{children}</CardFlipperContext.Provider>;
