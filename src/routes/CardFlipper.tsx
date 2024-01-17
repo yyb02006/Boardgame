@@ -5,6 +5,7 @@ import React, { type ReactNode, useRef, useState, useContext, useEffect, useCall
 import styled, { css } from 'styled-components';
 import { CardFlipperProvider, useCardFlipperContext } from './CardFlipperContext';
 import { rotate, slideIn } from '#styles/animations';
+import useThrottleClear from '#hooks/useThrottleClear';
 
 const layoutOption = {
 	padding: {
@@ -299,14 +300,9 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 			: flip<HTMLDivElement>(cardRef.current, 'forward');
 	}, [isFlipped]);
 
+	useThrottleClear(handleThrottledMouseMove, [onCardMove]);
+
 	// throttle함수가 재생성될 때, 이전 throttle함수의 타이머 취소 커스텀훅으로 ㄱㄱ
-	const prevThrottle = useRef<typeof handleThrottledMouseMove>();
-	useEffect(() => {
-		if (prevThrottle.current) {
-			prevThrottle.current.cancel();
-		}
-		prevThrottle.current = handleThrottledMouseMove;
-	}, [handleThrottledMouseMove, onCardMove]);
 	return (
 		<CardWrapper
 			onMouseMove={(e) => {
