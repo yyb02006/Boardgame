@@ -12,6 +12,15 @@ const Layout = styled.section`
 	display: flex;
 	align-items: center;
 	z-index: 1;
+	@media screen and (max-width: 1024px) {
+		height: 80px;
+		font-size: 2rem;
+	}
+	@media screen and (max-width: 640px) {
+		height: 60px;
+		padding: 0 48px;
+		font-size: 1rem;
+	}
 `;
 
 const HeaderNav = styled(NavLink)`

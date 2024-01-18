@@ -17,8 +17,9 @@ import useThrottleClear from '#hooks/useThrottleClear';
 
 const layoutOption = {
 	padding: {
-		lg: { top: 80, right: 120, bottom: 40, left: 120 },
-		sm: { top: 80, right: 0, bottom: 40, left: 0 },
+		lg: { top: 80, right: 120, bottom: 20, left: 120 },
+		md: { top: 80, right: 0, bottom: 20, left: 0 },
+		sm: { top: 60, right: 0, bottom: 20, left: 0 },
 	},
 };
 
@@ -38,18 +39,34 @@ const createGridAutoTemplate = (props: [number, number]) => css`
 `;
 
 const Layout = styled.section`
-	height: 100vh;
+	min-height: 100vh;
 	width: 100%;
 	font-size: 5rem;
 	font-weight: 800;
 	position: relative;
 	padding: ${() => getPaddingFromOption(layoutOption.padding.lg)};
 	perspective: 2000px;
-	overflow-y: hidden;
 	@media screen and (max-width: 1024px) {
 		display: flex;
 		flex-direction: column;
+		padding: ${() => getPaddingFromOption(layoutOption.padding.md)};
+	}
+	@media screen and (max-width: 640px) {
+		display: flex;
+		flex-direction: column;
 		padding: ${() => getPaddingFromOption(layoutOption.padding.sm)};
+	}
+	& .calcMinHeight {
+		min-height: ${() => {
+			const { top, bottom } = layoutOption.padding.lg;
+			return `calc(100vh - ${top + bottom}px)`;
+		}};
+	}
+	& .calcHeight {
+		height: ${() => {
+			const { top, bottom } = layoutOption.padding.lg;
+			return `calc(100vh - ${top + bottom}px)`;
+		}};
 	}
 `;
 
@@ -122,14 +139,13 @@ const CardWrapper = styled.div`
 	}
 `;
 
-const GameBoardLayout = styled.section<GameBoardLayoutProps>`
+const CardTable = styled.section<GameBoardLayoutProps>`
 	position: relative;
-	height: 100%;
 	display: grid;
 	${(props) => createGridAutoTemplate(props.$cardLayout.lg)}
 	place-content: center center;
 	place-items: center center;
-	gap: 24px;
+	gap: min(2.2vw, 24px);
 	@media screen and (max-width: 1024px) {
 		${(props) => createGridAutoTemplate(props.$cardLayout.md)}
 		gap: 18px;
@@ -137,6 +153,43 @@ const GameBoardLayout = styled.section<GameBoardLayoutProps>`
 	@media screen and (max-width: 640px) {
 		${(props) => createGridAutoTemplate(props.$cardLayout.sm)}
 		gap: 16px;
+	}
+`;
+
+const GameBoardLayout = styled.section`
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	${CardTable} {
+		flex: 1 1;
+	}
+`;
+
+const ScoreBoard = styled.section`
+	background-color: #303030;
+	font-size: 2rem;
+	font-weight: 500;
+	padding: 12px 48px;
+	display: flex;
+	align-items: center;
+	margin-bottom: 24px;
+	& > div {
+		flex: 1 1;
+		display: flex;
+	}
+	& > div:nth-child(2) {
+		justify-content: center;
+	}
+	& > div:nth-child(3) {
+		justify-content: right;
+		color: yellow;
+		font-weight: 800;
+	}
+	@media screen and (max-width: 1024px) {
+		height: 9vw;
+		font-size: 3.5vw;
+		padding: 0 48px;
 	}
 `;
 
@@ -168,7 +221,7 @@ const TitleWord = styled.div<SetQuantityButton>`
 `;
 
 const LobbyLayout = styled.section`
-	${fullWidthHeight}
+	height: calc(100vh - 100px);
 	background-color: var(--bgColor-dark);
 	display: flex;
 	flex-direction: column;
@@ -178,6 +231,7 @@ const LobbyLayout = styled.section`
 	font-size: 3rem;
 	padding-bottom: 120px;
 	text-align: center;
+	overflow-y: hidden;
 `;
 
 const SetQuantityButton = styled.button<SetQuantityButton>`
@@ -222,7 +276,6 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 `;
 
 const ResultScreenLayout = styled.section`
-	${fullWidthHeight}
 	color: yellow;
 	display: flex;
 	flex-direction: column;
@@ -388,7 +441,7 @@ const Lobby = () => {
 		setGameState({ playState: 'playing', quantity });
 	};
 	return (
-		<LobbyLayout>
+		<LobbyLayout className="calcHeight">
 			<div className="Title">
 				{'Choose the quantity of cards.'.split(' ').map((word, id, source) => (
 					<TitleWord key={word} $index={id} $isRun={playState === 'playing'}>
@@ -420,24 +473,34 @@ const GameBoard = () => {
 	const {
 		gameState: { quantity },
 		cards,
+		flipCount,
 	} = useCardFlipperContext();
 	return (
-		<GameBoardLayout
-			$cardLayout={quantity ? cardOptions.layoutRules[quantity] : cardOptions.layoutRules.generous}
-		>
-			{cards?.map((card) => {
-				// console.log('executed');
-				const { cardId, order, isChecked, isFlipped } = card;
-				return (
-					<Card
-						key={`${cardId}_${order}`}
-						cardId={cardId}
-						order={order}
-						isChecked={isChecked}
-						isFlipped={isFlipped}
-					/>
-				);
-			})}
+		<GameBoardLayout className="calcMinHeight">
+			<ScoreBoard>
+				<div>Remains : {cards?.filter((arr) => !arr.isChecked).length}</div>
+				<div>Attempts : {flipCount}</div>
+				<div>30</div>
+			</ScoreBoard>
+			<CardTable
+				$cardLayout={
+					quantity ? cardOptions.layoutRules[quantity] : cardOptions.layoutRules.generous
+				}
+			>
+				{cards?.map((card) => {
+					// console.log('executed');
+					const { cardId, order, isChecked, isFlipped } = card;
+					return (
+						<Card
+							key={`${cardId}_${order}`}
+							cardId={cardId}
+							order={order}
+							isChecked={isChecked}
+							isFlipped={isFlipped}
+						/>
+					);
+				})}
+			</CardTable>
 		</GameBoardLayout>
 	);
 };
@@ -446,7 +509,7 @@ const ResultScreen = () => {
 	const { flipCount, initializeGameData } = useCardFlipperContext();
 	const flipCountRef = useRef(flipCount);
 	return (
-		<ResultScreenLayout>
+		<ResultScreenLayout className="calcHeight">
 			<div>Win!</div>
 			<div>flipCount : {flipCountRef.current}</div>
 			<button
