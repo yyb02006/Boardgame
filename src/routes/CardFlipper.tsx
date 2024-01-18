@@ -86,13 +86,14 @@ const CardStyle = styled.div`
 `;
 
 const CardWrapper = styled.div`
+	width: 7vw;
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	position: relative;
 	border-radius: ${cardOptions.borderRadius};
 	cursor: pointer;
-	aspect-ratio: 1/1.6;
+	aspect-ratio: 1/1.5;
 	& .InnerShadow,
 	.OuterShadow {
 		${fullWidthHeight}
@@ -113,6 +114,12 @@ const CardWrapper = styled.div`
 			filter: drop-shadow(0px 0px 12px #4444dd);
 		}
 	}
+	@media screen and (max-width: 1024px) {
+		width: 13vw;
+	}
+	@media screen and (max-width: 640px) {
+		width: 16vw;
+	}
 `;
 
 const GameBoardLayout = styled.section<GameBoardLayoutProps>`
@@ -123,16 +130,13 @@ const GameBoardLayout = styled.section<GameBoardLayoutProps>`
 	place-content: center center;
 	place-items: center center;
 	gap: 24px;
-	${CardWrapper} {
-		width: 8vw;
-	}
 	@media screen and (max-width: 1024px) {
 		${(props) => createGridAutoTemplate(props.$cardLayout.md)}
 		gap: 18px;
 	}
 	@media screen and (max-width: 640px) {
 		${(props) => createGridAutoTemplate(props.$cardLayout.sm)}
-		gap: 12px;
+		gap: 16px;
 	}
 `;
 
@@ -353,7 +357,7 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 			<div className="OuterShadow" />
 			<CardStyle ref={cardRef}>
 				<div className="Reverse">{cardId + 1}</div>
-				<div className="Forward">Front</div>
+				<div className="Forward"></div>
 			</CardStyle>
 		</CardWrapper>
 	);
