@@ -14,6 +14,10 @@ interface CardOption {
 
 /** Styled Components Types */
 
+interface ResultTextProps {
+	$delay: number;
+}
+
 interface SetQuantityButton {
 	$index: number;
 	$isRun: boolean;

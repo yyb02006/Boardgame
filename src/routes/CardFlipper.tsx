@@ -275,13 +275,17 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 	}
 `;
 
-const ResultScreenLayout = styled.section`
-	color: yellow;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-	padding-bottom: 120px;
+const ResultText = styled.div<ResultTextProps>`
+	opacity: 0;
+	${(props) =>
+		slideIn({
+			direction: 'vertical',
+			distance: -100,
+			duration: 0.2,
+			name: 'resultText',
+			seqDirection: 'normal',
+			delay: props.$delay,
+		})};
 	& > button {
 		cursor: pointer;
 		color: var(--color-royalBlue);
@@ -289,6 +293,15 @@ const ResultScreenLayout = styled.section`
 			color: red;
 		}
 	}
+`;
+
+const ResultScreenLayout = styled.section`
+	color: yellow;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	padding-bottom: 120px;
 `;
 
 const Card = ({ cardId, order, isFlipped }: CardProps) => {
@@ -510,15 +523,17 @@ const ResultScreen = () => {
 	const flipCountRef = useRef(flipCount);
 	return (
 		<ResultScreenLayout className="calcHeight">
-			<div>Win!</div>
-			<div>flipCount : {flipCountRef.current}</div>
-			<button
-				onClick={() => {
-					initializeGameData();
-				}}
-			>
-				again?
-			</button>
+			<ResultText $delay={0}>Win!</ResultText>
+			<ResultText $delay={0.2}>flipCount : {flipCountRef.current}</ResultText>
+			<ResultText $delay={0.4}>
+				<button
+					onClick={() => {
+						initializeGameData();
+					}}
+				>
+					again?
+				</button>
+			</ResultText>
 		</ResultScreenLayout>
 	);
 };
