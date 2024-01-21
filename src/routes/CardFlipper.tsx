@@ -118,7 +118,7 @@ const CardWrapper = styled.div`
 		border-radius: ${cardOptions.borderRadius};
 	}
 	& .InnerShadow {
-		box-shadow: inset 0px 0px 24px 4px #000000;
+		box-shadow: inset 0 0 24px 4px #000000;
 	}
 	&:hover {
 		& .OuterShadow {
@@ -140,13 +140,15 @@ const CardWrapper = styled.div`
 `;
 
 const ScoreBoard = styled.section`
-	background-color: #2a2a2a;
+	background-color: #181818;
 	font-size: 2rem;
 	font-weight: 500;
 	padding: 12px 48px;
 	display: flex;
 	align-items: center;
 	margin-bottom: 24px;
+	box-shadow: inset 0 0 16px 2px #000000;
+	border-radius: 24px;
 	& > div {
 		flex: 1 1;
 		display: flex;
@@ -163,6 +165,8 @@ const ScoreBoard = styled.section`
 		height: 9vw;
 		font-size: 3.5vw;
 		padding: 0 48px;
+		box-shadow: inset 0 0 1.5vw 2px #000000;
+		border-radius: 0;
 	}
 `;
 
