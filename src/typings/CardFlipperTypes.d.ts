@@ -23,7 +23,7 @@ interface SetQuantityButton {
 	$isRun: boolean;
 }
 
-interface GameBoardLayoutProps {
+interface CardTableProps {
 	$cardLayout: Record<BreakPoints, [number, number]>;
 }
 

@@ -139,7 +139,34 @@ const CardWrapper = styled.div`
 	}
 `;
 
-const CardTable = styled.section<GameBoardLayoutProps>`
+const ScoreBoard = styled.section`
+	background-color: #2a2a2a;
+	font-size: 2rem;
+	font-weight: 500;
+	padding: 12px 48px;
+	display: flex;
+	align-items: center;
+	margin-bottom: 24px;
+	& > div {
+		flex: 1 1;
+		display: flex;
+	}
+	& > div:nth-child(2) {
+		justify-content: center;
+	}
+	& > div:nth-child(3) {
+		justify-content: right;
+		color: yellow;
+		font-weight: 800;
+	}
+	@media screen and (max-width: 1024px) {
+		height: 9vw;
+		font-size: 3.5vw;
+		padding: 0 48px;
+	}
+`;
+
+const CardTable = styled.section<CardTableProps>`
 	position: relative;
 	display: grid;
 	${(props) => createGridAutoTemplate(props.$cardLayout.lg)}
@@ -163,33 +190,6 @@ const GameBoardLayout = styled.section`
 	justify-content: space-between;
 	${CardTable} {
 		flex: 1 1;
-	}
-`;
-
-const ScoreBoard = styled.section`
-	background-color: #303030;
-	font-size: 2rem;
-	font-weight: 500;
-	padding: 12px 48px;
-	display: flex;
-	align-items: center;
-	margin-bottom: 24px;
-	& > div {
-		flex: 1 1;
-		display: flex;
-	}
-	& > div:nth-child(2) {
-		justify-content: center;
-	}
-	& > div:nth-child(3) {
-		justify-content: right;
-		color: yellow;
-		font-weight: 800;
-	}
-	@media screen and (max-width: 1024px) {
-		height: 9vw;
-		font-size: 3.5vw;
-		padding: 0 48px;
 	}
 `;
 
@@ -276,22 +276,35 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 `;
 
 const ResultText = styled.div<ResultTextProps>`
-	opacity: 0;
-	${(props) =>
-		slideIn({
-			direction: 'vertical',
-			distance: -100,
-			duration: 0.2,
-			name: 'resultText',
-			seqDirection: 'normal',
-			delay: props.$delay,
-		})};
 	& > button {
 		cursor: pointer;
 		color: var(--color-royalBlue);
 		&:hover {
 			color: red;
 		}
+	}
+	&.Enter {
+		opacity: 0;
+		${(props) =>
+			slideIn({
+				direction: 'vertical',
+				distance: -100,
+				duration: 0.2,
+				name: 'textEnter',
+				seqDirection: 'normal',
+				delay: props.$delay,
+			})};
+	}
+	&.Exit {
+		${(props) =>
+			slideIn({
+				direction: 'vertical',
+				distance: -100,
+				duration: 0.2,
+				name: 'textExit',
+				seqDirection: 'reverse',
+				delay: 0.4 - props.$delay,
+			})};
 	}
 `;
 
@@ -521,14 +534,20 @@ const GameBoard = () => {
 const ResultScreen = () => {
 	const { flipCount, initializeGameData } = useCardFlipperContext();
 	const flipCountRef = useRef(flipCount);
+	const [motionClass, setMotionClass] = useState<'Enter' | 'Exit'>('Enter');
 	return (
 		<ResultScreenLayout className="calcHeight">
-			<ResultText $delay={0}>Win!</ResultText>
-			<ResultText $delay={0.2}>flipCount : {flipCountRef.current}</ResultText>
-			<ResultText $delay={0.4}>
+			<ResultText $delay={0} className={motionClass}>
+				Win!
+			</ResultText>
+			<ResultText $delay={0.2} className={motionClass}>
+				flipCount : {flipCountRef.current}
+			</ResultText>
+			<ResultText $delay={0.4} className={motionClass}>
 				<button
 					onClick={() => {
 						initializeGameData();
+						setMotionClass('Exit');
 					}}
 				>
 					again?
