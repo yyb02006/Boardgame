@@ -1,6 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useCallback, useState } from 'react';
+import React, {
+	createContext,
+	memo,
+	useCallback,
+	useContext,
+	useMemo,
+	useRef,
+	useState,
+} from 'react';
 import styled, { css } from 'styled-components';
+import { TestProvider, useTestContext } from './TestContext';
 
 const Layout = styled.section`
 	background-color: var(--bgColor-dark);
@@ -51,7 +60,10 @@ const BoardLayout = styled.div`
 	background-color: yellow;
 `;
 
-/* TestComp가 마운트될 때, 모든 클래스에 대한 함수가 실행된다. */
+/**
+ * TestComp가 마운트될 때, 모든 클래스에 대한 함수가 실행된다.
+ * log : One, Two, Three
+ * */
 const ComponentWithFunction = styled.div`
 	&.One {
 		${() => {
@@ -84,7 +96,8 @@ const ComponentWithFunction = styled.div`
  * 애니메이션은 바뀐 direction으로 키프레임이 실행된 상태에서 진행된다.
  * ex) 4초간 애니메이션을 실행하고 'reverse'상태가 되면 'reverse'로 4초간 실행된 시점으로 박스가 순간이동한다.
  * keyframes라는 이름을 생각하면 알 수 있는 부분.
- */
+ * 애니메이션의 재실행을 위해서는 동적으로 key값을 바꾸거나 class를 분기하면된다.
+ * */
 const AnimatedComp = styled.div<{ $direction: 'normal' | 'reverse' }>`
 	width: 200px;
 	height: 200px;
@@ -244,42 +257,109 @@ function fysReverse(array: number[]) {
 	}
 }
 
-/**
- * 이런 게 있을 거라고 타입스크립트에게 알려줄 수 있음.
- * declare function interfaced(arg: string): string;
- */
+const Children = memo(function Children({
+	setCount,
+}: {
+	setCount: React.Dispatch<React.SetStateAction<number>>;
+}) {
+	const { contextSecond, setContextSecond } = useTestContext();
+	console.log('Children Rendered');
+	return (
+		<div
+			onClick={() => {
+				setContextSecond((p) => p + 1);
+			}}
+		>
+			Children{contextSecond}
+		</div>
+	);
+});
+
+function Parent({ obj, func }: { obj: { a: string; b: number; c: null }; func: () => void }) {
+	const [count, setCount] = useState(0);
+	console.log('Parent Rendered');
+	func();
+	return (
+		<div>
+			<div
+				onClick={() => {
+					setCount((p) => p + 1);
+				}}
+			>
+				Parent{count}
+			</div>
+			<Children setCount={setCount}></Children>
+		</div>
+	);
+}
+
+const Uncle = memo(function Uncle() {
+	const { contextVariable, setContextVariable } = useTestContext();
+	console.log('Uncle Rendered');
+	return (
+		<div
+			onClick={() => {
+				setContextVariable((p) => p + 1);
+			}}
+		>
+			Uncle{contextVariable}
+		</div>
+	);
+});
+
+/*
+  이런 게 있을 거라고 타입스크립트에게 알려줄 수 있음.
+  declare function interfaced(arg: string): string;
+	*/
 
 const Test = () => {
 	/* 정의한 적 없지만 실행 가능, 런타임 에러
 	interfaced('dd'); */
 	const [direction, setDirection] = useState<'normal' | 'reverse'>('normal');
+	const [count, setCount] = useState(0);
+	const obj = useMemo(() => {
+		return { a: 'a', b: 2, c: null };
+	}, []);
+	const func = () => {
+		console.log('function run');
+	};
+	console.log('Container Rendered');
 	return (
-		<Layout>
-			<PerspectiveParent>
-				<div className="FirstChild"></div>
-				<div className="SecondChild"></div>
-			</PerspectiveParent>
-			<Card />
-			{/* log : One, Two, Three */}
-			<ComponentWithFunction />
-			{/* 애니메이션의 재실행을 위해서는 동적으로 key값을 바꾸거나 class를 분기하면된다. */}
-			<AnimatedComp className={direction} $direction={direction}>
-				<button
+		<TestProvider>
+			<Layout>
+				<div
 					onClick={() => {
-						setDirection((p) => (p === 'normal' ? 'reverse' : 'normal'));
+						setCount((p) => p + 1);
 					}}
 				>
-					<div>turn</div>
-				</button>
-			</AnimatedComp>
-			BorderGame
-			<BoardLayout>
-				<ShadowOnlyElement></ShadowOnlyElement>
-				<Child />
-				<Middle />
-				<Child />
-			</BoardLayout>
-		</Layout>
+					Container{count}
+				</div>
+				<Parent obj={obj} func={func}></Parent>
+				<Uncle></Uncle>
+				{/* <PerspectiveParent>
+					<div className="FirstChild"></div>
+					<div className="SecondChild"></div>
+				</PerspectiveParent>
+				<Card />
+				<ComponentWithFunction />
+				<AnimatedComp className={direction} $direction={direction}>
+					<button
+						onClick={() => {
+							setDirection((p) => (p === 'normal' ? 'reverse' : 'normal'));
+						}}
+					>
+						<div>turn</div>
+					</button>
+				</AnimatedComp>
+				BorderGame
+				<BoardLayout>
+					<ShadowOnlyElement></ShadowOnlyElement>
+					<Child />
+					<Middle />
+					<Child />
+				</BoardLayout> */}
+			</Layout>
+		</TestProvider>
 	);
 };
 

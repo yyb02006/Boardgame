@@ -14,12 +14,16 @@ interface CardOption {
 
 /** Styled Components Types */
 
+interface ResultTextProps {
+	$delay: number;
+}
+
 interface SetQuantityButton {
 	$index: number;
 	$isRun: boolean;
 }
 
-interface GameBoardLayoutProps {
+interface CardTableProps {
 	$cardLayout: Record<BreakPoints, [number, number]>;
 }
 
