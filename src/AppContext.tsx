@@ -4,7 +4,7 @@ const AppContext = createContext<AppContext | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
 	const [pageState, setPageState] = useState<PageState>('home');
-	const contextValue = { pageState };
+	const contextValue = { pageState, setPageState };
 	return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
 }
 

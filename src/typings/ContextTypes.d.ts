@@ -8,6 +8,7 @@ type PageState = 'home' | 'borderGame' | 'cardFlipper' | 'test';
 
 interface AppContext {
 	pageState: PageState;
+	setPageState: React.Dispatch<React.SetStateAction<PageState>>;
 }
 
 /* CardFlipper's Context Types */

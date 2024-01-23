@@ -5,19 +5,22 @@ import Home from '#routes/Home';
 import Test from '#routes/Test';
 import GlobalStyle from '#GlobalStyle';
 import CardFlipper from '#routes/CardFlipper';
+import { AppProvider } from '#AppContext';
 
 export default function App() {
 	return (
 		<BrowserRouter>
 			<GlobalStyle />
-			<div className="App" style={{ position: 'relative' }}>
-				<Header title={'BorderGame'} />
-				<Routes>
-					<Route path="/" element={<Home />} />
-					<Route path="/card-flipper" element={<CardFlipper />} />
-					<Route path="/Test" element={<Test />} />
-				</Routes>
-			</div>
+			<AppProvider>
+				<div className="App" style={{ position: 'relative' }}>
+					<Header title={'BorderGame'} />
+					<Routes>
+						<Route path="/" element={<Home />} />
+						<Route path="/card-flipper" element={<CardFlipper />} />
+						<Route path="/Test" element={<Test />} />
+					</Routes>
+				</div>
+			</AppProvider>
 		</BrowserRouter>
 	);
 }

@@ -1,3 +1,4 @@
+import { useAppContext } from '#AppContext';
 import { fadeInZ } from '#styles/animations';
 import { fullWidthHeight } from '#styles/theme';
 import React, { useEffect, useRef, useState } from 'react';
@@ -34,7 +35,7 @@ const HambergerMenu = styled.div`
 	width: 24px;
 	height: 24px;
 	position: relative;
-	perspective: 1000px;
+	perspective: 2000px;
 `;
 
 const MenuIcon = styled.div`
@@ -141,7 +142,22 @@ interface HeaderProps {
 	title: string;
 }
 
+const LinkWrapper = ({ to, label, page }: { to: string; label: string; page: PageState }) => {
+	const { setPageState } = useAppContext();
+	return (
+		<NavLink
+			to={to}
+			onClick={() => {
+				setPageState(page);
+			}}
+		>
+			{label}
+		</NavLink>
+	);
+};
+
 const Header = ({ title }: HeaderProps) => {
+	const { pageState } = useAppContext();
 	const [isOpen, setIsOpen] = useState(false);
 	const [isVisible, setIsVisible] = useState(false);
 	const menuToggleHandler = (isOpen: boolean) => {
@@ -155,6 +171,9 @@ const Header = ({ title }: HeaderProps) => {
 			}, 300);
 		}
 	};
+	useEffect(() => {
+		setIsOpen(false);
+	}, [pageState]);
 	return (
 		<Layout>
 			<HeaderNav to={'/'}>{title}</HeaderNav>
@@ -168,9 +187,9 @@ const Header = ({ title }: HeaderProps) => {
 						/>
 						<span className="Title">Games</span>
 						<div className="Links">
-							<NavLink to={'/'}>BorderGame</NavLink>
-							<NavLink to={'/card-flipper'}>CardFlipper</NavLink>
-							<span>Puzzles</span>
+							<LinkWrapper to="/" label="BorderGame" page="borderGame" />
+							<LinkWrapper to="/card-flipper" label="CardFlipper" page="cardFlipper" />
+							<LinkWrapper to="/test" label="Test" page="test" />
 						</div>
 					</Spread>
 				) : (
