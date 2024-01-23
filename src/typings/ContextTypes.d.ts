@@ -2,6 +2,14 @@ type PlayState = 'win' | 'draw' | 'playing' | 'ready';
 
 type Seconds = number;
 
+type PageState = 'home' | 'borderGame' | 'cardFlipper' | 'test';
+
+/* App's Context Types */
+
+interface AppContext {
+	pageState: PageState;
+}
+
 /* CardFlipper's Context Types */
 
 type PrevCard = [number] | [];
