@@ -1,5 +1,6 @@
+import { fadeInZ } from '#styles/animations';
 import { fullWidthHeight } from '#styles/theme';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -63,7 +64,6 @@ const Spread = styled.div`
 	position: absolute;
 	top: 0;
 	right: 0;
-	opacity: 0;
 	box-shadow: 0 0 24px #101010;
 	border-radius: 16px;
 	display: flex;
@@ -72,17 +72,22 @@ const Spread = styled.div`
 	padding: 24px 0;
 	gap: 24px;
 	font-size: 1rem;
-	@keyframes fallIn {
-		from {
-			transform: translateZ(200px);
-			opacity: 0;
-		}
-		to {
-			transform: translateZ(0);
-			opacity: 1;
-		}
+	&.Open {
+		${fadeInZ({
+			name: 'open',
+			distance: 200,
+			duration: 0.3,
+			seqDirection: 'normal',
+		})}
 	}
-	animation: fallIn 0.3s linear forwards;
+	&.Closed {
+		${fadeInZ({
+			name: 'close',
+			distance: 200,
+			duration: 0.3,
+			seqDirection: 'reverse',
+		})}
+	}
 	& .Title {
 		font-size: 1.5em;
 		font-weight: 800;
@@ -105,7 +110,7 @@ const Spread = styled.div`
 	}
 `;
 
-const CloseButton = styled.div`
+const CloseButton = styled.button`
 	position: absolute;
 	top: 8px;
 	right: 8px;
@@ -138,17 +143,29 @@ interface HeaderProps {
 
 const Header = ({ title }: HeaderProps) => {
 	const [isOpen, setIsOpen] = useState(false);
+	const [isVisible, setIsVisible] = useState(false);
+	const menuToggleHandler = (isOpen: boolean) => {
+		if (isOpen) {
+			setIsOpen(true);
+			setIsVisible(true);
+		} else {
+			setIsVisible(false);
+			setTimeout(() => {
+				setIsOpen(false);
+			}, 300);
+		}
+	};
 	return (
 		<Layout>
 			<HeaderNav to={'/'}>{title}</HeaderNav>
-			<HambergerMenu
-				onClick={() => {
-					setIsOpen(true);
-				}}
-			>
+			<HambergerMenu>
 				{isOpen ? (
-					<Spread>
-						<CloseButton></CloseButton>
+					<Spread className={isVisible ? 'Open' : 'Closed'}>
+						<CloseButton
+							onClick={() => {
+								menuToggleHandler(false);
+							}}
+						/>
 						<span className="Title">Games</span>
 						<div className="Links">
 							<NavLink to={'/'}>BorderGame</NavLink>
@@ -157,7 +174,11 @@ const Header = ({ title }: HeaderProps) => {
 						</div>
 					</Spread>
 				) : (
-					<MenuIcon>
+					<MenuIcon
+						onClick={() => {
+							menuToggleHandler(true);
+						}}
+					>
 						<div />
 						<div />
 						<div />

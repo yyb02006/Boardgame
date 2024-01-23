@@ -38,7 +38,7 @@ const GlobalStyle = createGlobalStyle`${css`
 		padding: 0;
 		padding-block: 0;
 		padding-inline: 0;
-		cursor: default;
+		cursor: pointer;
 		font: inherit;
 	}
 	:root {

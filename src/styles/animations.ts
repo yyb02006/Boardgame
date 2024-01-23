@@ -34,6 +34,36 @@ export function slideIn({
 	`;
 }
 
+export function fadeInZ({
+	name,
+	seqDirection,
+	distance,
+	duration,
+	isFaded = true,
+	delay = 0,
+}: Omit<SlideInProps, 'direction'>) {
+	return css`
+		@keyframes fadeIn_${name}_${seqDirection}_${distance} {
+			from {
+				transform: translateZ(${`${distance}px`});
+				${isFaded &&
+				css`
+					opacity: 0;
+				`}
+			}
+			to {
+				transform: translateZ(0px);
+				${isFaded &&
+				css`
+					opacity: 1;
+				`}
+			}
+		}
+		animation: ${`fadeIn_${name}_${seqDirection}_${distance}`} ${duration}s ${delay}s
+			${seqDirection} ease-in forwards;
+	`;
+}
+
 export function rotate({
 	name,
 	degree,
