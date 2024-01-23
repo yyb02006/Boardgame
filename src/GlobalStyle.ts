@@ -44,6 +44,7 @@ const GlobalStyle = createGlobalStyle`${css`
 	:root {
 		--bgColor-dark: #202020;
 		--color-royalBlue: #4444dd;
+		--color-white: #eaeaea;
 		--bgGradient-purple-navy: linear-gradient(135deg, #6e1af5 0%, #110981 100%);
 		--globalNavSize: 80px;
 	}
