@@ -4,7 +4,7 @@ import { getOppositeElement } from '#libs/utils';
 import { HomeProvider, useHomeContext } from '#routes/HomeContext';
 import theme, { fullWidthHeight } from '#styles/theme';
 import BoxCollection from '#components/BoxCollction';
-import { slideIn } from '#styles/animations';
+import { fadeInZ, slideIn } from '#styles/animations';
 
 const { colors } = theme;
 
@@ -75,6 +75,7 @@ const Layout = styled.section`
 	font-weight: 800;
 	position: relative;
 	padding: 80px 120px 40px 120px;
+	perspective: 1000px;
 	@media screen and (max-width: 1024px) {
 		display: flex;
 		flex-direction: column;
@@ -96,6 +97,7 @@ const TitleContainerLayout = styled.div`
 	& .Yellow {
 		color: ${colors.common.emphaticYellow};
 	}
+	${fadeInZ({ name: 'title', distance: 1000, duration: 0.5, seqDirection: 'normal', delay: 0.3 })}
 	@media screen and (max-width: 1024px) {
 		font-size: 2rem;
 		margin: 0 24px 16px 24px;
@@ -107,6 +109,7 @@ const BoardLayout = styled.div`
 	display: flex;
 	justify-content: space-between;
 	height: auto;
+	${fadeInZ({ name: 'Board', distance: 1000, duration: 0.5, seqDirection: 'normal', delay: 0.6 })}
 	@media screen and (max-width: 1024px) {
 		${fullWidthHeight}
 		flex-direction: column;
