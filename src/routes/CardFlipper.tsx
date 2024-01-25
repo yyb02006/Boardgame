@@ -248,7 +248,7 @@ const LobbyLayout = styled.section`
 	font-size: 3rem;
 	padding-bottom: 120px;
 	text-align: center;
-	overflow-y: hidden;
+	overflow: hidden;
 	> .Title {
 		${fadeInZ({
 			name: 'quantity',

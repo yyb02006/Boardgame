@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import styled, { css } from 'styled-components';
-import { getOppositeElement } from '#libs/utils';
+import { capitalizeFirstLetter, getOppositeElement } from '#libs/utils';
 import { HomeProvider, useHomeContext } from '#routes/HomeContext';
 import theme, { fullWidthHeight } from '#styles/theme';
 import BoxCollection from '#components/BoxCollction';
-import { slideIn } from '#styles/animations';
+import { fadeInZ, slideIn } from '#styles/animations';
 
 const { colors } = theme;
 
@@ -96,6 +96,12 @@ const TitleContainerLayout = styled.div`
 	}
 	& .Yellow {
 		color: ${colors.common.emphaticYellow};
+	}
+	& .Ready,
+	& .Draw,
+	& .Win,
+	& .Playing {
+		${fadeInZ({ name: 'title', distance: 200, duration: 300, seqDirection: 'normal' })}
 	}
 	@media screen and (max-width: 1024px) {
 		font-size: 2rem;
@@ -428,14 +434,14 @@ const TitleContainer = () => {
 	const player = playState === 'win' && winner ? winner : currentPlayer;
 	switch (playState) {
 		case 'draw':
-			return <span className="Yellow">Draw</span>;
+			return <span className="Yellow Draw">Draw</span>;
 		case 'ready':
-			return <span className="Yellow">Ready</span>;
+			return <span className="Yellow Ready">Ready</span>;
 		case 'playing':
 		case 'win':
 			return (
 				<>
-					<div className="GameIndicator">
+					<div key={playState} className={`GameIndicator ${capitalizeFirstLetter(playState)}`}>
 						<Player $currentPlayer={player}>{player}</Player>
 						{playState === 'win' ? <span>&nbsp;</span> : <span>{`'s`}&nbsp;</span>}
 						<div className="Yellow">{playState === 'win' ? `win` : `turn`}</div>
