@@ -97,7 +97,6 @@ const TitleContainerLayout = styled.div`
 	& .Yellow {
 		color: ${colors.common.emphaticYellow};
 	}
-	${fadeInZ({ name: 'title', distance: 1000, duration: 0.5, seqDirection: 'normal', delay: 0.3 })}
 	@media screen and (max-width: 1024px) {
 		font-size: 2rem;
 		margin: 0 24px 16px 24px;
@@ -109,7 +108,6 @@ const BoardLayout = styled.div`
 	display: flex;
 	justify-content: space-between;
 	height: auto;
-	${fadeInZ({ name: 'Board', distance: 1000, duration: 0.5, seqDirection: 'normal', delay: 0.6 })}
 	@media screen and (max-width: 1024px) {
 		${fullWidthHeight}
 		flex-direction: column;

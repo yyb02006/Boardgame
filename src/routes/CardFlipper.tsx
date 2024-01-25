@@ -12,7 +12,7 @@ import React, {
 } from 'react';
 import styled, { css } from 'styled-components';
 import { CardFlipperProvider, useCardFlipperContext } from './CardFlipperContext';
-import { rotate, slideIn } from '#styles/animations';
+import { fadeInZ, rotate, slideIn } from '#styles/animations';
 import useThrottleClear from '#hooks/useThrottleClear';
 
 const layoutOption = {
@@ -70,7 +70,7 @@ const Layout = styled.section`
 	}
 `;
 
-const CardStyle = styled.div`
+const CardStyle = styled.div<CardStyleProps>`
 	${fullWidthHeight}
 	transform-origin: 0% 0%;
 	font-size: 2vw;
@@ -78,6 +78,17 @@ const CardStyle = styled.div`
 	transform-style: preserve-3d;
 	position: relative;
 	border-radius: ${cardOptions.borderRadius};
+	&.Init {
+		opacity: 0;
+		${(props) =>
+			fadeInZ({
+				name: `card${props.$index}`,
+				distance: 400,
+				duration: 0.3,
+				seqDirection: 'normal',
+				delay: 1,
+			})}
+	}
 	& .Forward,
 	.Reverse {
 		${fullWidthHeight}
@@ -236,23 +247,45 @@ const LobbyLayout = styled.section`
 	padding-bottom: 120px;
 	text-align: center;
 	overflow-y: hidden;
+	> .Title {
+		${fadeInZ({
+			name: 'quantity',
+			distance: 400,
+			duration: 0.3,
+			seqDirection: 'normal',
+			delay: 0,
+		})}
+	}
 `;
 
 const SetQuantityButton = styled.button<SetQuantityButton>`
 	border-radius: 12px;
 	width: max(300px, 15vw);
+	opacity: 0;
 	cursor: pointer;
+	${(props) => css`
+		${fadeInZ({
+			name: 'quantity',
+			distance: 400,
+			duration: 0.3,
+			seqDirection: 'normal',
+			delay: (props.$index + 1) * 0.2,
+		})}
+	`}
 	${(props) =>
 		props.$isRun &&
-		slideIn({
-			direction: 'vertical',
-			distance: 800,
-			duration: 0.45,
-			name: `drop`,
-			seqDirection: 'reverse',
-			isFaded: false,
-			delay: (3 - props.$index) / 20,
-		})}
+		css`
+			opacity: 1;
+			${slideIn({
+				direction: 'vertical',
+				distance: 800,
+				duration: 0.45,
+				name: `drop`,
+				seqDirection: 'reverse',
+				isFaded: false,
+				delay: (3 - props.$index) / 20,
+			})}
+		`}
 	& .Inner {
 		${fullWidthHeight}
 		border-radius: 12px;
@@ -321,7 +354,7 @@ const ResultScreenLayout = styled.section`
 	padding-bottom: 120px;
 `;
 
-const Card = ({ cardId, order, isFlipped }: CardProps) => {
+const Card = ({ index, cardId, order, isFlipped }: CardProps) => {
 	const {
 		setCards,
 		prevCard,
@@ -331,6 +364,7 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 		flipCount,
 		setFlipCount,
 	} = useCardFlipperContext();
+	const [cardState, setCardState] = useState<CardState>('init');
 	const flipForwardPresence = useRef(false);
 	const cardRef = useRef<HTMLDivElement | null>(null);
 	/* 
@@ -342,7 +376,14 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 		currentTarget: EventTarget & HTMLDivElement
 	) => {
 		const { current } = cardRef;
-		if (!current || isFlipped || isUnmatchedCardFlipping || flipForwardPresence.current) return;
+		if (
+			!current ||
+			isFlipped ||
+			isUnmatchedCardFlipping ||
+			flipForwardPresence.current ||
+			cardState === 'init'
+		)
+			return;
 		const { clientX, clientY } = event;
 		const { left, top, width, height } = currentTarget.getBoundingClientRect();
 		const normalizedMouseX = (clientX - left) / width;
@@ -355,11 +396,27 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 		)}deg) rotateY(-${rotateClamp(normalizedMouseX)}deg);`;
 	};
 
+	useEffect(() => {
+		const timeout = setTimeout(() => {
+			setCardState('available');
+		}, index * 100);
+		return () => {
+			clearTimeout(timeout);
+		};
+	}, [index]);
+
 	const handleThrottledMouseMove = useCallback(throttle(onCardMove, 150), [onCardMove]);
 
 	const onCardLeave = () => {
 		const { current } = cardRef;
-		if (!current || isFlipped || isUnmatchedCardFlipping || flipForwardPresence.current) return;
+		if (
+			!current ||
+			isFlipped ||
+			isUnmatchedCardFlipping ||
+			flipForwardPresence.current ||
+			cardState === 'init'
+		)
+			return;
 		handleThrottledMouseMove.cancel();
 		current.style.cssText = `transition: transform 0.5s ease; transform: rotateX(0) rotateY(0);`;
 	};
@@ -380,7 +437,14 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 
 	const onCardClick = () => {
 		const { current } = cardRef;
-		if (!current || isFlipped || isUnmatchedCardFlipping || flipForwardPresence.current) return;
+		if (
+			!current ||
+			isFlipped ||
+			isUnmatchedCardFlipping ||
+			flipForwardPresence.current ||
+			cardState === 'init'
+		)
+			return;
 		handleThrottledMouseMove.cancel();
 		const [prevId] = prevCard;
 		setCards((p) => {
@@ -438,7 +502,7 @@ const Card = ({ cardId, order, isFlipped }: CardProps) => {
 		>
 			<div className="InnerShadow" />
 			<div className="OuterShadow" />
-			<CardStyle ref={cardRef}>
+			<CardStyle ref={cardRef} className={capitalizeFirstLetter(cardState)} $index={index * 0.1}>
 				<div className="Reverse">{cardId + 1}</div>
 				<div className="Forward"></div>
 			</CardStyle>
@@ -517,12 +581,13 @@ const GameBoard = () => {
 					quantity ? cardOptions.layoutRules[quantity] : cardOptions.layoutRules.generous
 				}
 			>
-				{cards?.map((card) => {
+				{cards?.map((card, id) => {
 					// console.log('executed');
 					const { cardId, order, isChecked, isFlipped } = card;
 					return (
 						<Card
 							key={`${cardId}_${order}`}
+							index={id}
 							cardId={cardId}
 							order={order}
 							isChecked={isChecked}

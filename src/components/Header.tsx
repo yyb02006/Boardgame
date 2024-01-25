@@ -1,7 +1,7 @@
 import { useAppContext } from '#AppContext';
 import { fadeInZ } from '#styles/animations';
 import { fullWidthHeight } from '#styles/theme';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -35,7 +35,6 @@ const HambergerMenu = styled.div`
 	width: 24px;
 	height: 24px;
 	position: relative;
-	perspective: 2000px;
 `;
 
 const MenuIcon = styled.div`
