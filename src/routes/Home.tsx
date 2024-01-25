@@ -24,7 +24,7 @@ const resultTransition = {
 			seqDirection,
 			distance: aniDirection === 'left' || aniDirection === 'up' ? -100 : 100,
 			direction: aniDirection === 'left' || aniDirection === 'right' ? 'horizontal' : 'vertical',
-			duration: 0.5,
+			duration: 500,
 		};
 		return slideIn(props);
 	},
@@ -57,11 +57,11 @@ const resultTransition = {
 			seqDirection,
 			distance: winner === 'player1' ? -200 : 200,
 			direction: 'horizontal',
-			duration: 0.5,
+			duration: 500,
 		};
 		return css`
 			${slideIn(props)};
-			animation-delay: ${index * 0.12}s;
+			animation-delay: ${index * 120}ms;
 		`;
 	},
 };
@@ -152,7 +152,7 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 				seqDirection: 'normal',
 				distance: props.$player === 'player1' ? -200 : 200,
 				direction: 'horizontal',
-				duration: 0.5,
+				duration: 500,
 			})}
 	}
 	& .SlideOut {
@@ -162,7 +162,7 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 				seqDirection: 'reverse',
 				distance: props.$player === 'player1' ? 200 : -200,
 				direction: 'horizontal',
-				duration: 0.5,
+				duration: 500,
 			})}
 	}
 	@media screen and (max-width: 1024px) {
@@ -330,7 +330,7 @@ const BoardCoverLayout = styled.div<{ $winner: PlayerElement | undefined }>`
 				seqDirection: 'normal',
 				distance: -200,
 				direction: 'vertical',
-				duration: 0.5,
+				duration: 500,
 			})};
 		}
 		&.SlideUp {
@@ -339,7 +339,7 @@ const BoardCoverLayout = styled.div<{ $winner: PlayerElement | undefined }>`
 				seqDirection: 'reverse',
 				distance: -200,
 				direction: 'vertical',
-				duration: 0.5,
+				duration: 500,
 			})};
 		}
 	}

@@ -28,8 +28,8 @@ export function slideIn({
 				`}
 			}
 		}
-		animation: ${`slideIn_${name}_${seqDirection}_${distance}_${direction}`} ${duration}s ${delay}s
-			ease-in-out forwards;
+		animation: ${`slideIn_${name}_${seqDirection}_${distance}_${direction}`} ${duration}ms
+			${delay}ms ease-in-out forwards;
 		animation-direction: ${seqDirection};
 	`;
 }
@@ -86,7 +86,7 @@ export function rotate({
 				transform: ${`rotate(${degree}deg)`};
 			}
 		}
-		animation: ${`rotate_${name}_${degree}`} ${duration}s ${delay}s ${timingFunc} forwards;
+		animation: ${`rotate_${name}_${degree}`} ${duration}ms ${delay}ms ${timingFunc} forwards;
 	`;
 }
 
