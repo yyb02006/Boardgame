@@ -312,6 +312,31 @@ const Uncle = memo(function Uncle() {
   declare function interfaced(arg: string): string;
 	*/
 
+const Perspective = styled.div`
+	width: 100%;
+	height: 100%;
+	background-color: blue;
+	position: relative;
+	> .childd {
+		width: 500px;
+		height: 500px;
+		background-color: yellow;
+		position: relative;
+		> .childdd {
+			width: 200px;
+			height: 200px;
+			background-color: green;
+			transform: perspective(500px) translateZ(200px);
+		}
+	}
+`;
+
+const PerspectiveChild = styled.div`
+	width: 50%;
+	height: 50%;
+	background-color: red;
+`;
+
 const Test = () => {
 	/* 정의한 적 없지만 실행 가능, 런타임 에러
 	interfaced('dd'); */
@@ -336,6 +361,12 @@ const Test = () => {
 				</div>
 				<Parent obj={obj} func={func}></Parent>
 				<Uncle></Uncle>
+				<Perspective>
+					<PerspectiveChild></PerspectiveChild>
+					<div className="childd">
+						<div className="childdd"></div>
+					</div>
+				</Perspective>
 				{/* <PerspectiveParent>
 					<div className="FirstChild"></div>
 					<div className="SecondChild"></div>
