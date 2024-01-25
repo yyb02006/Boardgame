@@ -4,7 +4,7 @@ import { getOppositeElement } from '#libs/utils';
 import { HomeProvider, useHomeContext } from '#routes/HomeContext';
 import theme, { fullWidthHeight } from '#styles/theme';
 import BoxCollection from '#components/BoxCollction';
-import { fadeInZ, slideIn } from '#styles/animations';
+import { slideIn } from '#styles/animations';
 
 const { colors } = theme;
 

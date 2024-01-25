@@ -76,7 +76,7 @@ const Spread = styled.div`
 		${fadeInZ({
 			name: 'open',
 			distance: 200,
-			duration: 0.3,
+			duration: 300,
 			seqDirection: 'normal',
 		})}
 	}
@@ -84,7 +84,7 @@ const Spread = styled.div`
 		${fadeInZ({
 			name: 'close',
 			distance: 200,
-			duration: 0.3,
+			duration: 300,
 			seqDirection: 'reverse',
 		})}
 	}

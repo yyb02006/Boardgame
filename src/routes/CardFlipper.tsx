@@ -79,18 +79,20 @@ const CardStyle = styled.div<CardStyleProps>`
 	position: relative;
 	border-radius: ${cardOptions.borderRadius};
 	&.Init {
+		transform-origin: center;
 		opacity: 0;
-		${(props) =>
-			fadeInZ({
+		${(props) => {
+			return fadeInZ({
 				name: `card${props.$index}`,
-				distance: 400,
-				duration: 0.3,
+				distance: 200,
+				duration: 300,
 				seqDirection: 'normal',
-				delay: 1,
-			})}
+				delay: props.$index * 100,
+			});
+		}}
 	}
 	& .Forward,
-	.Reverse {
+	& .Reverse {
 		${fullWidthHeight}
 		position: absolute;
 		border-radius: inherit;
@@ -251,9 +253,8 @@ const LobbyLayout = styled.section`
 		${fadeInZ({
 			name: 'quantity',
 			distance: 400,
-			duration: 0.3,
+			duration: 300,
 			seqDirection: 'normal',
-			delay: 0,
 		})}
 	}
 `;
@@ -267,9 +268,9 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 		${fadeInZ({
 			name: 'quantity',
 			distance: 400,
-			duration: 0.3,
+			duration: 300,
 			seqDirection: 'normal',
-			delay: (props.$index + 1) * 0.2,
+			delay: (props.$index + 1) * 200,
 		})}
 	`}
 	${(props) =>
@@ -397,9 +398,12 @@ const Card = ({ index, cardId, order, isFlipped }: CardProps) => {
 	};
 
 	useEffect(() => {
-		const timeout = setTimeout(() => {
-			setCardState('available');
-		}, index * 100);
+		const timeout = setTimeout(
+			() => {
+				setCardState('available');
+			},
+			300 + index * 100
+		);
 		return () => {
 			clearTimeout(timeout);
 		};
@@ -487,6 +491,9 @@ const Card = ({ index, cardId, order, isFlipped }: CardProps) => {
 	}, [isFlipped]);
 
 	useThrottleClear(handleThrottledMouseMove, [onCardMove]);
+
+	console.log(cardState);
+
 	return (
 		<CardWrapper
 			onMouseMove={(e) => {
@@ -502,7 +509,7 @@ const Card = ({ index, cardId, order, isFlipped }: CardProps) => {
 		>
 			<div className="InnerShadow" />
 			<div className="OuterShadow" />
-			<CardStyle ref={cardRef} className={capitalizeFirstLetter(cardState)} $index={index * 0.1}>
+			<CardStyle ref={cardRef} className={capitalizeFirstLetter(cardState)} $index={index}>
 				<div className="Reverse">{cardId + 1}</div>
 				<div className="Forward"></div>
 			</CardStyle>

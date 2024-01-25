@@ -59,7 +59,7 @@ export function fadeInZ({
 				`}
 			}
 		}
-		animation: ${`fadeIn_${name}_${seqDirection}_${distance}`} ${duration}s ${delay}s
+		animation: ${`fadeIn_${name}_${seqDirection}_${distance}`} ${duration}ms ${delay}ms
 			${seqDirection} ease-in forwards;
 	`;
 }
