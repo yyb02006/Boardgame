@@ -97,7 +97,7 @@ const CardStyle = styled.div<CardStyleProps>`
 		position: absolute;
 		border-radius: inherit;
 		backface-visibility: hidden;
-		transition: filter 0.3s ease;
+		transition: filter 300ms ease;
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -217,11 +217,11 @@ const TitleWord = styled.div<SetQuantityButton>`
 		slideIn({
 			direction: 'vertical',
 			distance: 900,
-			duration: 0.35,
+			duration: 350,
 			name: `drop`,
 			seqDirection: 'reverse',
 			isFaded: false,
-			delay: 0.25,
+			delay: 250,
 		})}
 	& .Inner {
 		display: inline-block;
@@ -229,8 +229,8 @@ const TitleWord = styled.div<SetQuantityButton>`
 			props.$isRun &&
 			rotate({
 				name: 'letter',
-				duration: 0.4,
-				delay: 0.2,
+				duration: 400,
+				delay: 200,
 				degree: props.$index % 2 === 1 ? 50 : -50,
 				timingFunc: 'ease-in',
 			})}
@@ -280,11 +280,11 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 			${slideIn({
 				direction: 'vertical',
 				distance: 800,
-				duration: 0.45,
+				duration: 450,
 				name: `drop`,
 				seqDirection: 'reverse',
 				isFaded: false,
-				delay: (3 - props.$index) / 20,
+				delay: (3 - props.$index) * 50,
 			})}
 		`}
 	& .Inner {
@@ -298,14 +298,14 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 			props.$isRun &&
 			rotate({
 				name: 'button',
-				duration: 0.45,
-				delay: (3 - props.$index) / 20,
+				duration: 450,
+				delay: (3 - props.$index) * 50,
 				degree: props.$index % 2 === 1 ? 50 : -50,
 				timingFunc: 'ease-in',
 			})}
 		transition:
-		background-color 0.2s ease,
-		color 0.2s ease;
+		background-color 200ms ease,
+		color 200ms ease;
 		&:hover {
 			background-color: var(--color-royalBlue);
 			color: violet;
@@ -327,7 +327,7 @@ const ResultText = styled.div<ResultTextProps>`
 			slideIn({
 				direction: 'vertical',
 				distance: -100,
-				duration: 0.2,
+				duration: 200,
 				name: 'textEnter',
 				seqDirection: 'normal',
 				delay: props.$delay,
@@ -338,10 +338,10 @@ const ResultText = styled.div<ResultTextProps>`
 			slideIn({
 				direction: 'vertical',
 				distance: -100,
-				duration: 0.2,
+				duration: 200,
 				name: 'textExit',
 				seqDirection: 'reverse',
-				delay: 0.4 - props.$delay,
+				delay: 400 - props.$delay,
 			})};
 	}
 `;
@@ -389,12 +389,12 @@ const Card = ({ index, cardId, order, isFlipped }: CardProps) => {
 		const { left, top, width, height } = currentTarget.getBoundingClientRect();
 		const normalizedMouseX = (clientX - left) / width;
 		const normalizedMouseY = (clientY - top) / height;
-		const rotateClamp = (normalizedMouse: number) => {
+		const degClamp = (normalizedMouse: number) => {
 			return normalizedMouse > 0.5 ? 20 : normalizedMouse * 40;
 		};
-		current.style.cssText = `transition: transform 0.15s linear; transform: rotateX(${rotateClamp(
+		current.style.cssText = `transition: transform 150ms linear; transform: rotateX(${degClamp(
 			normalizedMouseY
-		)}deg) rotateY(-${rotateClamp(normalizedMouseX)}deg);`;
+		)}deg) rotateY(-${degClamp(normalizedMouseX)}deg);`;
 	};
 
 	useEffect(() => {
@@ -422,12 +422,12 @@ const Card = ({ index, cardId, order, isFlipped }: CardProps) => {
 		)
 			return;
 		handleThrottledMouseMove.cancel();
-		current.style.cssText = `transition: transform 0.5s ease; transform: rotateX(0) rotateY(0);`;
+		current.style.cssText = `transition: transform 500ms ease; transform: rotateX(0) rotateY(0);`;
 	};
 
 	const flip = <T extends HTMLElement>(card: T | null, direction: 'forward' | 'reverse') => {
 		if (!card) return;
-		card.style.cssText = `transition: transform 0.5s ease, transform-origin 0.5s ease; transform-origin:center; transform:rotateY(${
+		card.style.cssText = `transition: transform 500ms ease, transform-origin 500ms ease; transform-origin:center; transform:rotateY(${
 			direction === 'forward' ? 0 : 180
 		}deg);`;
 		if (direction === 'forward') {
@@ -616,10 +616,10 @@ const ResultScreen = () => {
 			<ResultText $delay={0} className={motionClass}>
 				Win!
 			</ResultText>
-			<ResultText $delay={0.2} className={motionClass}>
+			<ResultText $delay={200} className={motionClass}>
 				flipCount : {flipCountRef.current}
 			</ResultText>
-			<ResultText $delay={0.4} className={motionClass}>
+			<ResultText $delay={400} className={motionClass}>
 				<button
 					onClick={() => {
 						initializeGameData();
