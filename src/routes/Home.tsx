@@ -76,6 +76,7 @@ const Layout = styled.section`
 	position: relative;
 	padding: 80px 120px 40px 120px;
 	perspective: 1000px;
+	overflow: hidden;
 	@media screen and (max-width: 1024px) {
 		display: flex;
 		flex-direction: column;
@@ -131,6 +132,15 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 	position: relative;
 	padding: 12px 24px;
 	text-align: ${(props) => (props.$player === 'player1' ? 'left' : 'right')};
+	opacity: 0;
+	${(props) =>
+		fadeInZ({
+			name: 'playerCard',
+			distance: 200,
+			duration: 300,
+			seqDirection: 'normal',
+			delay: props.$player === 'player1' ? 100 : 300,
+		})}
 	& .FakeLetter {
 		user-select: none;
 		color: transparent;
@@ -194,6 +204,8 @@ const BoardItemsWrapper = styled.div`
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	opacity: 0;
+	${fadeInZ({ name: 'board', distance: 200, duration: 300, seqDirection: 'normal', delay: 200 })}
 	@media screen and (max-width: 1024px) {
 		padding: 24px 0;
 	}

@@ -6,6 +6,7 @@ import Test from '#routes/Test';
 import GlobalStyle from '#GlobalStyle';
 import CardFlipper from '#routes/CardFlipper';
 import { AppProvider } from '#AppContext';
+import Othello from '#routes/Othello';
 
 export default function App() {
 	return (
@@ -17,7 +18,8 @@ export default function App() {
 					<Routes>
 						<Route path="/" element={<Home />} />
 						<Route path="/card-flipper" element={<CardFlipper />} />
-						<Route path="/Test" element={<Test />} />
+						<Route path="/othello" element={<Othello />}></Route>
+						<Route path="/test" element={<Test />} />
 					</Routes>
 				</div>
 			</AppProvider>
