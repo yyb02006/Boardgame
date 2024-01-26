@@ -18,7 +18,7 @@ export default function App() {
 					<Routes>
 						<Route path="/" element={<Home />} />
 						<Route path="/card-flipper" element={<CardFlipper />} />
-						<Route path="/othello" element={<Othello />}></Route>
+						<Route path="/othello" element={<Othello />} />
 						<Route path="/test" element={<Test />} />
 					</Routes>
 				</div>

@@ -45,7 +45,6 @@ const Layout = styled.section`
 	font-weight: 800;
 	position: relative;
 	padding: ${() => getPaddingFromOption(layoutOption.padding.lg)};
-	perspective: 2000px;
 	@media screen and (max-width: 1024px) {
 		display: flex;
 		flex-direction: column;
@@ -491,8 +490,6 @@ const Card = ({ index, cardId, order, isFlipped }: CardProps) => {
 	}, [isFlipped]);
 
 	useThrottleClear(handleThrottledMouseMove, [onCardMove]);
-
-	console.log(cardState);
 
 	return (
 		<CardWrapper
