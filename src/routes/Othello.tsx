@@ -28,28 +28,57 @@ const SquareStyle = styled.div`
 	font-weight: 800;
 	color: var(--color-royalBlue);
 	transition: transform 300ms ease;
+	position: relative;
+	transform-style: preserve-3d;
 	cursor: pointer;
-	&:hover {
-		background-color: red;
-		transform: perspective(1000px) translateZ(200px);
-	}
+	${fullWidthHeight}
 	&.Back {
 		transform: rotateY(180deg);
 	}
 	&.Front {
 		transform: rotateY(0);
 	}
+	& .Forward,
+	& .Reverse {
+		${fullWidthHeight}
+		position: absolute;
+		backface-visibility: hidden;
+		border-radius: 100%;
+	}
+	& .Forward {
+		background-color: red;
+	}
+	& .Reverse {
+		transform: rotateY(180deg);
+		background-color: var(--color-royalBlue);
+	}
+`;
+
+const SquareLayout = styled.div`
+	border-radius: 100%;
+	&:hover {
+		& .Back,
+		& .Front {
+			background-color: red;
+			transform: perspective(1000px) translateZ(200px);
+		}
+	}
 `;
 
 const Square = () => {
 	const [isSquareFlipped, setIsSquareFlipped] = useState<boolean>(false);
 	return (
-		<SquareStyle
-			onClick={() => {
-				setIsSquareFlipped(true);
-			}}
-			className={isSquareFlipped ? 'Back' : 'Front'}
-		/>
+		<SquareLayout>
+			<SquareStyle
+				onClick={() => {
+					setIsSquareFlipped((p) => !p);
+				}}
+				className={isSquareFlipped ? 'Back' : 'Front'}
+			>
+				<div className="Forward" />
+				<div className="Reverse" />
+			</SquareStyle>
+		</SquareLayout>
 	);
 };
 
