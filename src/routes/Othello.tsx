@@ -1,4 +1,5 @@
 import { fullWidthHeight } from '#styles/theme';
+import { capitalize } from 'lodash';
 import React, { useState } from 'react';
 import styled from 'styled-components';
 
@@ -19,16 +20,18 @@ const GameBoardLayout = styled.section`
 	grid-template-rows: repeat(8, auto);
 `;
 
-const SquareStyle = styled.div`
+const SquareStyle = styled.div<SquareStyleProps>`
 	border-radius: 100%;
-	background-color: #606060;
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	font-weight: 800;
 	color: var(--color-royalBlue);
-	transition: transform 300ms ease;
 	position: relative;
+	background-color: #505050;
+	transition:
+		transform 300ms ease,
+		background-color 300ms ease;
 	transform-style: preserve-3d;
 	cursor: pointer;
 	${fullWidthHeight}
@@ -38,6 +41,11 @@ const SquareStyle = styled.div`
 	&.Front {
 		transform: rotateY(0);
 	}
+	&.Hover {
+		z-index: 1;
+		background-color: ${(props) => (props.$currentPlayer === 'player1' ? 'yellow' : 'blue')};
+		transform: perspective(1000px) translateZ(200px);
+	}
 	& .Forward,
 	& .Reverse {
 		${fullWidthHeight}
@@ -46,48 +54,105 @@ const SquareStyle = styled.div`
 		border-radius: 100%;
 	}
 	& .Forward {
-		background-color: red;
+		background-color: ${(props) =>
+			props.$onwer === 'player1' ? 'yellow' : 'var(--color-royalBlue)'};
 	}
 	& .Reverse {
 		transform: rotateY(180deg);
-		background-color: var(--color-royalBlue);
+		background-color: ${(props) =>
+			props.$onwer === 'player1' ? 'var(--color-royalBlue)' : 'yellow'};
 	}
 `;
 
 const SquareLayout = styled.div`
 	border-radius: 100%;
-	&:hover {
-		& .Back,
-		& .Front {
-			background-color: red;
-			transform: perspective(1000px) translateZ(200px);
-		}
-	}
 `;
 
-const Square = () => {
-	const [isSquareFlipped, setIsSquareFlipped] = useState<boolean>(false);
+const Square = ({
+	owner,
+	initPlayer,
+	isFlipped,
+	index,
+	currentPlayer,
+	setSquareStates,
+}: SquareProps) => {
+	const [isHovered, setIsHovered] = useState<boolean>(false);
+	const onSquareClick = (owner: Owner) => {
+		switch (owner) {
+			case 'player1':
+			case 'player2':
+				break;
+			case 'unowned':
+				setSquareStates((p) => {
+					const newStates = [...p];
+					newStates[index] = {
+						...newStates[index],
+						isFlipped: false,
+						initPlayer: currentPlayer,
+						owner: currentPlayer,
+					};
+					return newStates;
+				});
+				setIsHovered(false);
+				break;
+			default:
+				break;
+		}
+	};
 	return (
 		<SquareLayout>
 			<SquareStyle
-				onClick={() => {
-					setIsSquareFlipped((p) => !p);
+				onMouseEnter={() => {
+					setIsHovered(true);
 				}}
-				className={isSquareFlipped ? 'Back' : 'Front'}
+				onMouseLeave={() => {
+					setIsHovered(false);
+				}}
+				onClick={() => {
+					onSquareClick(owner);
+				}}
+				className={`${isFlipped ? 'Back' : 'Front'} ${isHovered && 'Hover'}`}
+				$onwer={owner}
+				$initPlayer={owner}
+				$isHovered={isHovered}
+				$currentPlayer={currentPlayer}
 			>
-				<div className="Forward" />
-				<div className="Reverse" />
+				{owner !== 'unowned' && (
+					<>
+						<div className="Forward" />
+						<div className="Reverse" />
+					</>
+				)}
 			</SquareStyle>
 		</SquareLayout>
 	);
 };
 
 const GameBoard = () => {
+	const [squareStates, setSquareStates] = useState<SquareStates[]>(
+		Array.from({ length: 64 }, (_, id) => ({
+			index: id,
+			initPlayer: 'unowned',
+			owner: 'unowned',
+			isFlipped: false,
+		}))
+	);
 	return (
 		<GameBoardLayout>
-			{Array.from({ length: 64 }, (_, id) => (
-				<Square key={id} />
-			))}
+			{squareStates.map((arr, id) => {
+				const { index, initPlayer, isFlipped, owner } = arr;
+				return (
+					<Square
+						key={index}
+						index={index}
+						initPlayer={initPlayer}
+						owner={owner}
+						isFlipped={isFlipped}
+						currentPlayer={'player1'}
+						setSquareStates={setSquareStates}
+					/>
+				);
+			})}
 		</GameBoardLayout>
 	);
 };
