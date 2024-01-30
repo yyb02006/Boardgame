@@ -41,11 +41,6 @@ const SquareStyle = styled.div<SquareStyleProps>`
 	&.Front {
 		transform: rotateY(0);
 	}
-	&.Hover {
-		z-index: 1;
-		background-color: ${(props) => (props.$currentPlayer === 'player1' ? 'yellow' : 'blue')};
-		transform: perspective(1000px) translateZ(200px);
-	}
 	& .Forward,
 	& .Reverse {
 		${fullWidthHeight}
@@ -55,17 +50,28 @@ const SquareStyle = styled.div<SquareStyleProps>`
 	}
 	& .Forward {
 		background-color: ${(props) =>
-			props.$onwer === 'player1' ? 'yellow' : 'var(--color-royalBlue)'};
+			props.$owner === 'player1' ? 'yellow' : 'var(--color-royalBlue)'};
 	}
 	& .Reverse {
 		transform: rotateY(180deg);
 		background-color: ${(props) =>
-			props.$onwer === 'player1' ? 'var(--color-royalBlue)' : 'yellow'};
+			props.$owner === 'player1' ? 'var(--color-royalBlue)' : 'yellow'};
 	}
 `;
 
-const SquareLayout = styled.div`
+const SquareLayout = styled.div<Omit<SquareStyleProps, '$isHovered' | '$owner'>>`
 	border-radius: 100%;
+	&.Hover {
+		> ${SquareStyle} {
+			z-index: 1;
+			background-color: ${(props) => (props.$currentPlayer === 'player1' ? 'yellow' : 'blue')};
+			transform: perspective(1000px) translateZ(200px)
+				${(props) =>
+					props.$initPlayer === props.$currentPlayer || props.$initPlayer === 'unowned'
+						? null
+						: 'rotateY(180deg)'};
+		}
+	}
 `;
 
 const Square = ({
@@ -110,20 +116,24 @@ const Square = ({
 		}
 	};
 	return (
-		<SquareLayout>
+		<SquareLayout
+			onMouseEnter={() => {
+				setIsHovered(true);
+			}}
+			onMouseLeave={() => {
+				setIsHovered(false);
+			}}
+			className={`${isHovered && 'Hover'}`}
+			$currentPlayer={currentPlayer}
+			$initPlayer={initPlayer}
+		>
 			<SquareStyle
-				onMouseEnter={() => {
-					setIsHovered(true);
-				}}
-				onMouseLeave={() => {
-					setIsHovered(false);
-				}}
 				onClick={() => {
 					onSquareClick(owner);
 				}}
-				className={`${isFlipped ? 'Back' : 'Front'} ${isHovered && 'Hover'}`}
-				$onwer={owner}
-				$initPlayer={owner}
+				className={`${isFlipped ? 'Back' : 'Front'}`}
+				$owner={owner}
+				$initPlayer={initPlayer}
 				$isHovered={isHovered}
 				$currentPlayer={currentPlayer}
 			>

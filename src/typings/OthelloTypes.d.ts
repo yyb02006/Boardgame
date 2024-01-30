@@ -12,7 +12,7 @@ interface SquareStates {
 /** Styled Components Types */
 
 interface SquareStyleProps {
-	$onwer: Owner;
+	$owner: Owner;
 	$initPlayer: Owner;
 	$isHovered: boolean;
 	$currentPlayer: PlayerElement;
