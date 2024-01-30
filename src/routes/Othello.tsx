@@ -81,6 +81,16 @@ const Square = ({
 		switch (owner) {
 			case 'player1':
 			case 'player2':
+				setSquareStates((p) => {
+					const newStates = [...p];
+					newStates[index] = {
+						...newStates[index],
+						isFlipped: !newStates[index].isFlipped,
+						owner: currentPlayer,
+					};
+					return newStates;
+				});
+				setIsHovered(false);
 				break;
 			case 'unowned':
 				setSquareStates((p) => {
