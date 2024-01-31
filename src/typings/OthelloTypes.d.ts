@@ -1,5 +1,10 @@
 type Owner = PlayerElement | 'unowned';
 
+interface squareSetStateAction {
+	setSquareStates: React.Dispatch<React.SetStateAction<SquareStates[]>>;
+	setCurrentPlayer: React.Dispatch<React.SetStateAction<PlayerElement>>;
+}
+
 /** Function Props Types */
 
 interface SquareStates {
@@ -21,6 +26,6 @@ interface SquareStyleProps {
 /** React Components Types */
 
 interface SquareProps extends SquareStates {
-	setSquareStates: React.Dispatch<React.SetStateAction<SquareStates[]>>;
+	setStateAction: squareSetStateAction;
 	currentPlayer: PlayerElement;
 }

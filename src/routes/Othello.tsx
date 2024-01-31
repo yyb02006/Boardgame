@@ -1,3 +1,4 @@
+import { getOppositeElement } from '#libs/utils';
 import { fullWidthHeight } from '#styles/theme';
 import { capitalize } from 'lodash';
 import React, { useState } from 'react';
@@ -33,6 +34,7 @@ const SquareStyle = styled.div<SquareStyleProps>`
 		transform 300ms ease,
 		background-color 300ms ease;
 	transform-style: preserve-3d;
+	filter: drop-shadow(0 0 4px #101010);
 	cursor: pointer;
 	${fullWidthHeight}
 	&.Back {
@@ -50,12 +52,12 @@ const SquareStyle = styled.div<SquareStyleProps>`
 	}
 	& .Forward {
 		background-color: ${(props) =>
-			props.$owner === 'player1' ? 'yellow' : 'var(--color-royalBlue)'};
+			props.$initPlayer === 'player1' ? 'yellow' : 'var(--color-royalBlue)'};
 	}
 	& .Reverse {
 		transform: rotateY(180deg);
 		background-color: ${(props) =>
-			props.$owner === 'player1' ? 'var(--color-royalBlue)' : 'yellow'};
+			props.$initPlayer === 'player1' ? 'var(--color-royalBlue)' : 'yellow'};
 	}
 `;
 
@@ -63,8 +65,10 @@ const SquareLayout = styled.div<Omit<SquareStyleProps, '$isHovered' | '$owner'>>
 	border-radius: 100%;
 	&.Hover {
 		> ${SquareStyle} {
+			filter: drop-shadow(0 0 16px #101010);
 			z-index: 1;
-			background-color: ${(props) => (props.$currentPlayer === 'player1' ? 'yellow' : 'blue')};
+			background-color: ${(props) =>
+				props.$currentPlayer === 'player1' ? 'yellow' : 'var(--color-royalBlue)'};
 			transform: perspective(1000px) translateZ(200px)
 				${(props) =>
 					props.$initPlayer === props.$currentPlayer || props.$initPlayer === 'unowned'
@@ -80,13 +84,15 @@ const Square = ({
 	isFlipped,
 	index,
 	currentPlayer,
-	setSquareStates,
+	setStateAction,
 }: SquareProps) => {
 	const [isHovered, setIsHovered] = useState<boolean>(false);
+	const { setCurrentPlayer, setSquareStates } = setStateAction;
 	const onSquareClick = (owner: Owner) => {
 		switch (owner) {
 			case 'player1':
 			case 'player2':
+				if (owner === currentPlayer) break;
 				setSquareStates((p) => {
 					const newStates = [...p];
 					newStates[index] = {
@@ -97,6 +103,7 @@ const Square = ({
 					return newStates;
 				});
 				setIsHovered(false);
+				setCurrentPlayer((p) => getOppositeElement(p));
 				break;
 			case 'unowned':
 				setSquareStates((p) => {
@@ -110,6 +117,7 @@ const Square = ({
 					return newStates;
 				});
 				setIsHovered(false);
+				setCurrentPlayer((p) => getOppositeElement(p));
 				break;
 			default:
 				break;
@@ -157,6 +165,7 @@ const GameBoard = () => {
 			isFlipped: false,
 		}))
 	);
+	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>('player1');
 	return (
 		<GameBoardLayout>
 			{squareStates.map((arr, id) => {
@@ -168,8 +177,8 @@ const GameBoard = () => {
 						initPlayer={initPlayer}
 						owner={owner}
 						isFlipped={isFlipped}
-						currentPlayer={'player1'}
-						setSquareStates={setSquareStates}
+						currentPlayer={currentPlayer}
+						setStateAction={{ setCurrentPlayer, setSquareStates }}
 					/>
 				);
 			})}
