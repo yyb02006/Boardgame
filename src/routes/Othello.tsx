@@ -22,6 +22,7 @@ const GameBoardLayout = styled.section`
 `;
 
 const SquareStyle = styled.div<SquareStyleProps>`
+	${fullWidthHeight}
 	border-radius: 100%;
 	display: flex;
 	justify-content: center;
@@ -29,19 +30,13 @@ const SquareStyle = styled.div<SquareStyleProps>`
 	font-weight: 800;
 	color: var(--color-royalBlue);
 	position: relative;
-	background-color: #505050;
-	transition:
-		transform 300ms ease,
-		background-color 300ms ease;
+	background-color: ${(props) => (props.$owner === 'unowned' ? '#505050' : 'transparent')};
 	transform-style: preserve-3d;
-	filter: drop-shadow(0 0 4px #101010);
-	cursor: pointer;
-	${fullWidthHeight}
 	&.Back {
-		transform: rotateY(180deg);
+		transform: perspective(1000px) rotateY(180deg);
 	}
 	&.Front {
-		transform: rotateY(0);
+		transform: perspective(1000px) rotateY(0);
 	}
 	& .Forward,
 	& .Reverse {
@@ -61,20 +56,47 @@ const SquareStyle = styled.div<SquareStyleProps>`
 	}
 `;
 
-const SquareLayout = styled.div<Omit<SquareStyleProps, '$isHovered' | '$owner'>>`
+const SquareLayout = styled.div<Omit<SquareStyleProps, '$isHovered'>>`
 	border-radius: 100%;
+	position: relative;
+	cursor: pointer;
 	&.Hover {
 		> ${SquareStyle} {
-			filter: drop-shadow(0 0 16px #101010);
 			z-index: 1;
 			background-color: ${(props) =>
-				props.$currentPlayer === 'player1' ? 'yellow' : 'var(--color-royalBlue)'};
+				props.$owner === 'unowned' && props.$currentPlayer === 'player1'
+					? 'yellow'
+					: 'var(--color-royalBlue)'};
 			transform: perspective(1000px) translateZ(200px)
 				${(props) =>
 					props.$initPlayer === props.$currentPlayer || props.$initPlayer === 'unowned'
 						? null
 						: 'rotateY(180deg)'};
 		}
+		& .Shadow {
+			z-index: 1;
+			transform: perspective(1000px) translateZ(200px)
+				${(props) =>
+					props.$initPlayer === props.$currentPlayer || props.$initPlayer === 'unowned'
+						? null
+						: 'rotateY(180deg)'};
+		}
+	}
+	> ${SquareStyle}, .Shadow {
+		transition:
+			transform 300ms ease,
+			background-color 300ms ease;
+	}
+	& .Shadow {
+		${fullWidthHeight}
+		position: absolute;
+		top: 0;
+		left: 0;
+		z-index: -1;
+		box-shadow: 0 0 16px #101010;
+		border-radius: 100%;
+		transform: perspective(1000px);
+		transform-style: preserve-3d;
 	}
 `;
 
@@ -123,6 +145,7 @@ const Square = ({
 				break;
 		}
 	};
+	console.log(isFlipped, index);
 	return (
 		<SquareLayout
 			onMouseEnter={() => {
@@ -131,10 +154,12 @@ const Square = ({
 			onMouseLeave={() => {
 				setIsHovered(false);
 			}}
-			className={`${isHovered && 'Hover'}`}
+			className={`${isHovered ? 'Hover' : ''}`}
 			$currentPlayer={currentPlayer}
 			$initPlayer={initPlayer}
+			$owner={owner}
 		>
+			<div className={`Shadow ${isFlipped ? 'Back' : 'Front'} ${isHovered ? 'Hover' : ''}`} />
 			<SquareStyle
 				onClick={() => {
 					onSquareClick(owner);
@@ -166,6 +191,8 @@ const GameBoard = () => {
 		}))
 	);
 	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>('player1');
+	// console.log(squareStates);
+
 	return (
 		<GameBoardLayout>
 			{squareStates.map((arr, id) => {
