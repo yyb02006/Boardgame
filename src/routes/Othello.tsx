@@ -1,7 +1,7 @@
 import { getOppositeElement } from '#libs/utils';
 import { fullWidthHeight } from '#styles/theme';
-import { capitalize } from 'lodash';
-import React, { useState } from 'react';
+import { capitalize, divide } from 'lodash';
+import React, { useCallback, useRef, useState } from 'react';
 import styled from 'styled-components';
 
 const Layout = styled.section`
@@ -84,8 +84,8 @@ const SquareLayout = styled.div<Omit<SquareStyleProps, '$isHovered'>>`
 	}
 	> ${SquareStyle}, .Shadow {
 		transition:
-			transform 300ms ease,
-			background-color 300ms ease;
+			transform 400ms ease,
+			background-color 400ms ease;
 	}
 	& .Shadow {
 		${fullWidthHeight}
@@ -109,43 +109,22 @@ const Square = ({
 	setStateAction,
 }: SquareProps) => {
 	const [isHovered, setIsHovered] = useState<boolean>(false);
-	const { setCurrentPlayer, setSquareStates } = setStateAction;
-	const onSquareClick = (owner: Owner) => {
+	const onSquareClickHandler = (owner: Owner) => {
 		switch (owner) {
 			case 'player1':
 			case 'player2':
 				if (owner === currentPlayer) break;
-				setSquareStates((p) => {
-					const newStates = [...p];
-					newStates[index] = {
-						...newStates[index],
-						isFlipped: !newStates[index].isFlipped,
-						owner: currentPlayer,
-					};
-					return newStates;
-				});
+				setStateAction(owner, index);
 				setIsHovered(false);
-				setCurrentPlayer((p) => getOppositeElement(p));
 				break;
 			case 'unowned':
-				setSquareStates((p) => {
-					const newStates = [...p];
-					newStates[index] = {
-						...newStates[index],
-						isFlipped: false,
-						initPlayer: currentPlayer,
-						owner: currentPlayer,
-					};
-					return newStates;
-				});
+				setStateAction(owner, index);
 				setIsHovered(false);
-				setCurrentPlayer((p) => getOppositeElement(p));
 				break;
 			default:
 				break;
 		}
 	};
-	console.log(isFlipped, index);
 	return (
 		<SquareLayout
 			onMouseEnter={() => {
@@ -162,7 +141,7 @@ const Square = ({
 			<div className={`Shadow ${isFlipped ? 'Back' : 'Front'} ${isHovered ? 'Hover' : ''}`} />
 			<SquareStyle
 				onClick={() => {
-					onSquareClick(owner);
+					onSquareClickHandler(owner);
 				}}
 				className={`${isFlipped ? 'Back' : 'Front'}`}
 				$owner={owner}
@@ -191,8 +170,32 @@ const GameBoard = () => {
 		}))
 	);
 	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>('player1');
-	// console.log(squareStates);
-
+	const updateStates = useCallback((owner: Owner, index: number) => {
+		if (owner === 'unowned') {
+			setSquareStates((p) => {
+				const newStates = [...p];
+				newStates[index] = {
+					...newStates[index],
+					isFlipped: false,
+					initPlayer: currentPlayer,
+					owner: currentPlayer,
+				};
+				return newStates;
+			});
+			setCurrentPlayer((p) => getOppositeElement(p));
+		} else {
+			setSquareStates((p) => {
+				const newStates = [...p];
+				newStates[index] = {
+					...newStates[index],
+					isFlipped: !newStates[index].isFlipped,
+					owner: currentPlayer,
+				};
+				return newStates;
+			});
+			setCurrentPlayer((p) => getOppositeElement(p));
+		}
+	}, []);
 	return (
 		<GameBoardLayout>
 			{squareStates.map((arr, id) => {
@@ -205,7 +208,7 @@ const GameBoard = () => {
 						owner={owner}
 						isFlipped={isFlipped}
 						currentPlayer={currentPlayer}
-						setStateAction={{ setCurrentPlayer, setSquareStates }}
+						setStateAction={updateStates}
 					/>
 				);
 			})}
