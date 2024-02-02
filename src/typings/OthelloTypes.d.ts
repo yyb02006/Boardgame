@@ -23,6 +23,6 @@ interface SquareStyleProps {
 /** React Components Types */
 
 interface SquareProps extends SquareStates {
-	updateStates: (callback: updateStates) => void;
+	updateStates: (index: number, callback: updateStates) => void;
 	currentPlayer: PlayerElement;
 }

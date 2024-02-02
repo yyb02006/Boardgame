@@ -7,7 +7,7 @@ import styled from 'styled-components';
 const Layout = styled.section`
 	height: 100vh;
 	width: 100%;
-	padding: 80px 120px 20px 120px;
+	padding: 80px 120px 40px 120px;
 	display: flex;
 	justify-content: center;
 `;
@@ -109,12 +109,15 @@ const Square = ({
 	updateStates,
 }: SquareProps) => {
 	const [isHovered, setIsHovered] = useState<boolean>(false);
+	/* const shouldAbort = () => {
+		return owner !== 'unowned';
+	}; */
 	const onSquareClickHandler = (owner: Owner) => {
 		switch (owner) {
 			case 'player1':
 			case 'player2':
 				if (owner === currentPlayer) break;
-				updateStates((p) => {
+				updateStates(index, (p) => {
 					const newStates = [...p];
 					newStates[index] = {
 						...newStates[index],
@@ -126,7 +129,7 @@ const Square = ({
 				setIsHovered(false);
 				break;
 			case 'unowned':
-				updateStates((p) => {
+				updateStates(index, (p) => {
 					const newStates = [...p];
 					newStates[index] = {
 						...newStates[index],
@@ -179,18 +182,66 @@ const Square = ({
 
 const GameBoard = () => {
 	const [squareStates, setSquareStates] = useState<SquareStates[]>(
-		Array.from({ length: 64 }, (_, id) => ({
-			index: id,
-			initPlayer: 'unowned',
-			owner: 'unowned',
-			isFlipped: false,
-		}))
+		Array.from({ length: 64 }, (_, id) => {
+			const player1Init = id === 27 || id === 36;
+			const player2Init = id === 28 || id === 35;
+			return {
+				index: id,
+				initPlayer: player1Init ? 'player1' : player2Init ? 'player2' : 'unowned',
+				owner: player1Init ? 'player1' : player2Init ? 'player2' : 'unowned',
+				isFlipped: false,
+			};
+		})
 	);
 	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>('player1');
-	const updateStates = useCallback((callback: (p: SquareStates[]) => SquareStates[]) => {
-		setSquareStates(callback);
-		setCurrentPlayer((p) => getOppositeElement(p));
-	}, []);
+	const updateStates = useCallback(
+		(index: number, callback: (p: SquareStates[]) => SquareStates[]) => {
+			const getColumnAndRow = (number: number) => {
+				return { column: number % 8, row: Math.floor(number / 8) };
+			};
+			const { column, row } = getColumnAndRow(index);
+			/* squareStates.filter((square) => {
+				const { index } = square;
+				const squareLocation = getColumnAndRow(index);
+				return (
+					!(squareLocation.column === column && squareLocation.row === row) &&
+					squareLocation.column === column
+				);
+			}); */
+			console.log(
+				squareStates.reduce<{
+					column: { lower: SquareStates[]; upper: SquareStates[] };
+					row: { lower: SquareStates[]; upper: SquareStates[] };
+				}>(
+					(accumulator, currentSquare) => {
+						const squarePosition = getColumnAndRow(currentSquare.index);
+						switch (true) {
+							case squarePosition.column === column && squarePosition.row === row:
+								return accumulator;
+							case squarePosition.column === column || squarePosition.row === row: {
+								const range: 'lower' | 'upper' = currentSquare.index < index ? 'lower' : 'upper';
+								const targetDirection: 'column' | 'row' =
+									squarePosition.column === column ? 'column' : 'row';
+								return {
+									...accumulator,
+									[targetDirection]: {
+										...accumulator[targetDirection],
+										[range]: [...accumulator[targetDirection][range], currentSquare],
+									},
+								};
+							}
+							default:
+								return accumulator;
+						}
+					},
+					{ column: { lower: [], upper: [] }, row: { lower: [], upper: [] } }
+				)
+			);
+			setSquareStates(callback);
+			setCurrentPlayer((p) => getOppositeElement(p));
+		},
+		[]
+	);
 	return (
 		<GameBoardLayout>
 			{squareStates.map((arr, id) => {
