@@ -106,7 +106,7 @@ const Square = ({
 	isFlipped,
 	index,
 	currentPlayer,
-	setStateAction,
+	updateStates,
 }: SquareProps) => {
 	const [isHovered, setIsHovered] = useState<boolean>(false);
 	const onSquareClickHandler = (owner: Owner) => {
@@ -114,11 +114,28 @@ const Square = ({
 			case 'player1':
 			case 'player2':
 				if (owner === currentPlayer) break;
-				setStateAction(owner, index);
+				updateStates((p) => {
+					const newStates = [...p];
+					newStates[index] = {
+						...newStates[index],
+						isFlipped: !newStates[index].isFlipped,
+						owner: currentPlayer,
+					};
+					return newStates;
+				});
 				setIsHovered(false);
 				break;
 			case 'unowned':
-				setStateAction(owner, index);
+				updateStates((p) => {
+					const newStates = [...p];
+					newStates[index] = {
+						...newStates[index],
+						isFlipped: false,
+						initPlayer: currentPlayer,
+						owner: currentPlayer,
+					};
+					return newStates;
+				});
 				setIsHovered(false);
 				break;
 			default:
@@ -170,31 +187,9 @@ const GameBoard = () => {
 		}))
 	);
 	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>('player1');
-	const updateStates = useCallback((owner: Owner, index: number) => {
-		if (owner === 'unowned') {
-			setSquareStates((p) => {
-				const newStates = [...p];
-				newStates[index] = {
-					...newStates[index],
-					isFlipped: false,
-					initPlayer: currentPlayer,
-					owner: currentPlayer,
-				};
-				return newStates;
-			});
-			setCurrentPlayer((p) => getOppositeElement(p));
-		} else {
-			setSquareStates((p) => {
-				const newStates = [...p];
-				newStates[index] = {
-					...newStates[index],
-					isFlipped: !newStates[index].isFlipped,
-					owner: currentPlayer,
-				};
-				return newStates;
-			});
-			setCurrentPlayer((p) => getOppositeElement(p));
-		}
+	const updateStates = useCallback((callback: (p: SquareStates[]) => SquareStates[]) => {
+		setSquareStates(callback);
+		setCurrentPlayer((p) => getOppositeElement(p));
 	}, []);
 	return (
 		<GameBoardLayout>
@@ -208,7 +203,7 @@ const GameBoard = () => {
 						owner={owner}
 						isFlipped={isFlipped}
 						currentPlayer={currentPlayer}
-						setStateAction={updateStates}
+						updateStates={updateStates}
 					/>
 				);
 			})}

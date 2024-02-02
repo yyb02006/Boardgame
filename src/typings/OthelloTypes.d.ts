@@ -2,6 +2,8 @@ type Owner = PlayerElement | 'unowned';
 
 /** Function Props Types */
 
+type updateStates = (p: SquareStates[]) => SquareStates[];
+
 interface SquareStates {
 	index: number;
 	initPlayer: Owner;
@@ -21,6 +23,6 @@ interface SquareStyleProps {
 /** React Components Types */
 
 interface SquareProps extends SquareStates {
-	setStateAction: (owner: Owner, index: number) => void;
+	updateStates: (callback: updateStates) => void;
 	currentPlayer: PlayerElement;
 }
