@@ -1,5 +1,7 @@
 type Owner = PlayerElement | 'unowned';
 
+type SquaresDirection = 'column' | 'row';
+
 /** Function Props Types */
 
 type updateStates = (p: SquareStates[]) => SquareStates[];
@@ -22,7 +24,9 @@ interface SquareStyleProps {
 
 /** React Components Types */
 
-interface SquareProps extends SquareStates {
+interface SquareProps {
+	squareStates: SquareStates[];
 	updateStates: (index: number, callback: updateStates) => void;
+	currentSquare: SquareStates;
 	currentPlayer: PlayerElement;
 }

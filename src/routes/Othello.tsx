@@ -1,4 +1,4 @@
-import { getOppositeElement } from '#libs/utils';
+import { getColumnAndRow, getColumnAndRowSquares, getOppositeElement } from '#libs/utils';
 import { fullWidthHeight } from '#styles/theme';
 import { capitalize, divide } from 'lodash';
 import React, { useCallback, useRef, useState } from 'react';
@@ -100,18 +100,67 @@ const SquareLayout = styled.div<Omit<SquareStyleProps, '$isHovered'>>`
 	}
 `;
 
-const Square = ({
-	owner,
-	initPlayer,
-	isFlipped,
-	index,
-	currentPlayer,
-	updateStates,
-}: SquareProps) => {
+const Square = ({ currentSquare, currentPlayer, squareStates, updateStates }: SquareProps) => {
 	const [isHovered, setIsHovered] = useState<boolean>(false);
-	/* const shouldAbort = () => {
+	const { index, initPlayer, isFlipped, owner } = currentSquare;
+	const shouldAbort = () => {
+		const squares = getColumnAndRowSquares({ index, squareStates });
+		const position = getColumnAndRow(index, 8, 8);
+		const flippable = {
+			column: {
+				lower:
+					squares.column.lower.find((arr, id) => arr.owner === currentPlayer) &&
+					squares.column.lower.filter((arr, id) => {
+						const targetIndex = squares.column.lower.find((arr, id) => arr.owner === currentPlayer)
+							?.index;
+						if (targetIndex) {
+							return arr.index < targetIndex || arr.index > position.column;
+						} else {
+							return false;
+						}
+					}),
+				upper:
+					squares.column.upper.find((arr, id) => arr.owner === currentPlayer) &&
+					squares.column.upper.filter((arr, id) => {
+						const targetIndex = squares.column.upper.find((arr, id) => arr.owner === currentPlayer)
+							?.index;
+						if (targetIndex) {
+							return arr.index < targetIndex || arr.index > position.column;
+						} else {
+							return false;
+						}
+					}),
+			},
+			row: {
+				lower:
+					squares.row.lower.find((arr, id) => arr.owner === currentPlayer) &&
+					squares.row.lower.filter((arr, id) => {
+						const targetIndex = squares.row.lower.find((arr, id) => arr.owner === currentPlayer)
+							?.index;
+						if (targetIndex) {
+							return arr.index < targetIndex || arr.index > position.row;
+						} else {
+							return false;
+						}
+					}),
+				upper:
+					squares.row.upper.find((arr, id) => arr.owner === currentPlayer) &&
+					squares.row.upper.filter((arr, id) => {
+						const targetIndex = squares.row.upper.find((arr, id) => arr.owner === currentPlayer)
+							?.index;
+						if (targetIndex) {
+							return arr.index < targetIndex || arr.index > position.row;
+						} else {
+							return false;
+						}
+					}),
+			},
+		};
+		/* const getFlippable = () => {
+			
+		}; */
 		return owner !== 'unowned';
-	}; */
+	};
 	const onSquareClickHandler = (owner: Owner) => {
 		switch (owner) {
 			case 'player1':
@@ -196,47 +245,6 @@ const GameBoard = () => {
 	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>('player1');
 	const updateStates = useCallback(
 		(index: number, callback: (p: SquareStates[]) => SquareStates[]) => {
-			const getColumnAndRow = (number: number) => {
-				return { column: number % 8, row: Math.floor(number / 8) };
-			};
-			const { column, row } = getColumnAndRow(index);
-			/* squareStates.filter((square) => {
-				const { index } = square;
-				const squareLocation = getColumnAndRow(index);
-				return (
-					!(squareLocation.column === column && squareLocation.row === row) &&
-					squareLocation.column === column
-				);
-			}); */
-			console.log(
-				squareStates.reduce<{
-					column: { lower: SquareStates[]; upper: SquareStates[] };
-					row: { lower: SquareStates[]; upper: SquareStates[] };
-				}>(
-					(accumulator, currentSquare) => {
-						const squarePosition = getColumnAndRow(currentSquare.index);
-						switch (true) {
-							case squarePosition.column === column && squarePosition.row === row:
-								return accumulator;
-							case squarePosition.column === column || squarePosition.row === row: {
-								const range: 'lower' | 'upper' = currentSquare.index < index ? 'lower' : 'upper';
-								const targetDirection: 'column' | 'row' =
-									squarePosition.column === column ? 'column' : 'row';
-								return {
-									...accumulator,
-									[targetDirection]: {
-										...accumulator[targetDirection],
-										[range]: [...accumulator[targetDirection][range], currentSquare],
-									},
-								};
-							}
-							default:
-								return accumulator;
-						}
-					},
-					{ column: { lower: [], upper: [] }, row: { lower: [], upper: [] } }
-				)
-			);
 			setSquareStates(callback);
 			setCurrentPlayer((p) => getOppositeElement(p));
 		},
@@ -245,15 +253,12 @@ const GameBoard = () => {
 	return (
 		<GameBoardLayout>
 			{squareStates.map((arr, id) => {
-				const { index, initPlayer, isFlipped, owner } = arr;
 				return (
 					<Square
-						key={index}
-						index={index}
-						initPlayer={initPlayer}
-						owner={owner}
-						isFlipped={isFlipped}
+						key={arr.index}
+						currentSquare={arr}
 						currentPlayer={currentPlayer}
+						squareStates={squareStates}
 						updateStates={updateStates}
 					/>
 				);

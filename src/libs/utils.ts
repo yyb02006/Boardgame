@@ -162,3 +162,52 @@ export function getPaddingFromOption(padding: {
 	const { top, right, bottom, left } = padding;
 	return `${top}px ${right}px ${bottom}px ${left}px`;
 }
+
+/** index가 columns와 rows에서 어느 위치에 있는지 반환하는 함수 */
+export function getColumnAndRow(number: number, columns: number, rows: number) {
+	return { column: number % columns, row: Math.floor(number / rows) };
+}
+
+/** square와 같은 column이나 row에 있는 다른 square를 반환하는 함수 */
+export function getColumnAndRowSquares({
+	index,
+	squareStates,
+}: {
+	index: number;
+	squareStates: SquareStates[];
+}) {
+	const { column, row } = getColumnAndRow(index, 8, 8);
+	return squareStates.reduce<{
+		column: { lower: SquareStates[]; upper: SquareStates[] };
+		row: { lower: SquareStates[]; upper: SquareStates[] };
+	}>(
+		(accumulator, currentSquare) => {
+			const squarePosition = getColumnAndRow(currentSquare.index, 8, 8);
+			const currentIndex = currentSquare.index;
+			switch (true) {
+				case currentIndex === index:
+				case Math.abs(currentIndex - index) === 1:
+				case Math.abs(currentIndex - index) === 8:
+					return accumulator;
+				case squarePosition.column === column || squarePosition.row === row: {
+					const range: 'lower' | 'upper' = currentSquare.index < index ? 'lower' : 'upper';
+					const targetDirection: 'column' | 'row' =
+						squarePosition.column === column ? 'column' : 'row';
+					return {
+						...accumulator,
+						[targetDirection]: {
+							...accumulator[targetDirection],
+							[range]:
+								range === 'lower'
+									? [currentSquare, ...accumulator[targetDirection][range]]
+									: [...accumulator[targetDirection][range], currentSquare],
+						},
+					};
+				}
+				default:
+					return accumulator;
+			}
+		},
+		{ column: { lower: [], upper: [] }, row: { lower: [], upper: [] } }
+	);
+}
