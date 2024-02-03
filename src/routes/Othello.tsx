@@ -181,7 +181,7 @@ const Square = ({ currentSquare, currentPlayer, squareStates, updateStates }: Sq
 			}
 			return [];
 		};
-		const getFlipped = () => {
+		const getFlipped = (index: number) => {
 			const targetSquares = getColumnAndRowSquares({ index, squareStates });
 			let resultSquares: SquareStates[] = [];
 			for (const direction in targetSquares) {
@@ -193,8 +193,24 @@ const Square = ({ currentSquare, currentPlayer, squareStates, updateStates }: Sq
 			}
 			return resultSquares;
 		};
+		const getFlippable = () => {
+			const opponentSquares = squareStates.filter(
+				(arr) => arr.owner === getOppositeElement(currentPlayer)
+			);
+			const enclosingSquares = squareStates.filter((square) => {
+				const { index, owner } = square;
+				return (
+					owner === 'unowned' &&
+					[index - 1, index + 1, index - 8, index + 8].some((index) =>
+						opponentSquares.some((square) => square.index === index)
+					)
+				);
+			});
+			return enclosingSquares.filter((square) => getFlipped(square.index).length);
+		};
+		if (!getFlippable().some((square) => square.index === index)) return;
 		updateStates(index, (p) => {
-			const flippedSquares = getFlipped();
+			const flippedSquares = getFlipped(index);
 			const newStates = p.map((square, id) => {
 				const matchedSquare = flippedSquares.find(
 					(flippedSquare, id) => square.index === flippedSquare.index
