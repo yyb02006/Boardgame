@@ -162,37 +162,70 @@ const Square = ({ currentSquare, currentPlayer, squareStates, updateStates }: Sq
 		return owner !== 'unowned';
 	};
 	const onSquareClickHandler = (owner: Owner) => {
-		switch (owner) {
-			case 'player1':
-			case 'player2':
-				if (owner === currentPlayer) break;
-				updateStates(index, (p) => {
-					const newStates = [...p];
+		if (owner === currentPlayer) return;
+		const getFlippedBySide = (squares: SquareStates[]) => {
+			let resultSquares: SquareStates[] = [];
+			for (const square of squares) {
+				const { owner } = square;
+				switch (owner) {
+					case currentPlayer:
+						return resultSquares;
+					case 'unowned':
+						return [];
+					case getOppositeElement(currentPlayer):
+						resultSquares = [...resultSquares, square];
+						break;
+					default:
+						break;
+				}
+			}
+			return [];
+		};
+		const getFlipped = () => {
+			const targetSquares = getColumnAndRowSquares({ index, squareStates });
+			let resultSquares: SquareStates[] = [];
+			for (const direction in targetSquares) {
+				for (const boundary in targetSquares[direction as SquaresDirection]) {
+					const assertedBoundary =
+						targetSquares[direction as SquaresDirection][boundary as Boundary];
+					resultSquares = [...resultSquares, ...getFlippedBySide(assertedBoundary)];
+				}
+			}
+			return resultSquares;
+		};
+		updateStates(index, (p) => {
+			const flippedSquares = getFlipped();
+			const newStates = p.map((square, id) => {
+				const matchedSquare = flippedSquares.find(
+					(flippedSquare, id) => square.index === flippedSquare.index
+				);
+				return matchedSquare
+					? { ...matchedSquare, owner: currentPlayer, isFlipped: !matchedSquare.isFlipped }
+					: square;
+			});
+			switch (owner) {
+				case 'player1':
+				case 'player2':
 					newStates[index] = {
 						...newStates[index],
 						isFlipped: !newStates[index].isFlipped,
 						owner: currentPlayer,
 					};
-					return newStates;
-				});
-				setIsHovered(false);
-				break;
-			case 'unowned':
-				updateStates(index, (p) => {
-					const newStates = [...p];
+					break;
+				case 'unowned':
 					newStates[index] = {
 						...newStates[index],
 						isFlipped: false,
 						initPlayer: currentPlayer,
 						owner: currentPlayer,
 					};
-					return newStates;
-				});
-				setIsHovered(false);
-				break;
-			default:
-				break;
-		}
+					break;
+				default:
+					break;
+			}
+			return newStates;
+		});
+		setIsHovered(false);
 	};
 	return (
 		<SquareLayout

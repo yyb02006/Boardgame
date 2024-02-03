@@ -2,6 +2,8 @@ type Owner = PlayerElement | 'unowned';
 
 type SquaresDirection = 'column' | 'row';
 
+type Boundary = 'lower' | 'upper';
+
 /** Function Props Types */
 
 type updateStates = (p: SquareStates[]) => SquareStates[];

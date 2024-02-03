@@ -186,8 +186,6 @@ export function getColumnAndRowSquares({
 			const currentIndex = currentSquare.index;
 			switch (true) {
 				case currentIndex === index:
-				case Math.abs(currentIndex - index) === 1:
-				case Math.abs(currentIndex - index) === 8:
 					return accumulator;
 				case squarePosition.column === column || squarePosition.row === row: {
 					const range: 'lower' | 'upper' = currentSquare.index < index ? 'lower' : 'upper';
