@@ -13,6 +13,7 @@ interface SquareStates {
 	initPlayer: Owner;
 	owner: Owner;
 	isFlipped: boolean;
+	flippable: boolean;
 }
 
 /** Styled Components Types */
