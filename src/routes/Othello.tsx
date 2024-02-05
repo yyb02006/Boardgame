@@ -1,8 +1,7 @@
 import { getColumnAndRow, getColumnAndRowSquares, getOppositeElement } from '#libs/utils';
 import { colorBlink } from '#styles/animations';
 import { fullWidthHeight } from '#styles/theme';
-import { capitalize, divide } from 'lodash';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import styled, { css } from 'styled-components';
 
 const Layout = styled.section`
@@ -11,6 +10,13 @@ const Layout = styled.section`
 	padding: 80px 120px 40px 120px;
 	display: flex;
 	justify-content: center;
+	gap: 40px;
+`;
+
+const PlayerCardLayout = styled.section`
+	width: 100%;
+	height: 100%;
+	background-color: green;
 `;
 
 const GameBoardLayout = styled.section`
@@ -23,7 +29,7 @@ const GameBoardLayout = styled.section`
 `;
 
 const OthelloColors = {
-	player1: { activated: 'yellow', flippable: '#b1b39e' },
+	player1: { activated: '#e9a71a', flippable: '#9c937f' },
 	player2: { activated: 'var(--color-royalBlue)', flippable: '#9b9bbb' },
 	common: '#505050',
 };
@@ -36,18 +42,6 @@ const SquareStyle = styled.div<SquareStyleProps>`
 	align-items: center;
 	font-weight: 800;
 	position: relative;
-	${(props) =>
-		props.$flippable
-			? colorBlink({
-					name: 'square',
-					startColor: OthelloColors.common,
-					alternateColor: OthelloColors[props.$currentPlayer].flippable,
-					duration: 700,
-					targetProperty: 'backgroundColor',
-			  })
-			: css`
-					background-color: ${OthelloColors.common};
-			  `}
 	transform-style: preserve-3d;
 	&.Back {
 		transform: perspective(1000px) rotateY(180deg);
@@ -64,26 +58,58 @@ const SquareStyle = styled.div<SquareStyleProps>`
 	}
 	& .Forward {
 		background-color: ${(props) =>
-			props.$initPlayer === 'player1' ? 'yellow' : 'var(--color-royalBlue)'};
+			props.$initPlayer === 'player1'
+				? OthelloColors.player1.activated
+				: OthelloColors.player2.activated};
 	}
 	& .Reverse {
 		transform: rotateY(180deg);
 		background-color: ${(props) =>
-			props.$initPlayer === 'player1' ? 'var(--color-royalBlue)' : 'yellow'};
+			props.$initPlayer === 'player1'
+				? OthelloColors.player2.activated
+				: OthelloColors.player1.activated};
 	}
 `;
 
-const SquareLayout = styled.div<Omit<SquareStyleProps, '$isHovered' | '$flippable'>>`
+const SquareLayout = styled.div<Omit<SquareStyleProps, '$isHovered'>>`
 	border-radius: 100%;
 	position: relative;
 	cursor: pointer;
+	${(props) => {
+		const { $flippable, $currentPlayer, $owner } = props;
+		if ($owner === 'unowned') {
+			switch ($flippable) {
+				case true:
+					return colorBlink({
+						name: 'square',
+						startColor: OthelloColors.common,
+						alternateColor: OthelloColors[$currentPlayer].flippable,
+						duration: 700,
+						targetProperty: 'backgroundColor',
+					});
+				default:
+					return css`
+						background-color: ${OthelloColors.common};
+					`;
+			}
+		} else {
+			return css`
+				background-color: transparent;
+			`;
+		}
+	}}
 	&.Hover {
 		> ${SquareStyle} {
 			z-index: 1;
-			background-color: ${(props) =>
-				props.$owner === 'unowned' && props.$currentPlayer === 'player1'
-					? 'yellow'
-					: 'var(--color-royalBlue)'};
+			background-color: ${(props) => {
+				const { $owner, $currentPlayer } = props;
+				switch ($owner) {
+					case 'unowned':
+						return OthelloColors[$currentPlayer].activated;
+					default:
+						return OthelloColors.common;
+				}
+			}};
 			transform: perspective(1000px) translateZ(200px)
 				${(props) =>
 					props.$initPlayer === props.$currentPlayer || props.$initPlayer === 'unowned'
@@ -181,7 +207,7 @@ const Square = ({ currentSquare, currentPlayer, squareStates, updateStates }: Sq
 				? { ...square, isFlipped: !square.isFlipped, owner: currentPlayer }
 				: square
 		);
-		updateStates(index, (prevSquares) => {
+		updateStates((prevSquares) => {
 			const flippedSquares = getFlipped(index, prevSquares, currentPlayer);
 			const newSquares = prevSquares.map((square, id) => {
 				const matchedSquare = flippedSquares.find(
@@ -229,15 +255,16 @@ const Square = ({ currentSquare, currentPlayer, squareStates, updateStates }: Sq
 	return (
 		<SquareLayout
 			onMouseEnter={() => {
-				setIsHovered(true);
+				!(!flippable && owner === 'unowned') && setIsHovered(true);
 			}}
 			onMouseLeave={() => {
-				setIsHovered(false);
+				!(!flippable && owner === 'unowned') && setIsHovered(false);
 			}}
 			className={`${isHovered ? 'Hover' : ''}`}
 			$currentPlayer={currentPlayer}
 			$initPlayer={initPlayer}
 			$owner={owner}
+			$flippable={flippable}
 		>
 			<div className={`Shadow ${isFlipped ? 'Back' : 'Front'} ${isHovered ? 'Hover' : ''}`} />
 			<SquareStyle
@@ -277,16 +304,13 @@ const GameBoard = () => {
 		})
 	);
 	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>('player1');
-	const updateStates = useCallback(
-		(index: number, callback: (p: SquareStates[]) => SquareStates[]) => {
-			setSquareStates(callback);
-			setCurrentPlayer((p) => getOppositeElement(p));
-		},
-		[]
-	);
+	const updateStates = useCallback((callback: (p: SquareStates[]) => SquareStates[]) => {
+		setSquareStates(callback);
+		setCurrentPlayer((p) => getOppositeElement(p));
+	}, []);
 	return (
 		<GameBoardLayout>
-			{squareStates.map((arr, id) => {
+			{squareStates.map((arr) => {
 				return (
 					<Square
 						key={arr.index}
@@ -301,10 +325,16 @@ const GameBoard = () => {
 	);
 };
 
+const PlayerCard = ({ player }: { player: PlayerElement }) => {
+	return <PlayerCardLayout>{player}</PlayerCardLayout>;
+};
+
 const Othello = () => {
 	return (
 		<Layout>
-			<GameBoard></GameBoard>
+			<PlayerCard player="player1" />
+			<GameBoard />
+			<PlayerCard player="player2" />
 		</Layout>
 	);
 };

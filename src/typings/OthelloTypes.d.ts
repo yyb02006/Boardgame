@@ -30,7 +30,7 @@ interface SquareStyleProps {
 
 interface SquareProps {
 	squareStates: SquareStates[];
-	updateStates: (index: number, callback: updateStates) => void;
+	updateStates: (callback: updateStates) => void;
 	currentSquare: SquareStates;
 	currentPlayer: PlayerElement;
 }
