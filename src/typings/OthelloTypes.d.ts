@@ -4,9 +4,15 @@ type SquaresDirection = 'column' | 'row';
 
 type Boundary = 'lower' | 'upper';
 
+interface PlayerData {
+	index: PlayerElement;
+	name: string;
+	score: number;
+}
+
 /** Function Props Types */
 
-type updateStates = (p: SquareStates[]) => SquareStates[];
+type UpdateStates = (p: SquareStates[]) => SquareStates[];
 
 interface SquareStates {
 	index: number;
@@ -18,6 +24,10 @@ interface SquareStates {
 
 /** Styled Components Types */
 
+interface PlayerCardLayoutProps {
+	$player: PlayerElement;
+}
+
 interface SquareStyleProps {
 	$owner: Owner;
 	$initPlayer: Owner;
@@ -28,9 +38,18 @@ interface SquareStyleProps {
 
 /** React Components Types */
 
+interface PlayerCardProps {
+	playerData: PlayerData;
+}
+
+interface GameBoardProps {
+	squareStates: SquareStates[];
+	setSquareStates: React.Dispatch<React.SetStateAction<SquareStates[]>>;
+}
+
 interface SquareProps {
 	squareStates: SquareStates[];
-	updateStates: (callback: updateStates) => void;
+	updateStates: (callback: UpdateStates) => void;
 	currentSquare: SquareStates;
 	currentPlayer: PlayerElement;
 }

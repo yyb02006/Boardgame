@@ -4,19 +4,37 @@ import { fullWidthHeight } from '#styles/theme';
 import React, { useCallback, useState } from 'react';
 import styled, { css } from 'styled-components';
 
+const OthelloColors = {
+	player1: { activated: '#e9a71a', flippable: '#9c937f' },
+	player2: { activated: 'var(--color-royalBlue)', flippable: '#9b9bbb' },
+	common: '#505050',
+};
+
 const Layout = styled.section`
 	height: 100vh;
 	width: 100%;
 	padding: 80px 120px 40px 120px;
 	display: flex;
+	font-size: 5rem;
+	font-weight: 800;
 	justify-content: center;
 	gap: 40px;
 `;
 
-const PlayerCardLayout = styled.section`
+const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
+	max-width: 400px;
 	width: 100%;
-	height: 100%;
-	background-color: green;
+	background-color: ${(props) => OthelloColors[props.$player].activated};
+	margin: ${(props) => (props.$player === 'player1' ? '0 40px 0 0' : '0 0 0 40px')};
+	font-size: 4vw;
+	position: relative;
+	padding: 12px 24px;
+	text-align: ${(props) => (props.$player === 'player1' ? 'left' : 'right')};
+	h3 {
+		font-size: ${`clamp(1rem,2vw,2rem)`};
+		font-weight: 600;
+		margin: 0;
+	}
 `;
 
 const GameBoardLayout = styled.section`
@@ -27,12 +45,6 @@ const GameBoardLayout = styled.section`
 	grid-template-columns: repeat(8, auto);
 	grid-template-rows: repeat(8, auto);
 `;
-
-const OthelloColors = {
-	player1: { activated: '#e9a71a', flippable: '#9c937f' },
-	player2: { activated: 'var(--color-royalBlue)', flippable: '#9b9bbb' },
-	common: '#505050',
-};
 
 const SquareStyle = styled.div<SquareStyleProps>`
 	${fullWidthHeight}
@@ -289,20 +301,7 @@ const Square = ({ currentSquare, currentPlayer, squareStates, updateStates }: Sq
 	);
 };
 
-const GameBoard = () => {
-	const [squareStates, setSquareStates] = useState<SquareStates[]>(
-		Array.from({ length: 64 }, (_, id) => {
-			const player1Init = id === 27 || id === 36;
-			const player2Init = id === 28 || id === 35;
-			return {
-				index: id,
-				initPlayer: player1Init ? 'player1' : player2Init ? 'player2' : 'unowned',
-				owner: player1Init ? 'player1' : player2Init ? 'player2' : 'unowned',
-				isFlipped: false,
-				flippable: [20, 29, 34, 43].includes(id),
-			};
-		})
-	);
+const GameBoard = ({ squareStates, setSquareStates }: GameBoardProps) => {
 	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>('player1');
 	const updateStates = useCallback((callback: (p: SquareStates[]) => SquareStates[]) => {
 		setSquareStates(callback);
@@ -325,16 +324,51 @@ const GameBoard = () => {
 	);
 };
 
-const PlayerCard = ({ player }: { player: PlayerElement }) => {
-	return <PlayerCardLayout>{player}</PlayerCardLayout>;
+const PlayerCard = ({ playerData }: PlayerCardProps) => {
+	const { index, name, score } = playerData;
+	return (
+		<PlayerCardLayout $player={index}>
+			<span>{name}</span>
+			<div className="Wrapper">
+				<div>
+					<h3>score : {score}</h3>
+				</div>
+			</div>
+		</PlayerCardLayout>
+	);
 };
 
 const Othello = () => {
+	const [squareStates, setSquareStates] = useState<SquareStates[]>(
+		Array.from({ length: 64 }, (_, id) => {
+			const player1Init = id === 27 || id === 36;
+			const player2Init = id === 28 || id === 35;
+			return {
+				index: id,
+				initPlayer: player1Init ? 'player1' : player2Init ? 'player2' : 'unowned',
+				owner: player1Init ? 'player1' : player2Init ? 'player2' : 'unowned',
+				isFlipped: false,
+				flippable: [20, 29, 34, 43].includes(id),
+			};
+		})
+	);
+	const playersData: Record<PlayerElement, PlayerData> = {
+		player1: {
+			index: 'player1',
+			name: 'player1',
+			score: squareStates.filter((square) => square.owner === 'player1').length,
+		},
+		player2: {
+			index: 'player2',
+			name: 'player2',
+			score: squareStates.filter((square) => square.owner === 'player2').length,
+		},
+	};
 	return (
 		<Layout>
-			<PlayerCard player="player1" />
-			<GameBoard />
-			<PlayerCard player="player2" />
+			<PlayerCard playerData={playersData.player1} />
+			<GameBoard squareStates={squareStates} setSquareStates={setSquareStates} />
+			<PlayerCard playerData={playersData.player2} />
 		</Layout>
 	);
 };
