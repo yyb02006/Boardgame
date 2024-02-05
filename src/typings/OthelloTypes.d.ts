@@ -23,6 +23,7 @@ interface SquareStyleProps {
 	$initPlayer: Owner;
 	$isHovered: boolean;
 	$currentPlayer: PlayerElement;
+	$flippable: boolean;
 }
 
 /** React Components Types */

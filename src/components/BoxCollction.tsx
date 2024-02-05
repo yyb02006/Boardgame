@@ -73,7 +73,8 @@ const BoxHover = styled.div<BoxHoverProps>`
 			name: props.$currentPlayer,
 			startColor: colors[props.$currentPlayer].noneActiveBorder,
 			alternateColor: colors.common.ownableBorder,
-			duration: 0.7,
+			duration: 700,
+			targetProperty: 'borderColor',
 		})}
 	z-index: ${(props) => (props.$isSelected ? 2 : 1)};
 	&:hover {

@@ -90,16 +90,42 @@ export function rotate({
 	`;
 }
 
-export function colorBlink({ name, startColor, alternateColor, duration }: ColorBlinkProps) {
+const categorizeByProperty = (targetProperty: ColorProperties, color: string) => {
+	switch (targetProperty) {
+		case 'backgroundColor':
+			return css`
+				background-color: ${color};
+			`;
+		case 'borderColor':
+			return css`
+				border-color: ${color};
+			`;
+		case 'color':
+			return css`
+				color: ${color};
+			`;
+		default:
+			break;
+	}
+};
+
+export function colorBlink({
+	name,
+	startColor,
+	alternateColor,
+	duration,
+	targetProperty,
+}: ColorBlinkProps) {
 	return css`
-		@keyframes colorBlink_${name} {
+		@keyframes colorBlink_${name}_${startColor.slice(1)}_${alternateColor.slice(1)} {
 			from {
-				border-color: ${startColor};
+				${categorizeByProperty(targetProperty, startColor)}
 			}
 			to {
-				border-color: ${alternateColor};
+				${categorizeByProperty(targetProperty, alternateColor)}
 			}
 		}
-		animation: ${`colorBlink_` + name} ease-in-out ${duration}s infinite alternate;
+		animation: ${`colorBlink_${name}_${startColor.slice(1)}_${alternateColor.slice(1)}`} ease-in-out
+			${duration}ms infinite alternate;
 	`;
 }

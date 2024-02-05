@@ -1,8 +1,9 @@
 import { getColumnAndRow, getColumnAndRowSquares, getOppositeElement } from '#libs/utils';
+import { colorBlink } from '#styles/animations';
 import { fullWidthHeight } from '#styles/theme';
 import { capitalize, divide } from 'lodash';
 import React, { useCallback, useRef, useState } from 'react';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 
 const Layout = styled.section`
 	height: 100vh;
@@ -21,6 +22,12 @@ const GameBoardLayout = styled.section`
 	grid-template-rows: repeat(8, auto);
 `;
 
+const OthelloColors = {
+	player1: { activated: 'yellow', flippable: '#b1b39e' },
+	player2: { activated: 'var(--color-royalBlue)', flippable: '#9b9bbb' },
+	common: '#505050',
+};
+
 const SquareStyle = styled.div<SquareStyleProps>`
 	${fullWidthHeight}
 	border-radius: 100%;
@@ -28,9 +35,19 @@ const SquareStyle = styled.div<SquareStyleProps>`
 	justify-content: center;
 	align-items: center;
 	font-weight: 800;
-	color: var(--color-royalBlue);
 	position: relative;
-	background-color: ${(props) => (props.$owner === 'unowned' ? '#505050' : 'transparent')};
+	${(props) =>
+		props.$flippable
+			? colorBlink({
+					name: 'square',
+					startColor: OthelloColors.common,
+					alternateColor: OthelloColors[props.$currentPlayer].flippable,
+					duration: 700,
+					targetProperty: 'backgroundColor',
+			  })
+			: css`
+					background-color: ${OthelloColors.common};
+			  `}
 	transform-style: preserve-3d;
 	&.Back {
 		transform: perspective(1000px) rotateY(180deg);
@@ -56,7 +73,7 @@ const SquareStyle = styled.div<SquareStyleProps>`
 	}
 `;
 
-const SquareLayout = styled.div<Omit<SquareStyleProps, '$isHovered'>>`
+const SquareLayout = styled.div<Omit<SquareStyleProps, '$isHovered' | '$flippable'>>`
 	border-radius: 100%;
 	position: relative;
 	cursor: pointer;
@@ -102,7 +119,7 @@ const SquareLayout = styled.div<Omit<SquareStyleProps, '$isHovered'>>`
 
 const Square = ({ currentSquare, currentPlayer, squareStates, updateStates }: SquareProps) => {
 	const [isHovered, setIsHovered] = useState<boolean>(false);
-	const { index, initPlayer, isFlipped, owner } = currentSquare;
+	const { index, initPlayer, isFlipped, owner, flippable } = currentSquare;
 	const shouldAbort = () => {
 		const squares = getColumnAndRowSquares({ index, squareStates });
 		const position = getColumnAndRow(index, 8, 8);
@@ -196,7 +213,6 @@ const Square = ({ currentSquare, currentPlayer, squareStates, updateStates }: Sq
 					break;
 			}
 			const flippables = getFlippables(newSquares, getOppositeElement(currentPlayer));
-			console.log(flippables);
 			const withOriginal = newSquares.map((square, id) => {
 				const matchedFlippable = flippables.find((flippable) => flippable.index === square.index);
 				return matchedFlippable
@@ -233,6 +249,7 @@ const Square = ({ currentSquare, currentPlayer, squareStates, updateStates }: Sq
 				$initPlayer={initPlayer}
 				$isHovered={isHovered}
 				$currentPlayer={currentPlayer}
+				$flippable={flippable}
 			>
 				{owner !== 'unowned' && (
 					<>
@@ -267,7 +284,6 @@ const GameBoard = () => {
 		},
 		[]
 	);
-	console.log(squareStates);
 	return (
 		<GameBoardLayout>
 			{squareStates.map((arr, id) => {
