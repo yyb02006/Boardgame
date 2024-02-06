@@ -76,7 +76,8 @@ const Layout = styled.section`
 	position: relative;
 	padding: 80px 120px 40px 120px;
 	perspective: 1000px;
-	overflow: hidden;
+	overflow-y: visible;
+	overflow-x: hidden;
 	@media screen and (max-width: 1024px) {
 		display: flex;
 		flex-direction: column;
@@ -199,7 +200,6 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 
 const BoardItemsWrapper = styled.div`
 	height: 100%;
-	max-height: 100vw;
 	aspect-ratio: 1;
 	display: flex;
 	justify-content: center;

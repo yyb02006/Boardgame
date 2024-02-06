@@ -11,21 +11,20 @@ const OthelloColors = {
 };
 
 const Layout = styled.section`
-	height: 100vh;
+	height: 45vw;
 	width: 100%;
 	padding: 80px 120px 40px 120px;
 	display: flex;
 	font-size: 5rem;
 	font-weight: 800;
 	justify-content: center;
-	gap: 40px;
 `;
 
 const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 	max-width: 400px;
 	width: 100%;
 	background-color: ${(props) => OthelloColors[props.$player].activated};
-	margin: ${(props) => (props.$player === 'player1' ? '0 40px 0 0' : '0 0 0 40px')};
+	margin: ${(props) => (props.$player === 'player1' ? '0 4vw 0 0' : '0 0 0 4vw')};
 	font-size: 4vw;
 	position: relative;
 	padding: 12px 24px;
@@ -38,7 +37,6 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 `;
 
 const GameBoardLayout = styled.section`
-	height: 100%;
 	aspect-ratio: 1;
 	display: grid;
 	gap: 8px;
