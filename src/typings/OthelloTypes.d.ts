@@ -4,10 +4,13 @@ type SquaresDirection = 'column' | 'row';
 
 type Boundary = 'lower' | 'upper';
 
+type SetPlayersData = React.Dispatch<React.SetStateAction<Record<PlayerElement, PlayerData>>>;
+
 interface PlayerData {
 	index: PlayerElement;
 	name: string;
 	score: number;
+	takeOverChance: number;
 }
 
 /** Function Props Types */
@@ -45,11 +48,13 @@ interface PlayerCardProps {
 interface GameBoardProps {
 	squareStates: SquareStates[];
 	setSquareStates: React.Dispatch<React.SetStateAction<SquareStates[]>>;
+	setPlayersData: SetPlayersData;
 }
 
 interface SquareProps {
 	squareStates: SquareStates[];
 	updateStates: (callback: UpdateStates) => void;
+	setPlayersData: SetPlayersData;
 	currentSquare: SquareStates;
 	currentPlayer: PlayerElement;
 }
