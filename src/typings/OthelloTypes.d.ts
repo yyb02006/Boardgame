@@ -13,6 +13,8 @@ interface PlayerData {
 	takeOverChance: number;
 }
 
+type SettingTyps = 'paid' | 'vanilla' | 'free' | 'modded' | 'list';
+
 /** Function Props Types */
 
 type UpdateStates = (p: SquareStates[]) => SquareStates[];
