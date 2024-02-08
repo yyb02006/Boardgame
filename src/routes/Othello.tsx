@@ -217,59 +217,85 @@ const Square = ({
 			);
 			return !isFlippable;
 		};
-		if (shouldAbort()) return;
-		const flippedSquares = getFlipped(index, squareStates, currentPlayer);
-		const newSquares = squareStates.map((square, id) => {
-			const matchedSquare = flippedSquares.find(
-				(flippedSquare, id) => square.index === flippedSquare.index
-			);
-			return matchedSquare
-				? { ...matchedSquare, owner: currentPlayer, isFlipped: !matchedSquare.isFlipped }
-				: { ...square, flippable: false };
-		});
-		switch (owner) {
-			case 'player1':
-			case 'player2':
-				newSquares[index] = {
-					...newSquares[index],
-					isFlipped: !newSquares[index].isFlipped,
-					owner: currentPlayer,
-				};
-				break;
-			case 'unowned':
-				newSquares[index] = {
-					...newSquares[index],
-					isFlipped: false,
-					initPlayer: currentPlayer,
-					owner: currentPlayer,
-					flippable: false,
-				};
-				break;
-			default:
-				break;
+		// if (shouldAbort()) return;
+		if (owner === getOppositeElement(currentPlayer)) {
+			const flippedSquares = getFlipped(index, squareStates, currentPlayer);
+			const newSquares = squareStates.map((square) => {
+				const matchedSquare = flippedSquares.find(
+					(flippedSquare) => square.index === flippedSquare.index || square.index === index
+				);
+				return matchedSquare
+					? { ...matchedSquare, owner: currentPlayer, isFlipped: !matchedSquare.isFlipped }
+					: { ...square, flippable: false };
+			});
+			console.log(newSquares);
+			const flippables = getFlippables(newSquares, getOppositeElement(currentPlayer));
+			const withOriginal = newSquares.map((square, id) => {
+				const matchedFlippable = flippables.some(
+					(flippable) =>
+						flippable.index === square.index || owner === getOppositeElement(currentPlayer)
+				);
+				return matchedFlippable
+					? {
+							...square,
+							flippable: true,
+					  }
+					: square;
+			});
+		} else {
+			const flippedSquares = getFlipped(index, squareStates, currentPlayer);
+			const newSquares = squareStates.map((square, id) => {
+				const matchedSquare = flippedSquares.find(
+					(flippedSquare, id) => square.index === flippedSquare.index
+				);
+				return matchedSquare
+					? { ...matchedSquare, owner: currentPlayer, isFlipped: !matchedSquare.isFlipped }
+					: { ...square, flippable: false };
+			});
+			switch (owner) {
+				case 'player1':
+				case 'player2':
+					newSquares[index] = {
+						...newSquares[index],
+						isFlipped: !newSquares[index].isFlipped,
+						owner: currentPlayer,
+					};
+					break;
+				case 'unowned':
+					newSquares[index] = {
+						...newSquares[index],
+						isFlipped: false,
+						initPlayer: currentPlayer,
+						owner: currentPlayer,
+						flippable: false,
+					};
+					break;
+				default:
+					break;
+			}
+			const flippables = getFlippables(newSquares, getOppositeElement(currentPlayer));
+			const withOriginal = newSquares.map((square, id) => {
+				const matchedFlippable = flippables.find((flippable) => flippable.index === square.index);
+				return matchedFlippable
+					? {
+							...matchedFlippable,
+							flippable: true,
+					  }
+					: square;
+			});
+			updateStates((prevSquares) => withOriginal);
+			setIsHovered(false);
+			setPlayersData((p) => ({
+				player1: {
+					...p.player1,
+					score: withOriginal.filter((square) => square.owner === 'player1').length,
+				},
+				player2: {
+					...p.player2,
+					score: withOriginal.filter((square) => square.owner === 'player2').length,
+				},
+			}));
 		}
-		const flippables = getFlippables(newSquares, getOppositeElement(currentPlayer));
-		const withOriginal = newSquares.map((square, id) => {
-			const matchedFlippable = flippables.find((flippable) => flippable.index === square.index);
-			return matchedFlippable
-				? {
-						...matchedFlippable,
-						flippable: true,
-				  }
-				: square;
-		});
-		updateStates((prevSquares) => withOriginal);
-		setIsHovered(false);
-		setPlayersData((p) => ({
-			player1: {
-				...p.player1,
-				score: withOriginal.filter((square) => square.owner === 'player1').length,
-			},
-			player2: {
-				...p.player2,
-				score: withOriginal.filter((square) => square.owner === 'player2').length,
-			},
-		}));
 	};
 	return (
 		<SquareLayout
