@@ -218,79 +218,55 @@ const Square = ({
 			return !isFlippable;
 		};
 		// if (shouldAbort()) return;
-		if (owner === getOppositeElement(currentPlayer)) {
-			const flippedSquares = getFlipped(index, squareStates, currentPlayer);
-			const newSquares = squareStates.map((square) => {
-				const matchedSquare = flippedSquares.some(
-					(flippedSquare) => square.index === flippedSquare.index
-				);
+		const flippedSquares = getFlipped(index, squareStates, currentPlayer);
+		const newSquares = squareStates.map((square) => {
+			const matchedSquare = flippedSquares.some(
+				(flippedSquare) => square.index === flippedSquare.index
+			);
+			if (owner === getOppositeElement(currentPlayer)) {
 				return matchedSquare || square.index === index
 					? { ...square, owner: currentPlayer, isFlipped: !square.isFlipped }
 					: { ...square, flippable: false };
-			});
-			const flippables = getFlippables(newSquares, getOppositeElement(currentPlayer));
-			const withOriginal = newSquares.map((square) => {
-				const matchedFlippable = flippables.some((flippable) => flippable.index === square.index);
-				return matchedFlippable || square.owner === getOppositeElement(currentPlayer)
-					? {
+			} else {
+				switch (true) {
+					case square.index === index:
+						return {
 							...square,
-							flippable: true,
-					  }
-					: square;
-			});
-			updateStates(() => withOriginal);
-			setIsHovered(false);
-			setPlayersData((p) => ({
-				player1: {
-					...p.player1,
-					score: withOriginal.filter((square) => square.owner === 'player1').length,
-				},
-				player2: {
-					...p.player2,
-					score: withOriginal.filter((square) => square.owner === 'player2').length,
-				},
-			}));
-		} else {
-			const flippedSquares = getFlipped(index, squareStates, currentPlayer);
-			const newSquares = squareStates.map((square) => {
-				const matchedSquare = flippedSquares.some(
-					(flippedSquare) => square.index === flippedSquare.index
-				);
-				return matchedSquare
-					? { ...square, owner: currentPlayer, isFlipped: !square.isFlipped }
-					: { ...square, flippable: false };
-			});
-			/* 여기를 삭제하고 if문 추상화 */
-			newSquares[index] = {
-				...newSquares[index],
-				isFlipped: false,
-				initPlayer: currentPlayer,
-				owner: currentPlayer,
-				flippable: false,
-			};
-			const flippables = getFlippables(newSquares, getOppositeElement(currentPlayer));
-			const withOriginal = newSquares.map((square, id) => {
-				const matchedFlippable = flippables.some((flippable) => flippable.index === square.index);
-				return matchedFlippable
-					? {
-							...square,
-							flippable: true,
-					  }
-					: square;
-			});
-			updateStates(() => withOriginal);
-			setIsHovered(false);
-			setPlayersData((p) => ({
-				player1: {
-					...p.player1,
-					score: withOriginal.filter((square) => square.owner === 'player1').length,
-				},
-				player2: {
-					...p.player2,
-					score: withOriginal.filter((square) => square.owner === 'player2').length,
-				},
-			}));
-		}
+							isFlipped: false,
+							initPlayer: currentPlayer,
+							owner: currentPlayer,
+							flippable: false,
+						};
+					case matchedSquare:
+						return { ...square, owner: currentPlayer, isFlipped: !square.isFlipped };
+					default:
+						return { ...square, flippable: false };
+				}
+			}
+		});
+		const flippables = getFlippables(newSquares, getOppositeElement(currentPlayer));
+		const withOriginal = newSquares.map((square) => {
+			const matchedFlippable = flippables.some((flippable) => flippable.index === square.index);
+			return matchedFlippable || square.owner === currentPlayer
+				? {
+						...square,
+						flippable: true,
+				  }
+				: square;
+		});
+		console.log(withOriginal);
+		updateStates(() => withOriginal);
+		setIsHovered(false);
+		setPlayersData((p) => ({
+			player1: {
+				...p.player1,
+				score: withOriginal.filter((square) => square.owner === 'player1').length,
+			},
+			player2: {
+				...p.player2,
+				score: withOriginal.filter((square) => square.owner === 'player2').length,
+			},
+		}));
 	};
 	return (
 		<SquareLayout
