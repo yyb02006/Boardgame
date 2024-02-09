@@ -57,9 +57,8 @@ interface GameBoardProps {
 
 interface SquareProps {
 	squareStates: SquareStates[];
-	updateStates: (callback: UpdateStates) => void;
+	updateStates: (callback: UpdateStates, nextPlayer: PlayerElement) => void;
 	setPlayersData: SetPlayersData;
-	setErrors: React.Dispatch<React.SetStateAction<string>>;
 	currentSquare: SquareStates;
 	currentPlayer: PlayerElement;
 }

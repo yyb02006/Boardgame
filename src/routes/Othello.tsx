@@ -162,20 +162,32 @@ const Square = ({
 	squareStates,
 	updateStates,
 	setPlayersData,
-	setErrors,
 }: SquareProps) => {
 	const [isHovered, setIsHovered] = useState<boolean>(false);
 	const { index, initPlayer, isFlipped, owner, flippable, isPrev } = currentSquare;
-	const onSquareClickHandler = (owner: Owner) => {
-		if (owner === currentPlayer) return;
-		if (isPrev) {
+	const onSquareClickHandler = () => {
+		const updateError = (error: string) => {
 			setPlayersData((p) => ({
 				...p,
 				[currentPlayer]: {
 					...p[currentPlayer],
-					error: 'cannot change the recently modified square again.',
+					error,
 				},
 			}));
+		};
+		const shouldAbort = () => {
+			return !flippable || owner === currentPlayer;
+		};
+		if (shouldAbort()) {
+			return;
+		} else if (
+			owner === getOppositeElement(currentPlayer) &&
+			squareStates.filter((square) => square.owner === currentPlayer).length < 8
+		) {
+			updateError('cannot takeover until the own squares reaches 8.');
+			return;
+		} else if (isPrev) {
+			updateError('cannot change the recently modified square again.');
 			return;
 		}
 		const isCurrentSquare = (currentIndex: number) => currentIndex === index;
@@ -226,15 +238,9 @@ const Square = ({
 				(square) => getFlipped(square.index, squares, targetPlayer).length
 			);
 		};
-		const shouldAbort = () => {
-			return !flippable;
-		};
-		if (shouldAbort()) return;
-		const flippedSquares = getFlipped(index, squareStates, currentPlayer);
-		const newSquares = squareStates.map((square) => {
-			const matchedSquare = flippedSquares.some(
-				(flippedSquare) => square.index === flippedSquare.index
-			);
+		const flippeds = getFlipped(index, squareStates, currentPlayer);
+		const flippedSquares = squareStates.map((square) => {
+			const matchedSquare = flippeds.some((flipped) => square.index === flipped.index);
 			if (owner === getOppositeElement(currentPlayer)) {
 				return matchedSquare || isCurrentSquare(square.index)
 					? { ...square, owner: currentPlayer, isFlipped: !square.isFlipped }
@@ -256,13 +262,21 @@ const Square = ({
 				}
 			}
 		});
-		const flippables = getFlippables(newSquares, getOppositeElement(currentPlayer));
-		const withOriginal = newSquares.map((square) => {
-			const matchedFlippable = flippables.some((flippable) => flippable.index === square.index);
+		const flippables = getFlippables(flippedSquares, getOppositeElement(currentPlayer));
+		const nextPlayer = flippables.length > 0 ? getOppositeElement(currentPlayer) : currentPlayer;
+		const resultSquares = flippedSquares.map((square) => {
+			const flippablesByNextPlayer = getFlippables(flippedSquares, nextPlayer);
+			const matchedFlippable = flippablesByNextPlayer.some(
+				(flippable) => flippable.index === square.index
+			);
 			switch (true) {
 				case isCurrentSquare(square.index):
-					return { ...square, flippable: false, isPrev: true };
-				case matchedFlippable || square.owner === currentPlayer:
+					return {
+						...square,
+						flippable: nextPlayer !== currentPlayer,
+						isPrev: true,
+					};
+				case matchedFlippable || square.owner === getOppositeElement(nextPlayer):
 					return {
 						...square,
 						flippable: true,
@@ -272,17 +286,39 @@ const Square = ({
 					return { ...square, isPrev: false };
 			}
 		});
-		updateStates(() => withOriginal);
+		const createPlayerData = ({
+			player,
+			restData,
+			resultSquares,
+		}: {
+			restData: PlayerData;
+			resultSquares: SquareStates[];
+			player: PlayerElement;
+		}): PlayerData => {
+			const { takeOverChance } = restData;
+			return {
+				...restData,
+				error: '',
+				score: resultSquares.filter((square) => square.owner === player).length,
+				takeOverChance:
+					currentPlayer === player && owner === getOppositeElement(player)
+						? takeOverChance - 1
+						: takeOverChance,
+			};
+		};
+		updateStates(() => resultSquares, nextPlayer);
 		setIsHovered(false);
 		setPlayersData((p) => ({
-			player1: {
-				...p.player1,
-				score: withOriginal.filter((square) => square.owner === 'player1').length,
-			},
-			player2: {
-				...p.player2,
-				score: withOriginal.filter((square) => square.owner === 'player2').length,
-			},
+			player1: createPlayerData({
+				player: 'player1',
+				restData: p.player1,
+				resultSquares,
+			}),
+			player2: createPlayerData({
+				player: 'player2',
+				restData: p.player2,
+				resultSquares,
+			}),
 		}));
 	};
 	return (
@@ -302,7 +338,7 @@ const Square = ({
 			<div className={`Shadow ${isFlipped ? 'Back' : 'Front'} ${isHovered ? 'Hover' : ''}`} />
 			<SquareStyle
 				onClick={() => {
-					onSquareClickHandler(owner);
+					onSquareClickHandler();
 				}}
 				className={`${isFlipped ? 'Back' : 'Front'}`}
 				$owner={owner}
@@ -324,11 +360,13 @@ const Square = ({
 
 const GameBoard = ({ squareStates, setSquareStates, setPlayersData }: GameBoardProps) => {
 	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>('player1');
-	const [errors, setErrors] = useState<string>('');
-	const updateStates = useCallback((callback: (p: SquareStates[]) => SquareStates[]) => {
-		setSquareStates(callback);
-		setCurrentPlayer((p) => getOppositeElement(p));
-	}, []);
+	const updateStates = useCallback(
+		(callback: (p: SquareStates[]) => SquareStates[], nextPlayer: PlayerElement) => {
+			setSquareStates(callback);
+			setCurrentPlayer(nextPlayer);
+		},
+		[]
+	);
 	return (
 		<GameBoardLayout>
 			{squareStates.map((arr) => {
@@ -340,7 +378,6 @@ const GameBoard = ({ squareStates, setSquareStates, setPlayersData }: GameBoardP
 						squareStates={squareStates}
 						updateStates={updateStates}
 						setPlayersData={setPlayersData}
-						setErrors={setErrors}
 					/>
 				);
 			})}
@@ -374,7 +411,7 @@ const Othello = () => {
 				initPlayer: player1Init ? 'player1' : player2Init ? 'player2' : 'unowned',
 				owner: player1Init ? 'player1' : player2Init ? 'player2' : 'unowned',
 				isFlipped: false,
-				flippable: [20, 29, 34, 43].includes(id),
+				flippable: [20, 29, 34, 43].includes(id) || player2Init,
 				isPrev: false,
 			};
 		})
