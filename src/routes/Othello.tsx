@@ -33,6 +33,10 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 		font-weight: 600;
 		margin: 0;
 	}
+	& .Error {
+		font-size: ${`clamp(0.5rem,1vw,1rem)`};
+		color: #ff481b;
+	}
 `;
 
 const GameBoardLayout = styled.section`
@@ -158,11 +162,23 @@ const Square = ({
 	squareStates,
 	updateStates,
 	setPlayersData,
+	setErrors,
 }: SquareProps) => {
 	const [isHovered, setIsHovered] = useState<boolean>(false);
-	const { index, initPlayer, isFlipped, owner, flippable } = currentSquare;
+	const { index, initPlayer, isFlipped, owner, flippable, isPrev } = currentSquare;
 	const onSquareClickHandler = (owner: Owner) => {
 		if (owner === currentPlayer) return;
+		if (isPrev) {
+			setPlayersData((p) => ({
+				...p,
+				[currentPlayer]: {
+					...p[currentPlayer],
+					error: 'cannot change the recently modified square again.',
+				},
+			}));
+			return;
+		}
+		const isCurrentSquare = (currentIndex: number) => currentIndex === index;
 		const getFlippedBySide = (squares: SquareStates[], targetPlayer: PlayerElement) => {
 			let resultSquares: SquareStates[] = [];
 			for (const square of squares) {
@@ -220,12 +236,12 @@ const Square = ({
 				(flippedSquare) => square.index === flippedSquare.index
 			);
 			if (owner === getOppositeElement(currentPlayer)) {
-				return matchedSquare || square.index === index
+				return matchedSquare || isCurrentSquare(square.index)
 					? { ...square, owner: currentPlayer, isFlipped: !square.isFlipped }
 					: { ...square, flippable: false };
 			} else {
 				switch (true) {
-					case square.index === index:
+					case isCurrentSquare(square.index):
 						return {
 							...square,
 							isFlipped: false,
@@ -243,12 +259,18 @@ const Square = ({
 		const flippables = getFlippables(newSquares, getOppositeElement(currentPlayer));
 		const withOriginal = newSquares.map((square) => {
 			const matchedFlippable = flippables.some((flippable) => flippable.index === square.index);
-			return matchedFlippable || square.owner === currentPlayer
-				? {
+			switch (true) {
+				case isCurrentSquare(square.index):
+					return { ...square, flippable: false, isPrev: true };
+				case matchedFlippable || square.owner === currentPlayer:
+					return {
 						...square,
 						flippable: true,
-				  }
-				: square;
+						isPrev: false,
+					};
+				default:
+					return { ...square, isPrev: false };
+			}
 		});
 		updateStates(() => withOriginal);
 		setIsHovered(false);
@@ -302,6 +324,7 @@ const Square = ({
 
 const GameBoard = ({ squareStates, setSquareStates, setPlayersData }: GameBoardProps) => {
 	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>('player1');
+	const [errors, setErrors] = useState<string>('');
 	const updateStates = useCallback((callback: (p: SquareStates[]) => SquareStates[]) => {
 		setSquareStates(callback);
 		setCurrentPlayer((p) => getOppositeElement(p));
@@ -317,6 +340,7 @@ const GameBoard = ({ squareStates, setSquareStates, setPlayersData }: GameBoardP
 						squareStates={squareStates}
 						updateStates={updateStates}
 						setPlayersData={setPlayersData}
+						setErrors={setErrors}
 					/>
 				);
 			})}
@@ -325,7 +349,7 @@ const GameBoard = ({ squareStates, setSquareStates, setPlayersData }: GameBoardP
 };
 
 const PlayerCard = ({ playerData }: PlayerCardProps) => {
-	const { index, name, score, takeOverChance } = playerData;
+	const { index, name, score, takeOverChance, error } = playerData;
 	return (
 		<PlayerCardLayout $player={index}>
 			<span>{name}</span>
@@ -333,6 +357,7 @@ const PlayerCard = ({ playerData }: PlayerCardProps) => {
 				<div>
 					<h3>takeover : {takeOverChance}</h3>
 					<h3>score : {score}</h3>
+					<h3 className="Error">{error}</h3>
 				</div>
 			</div>
 		</PlayerCardLayout>
@@ -350,6 +375,7 @@ const Othello = () => {
 				owner: player1Init ? 'player1' : player2Init ? 'player2' : 'unowned',
 				isFlipped: false,
 				flippable: [20, 29, 34, 43].includes(id),
+				isPrev: false,
 			};
 		})
 	);
@@ -359,12 +385,14 @@ const Othello = () => {
 			name: 'player1',
 			score: squareStates.filter((square) => square.owner === 'player1').length,
 			takeOverChance: 5,
+			error: '',
 		},
 		player2: {
 			index: 'player2',
 			name: 'player2',
 			score: squareStates.filter((square) => square.owner === 'player2').length,
 			takeOverChance: 5,
+			error: '',
 		},
 	});
 	return (

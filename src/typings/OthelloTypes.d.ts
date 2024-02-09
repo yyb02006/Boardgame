@@ -11,6 +11,7 @@ interface PlayerData {
 	name: string;
 	score: number;
 	takeOverChance: number;
+	error: string;
 }
 
 type SettingTyps = 'paid' | 'vanilla' | 'free' | 'modded' | 'list';
@@ -25,6 +26,7 @@ interface SquareStates {
 	owner: Owner;
 	isFlipped: boolean;
 	flippable: boolean;
+	isPrev: boolean;
 }
 
 /** Styled Components Types */
@@ -57,6 +59,7 @@ interface SquareProps {
 	squareStates: SquareStates[];
 	updateStates: (callback: UpdateStates) => void;
 	setPlayersData: SetPlayersData;
+	setErrors: React.Dispatch<React.SetStateAction<string>>;
 	currentSquare: SquareStates;
 	currentPlayer: PlayerElement;
 }
