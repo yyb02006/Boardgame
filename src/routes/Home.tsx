@@ -132,7 +132,6 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 	font-size: 4vw;
 	position: relative;
 	padding: 12px 24px;
-	text-align: ${(props) => (props.$player === 'player1' ? 'left' : 'right')};
 	opacity: 0;
 	${(props) =>
 		fadeInZ({

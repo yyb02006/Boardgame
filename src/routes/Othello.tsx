@@ -28,7 +28,6 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 	font-size: 4vw;
 	position: relative;
 	padding: 12px 24px;
-	text-align: ${(props) => (props.$player === 'player1' ? 'left' : 'right')};
 	h3 {
 		font-size: ${`clamp(1rem,2vw,2rem)`};
 		font-weight: 600;
@@ -212,12 +211,9 @@ const Square = ({
 			);
 		};
 		const shouldAbort = () => {
-			const isFlippable = getFlippables(squareStates, currentPlayer).some(
-				(square) => square.index === index
-			);
-			return !isFlippable;
+			return !flippable;
 		};
-		// if (shouldAbort()) return;
+		if (shouldAbort()) return;
 		const flippedSquares = getFlipped(index, squareStates, currentPlayer);
 		const newSquares = squareStates.map((square) => {
 			const matchedSquare = flippedSquares.some(
@@ -254,7 +250,6 @@ const Square = ({
 				  }
 				: square;
 		});
-		console.log(withOriginal);
 		updateStates(() => withOriginal);
 		setIsHovered(false);
 		setPlayersData((p) => ({
