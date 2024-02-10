@@ -210,6 +210,7 @@ export function getColumnAndRowSquares({
 	);
 }
 
+/** 특정 index의 square가 flip됐을 때 가질 수 있는 flippedSquares를 반환하는 함수 */
 export function getFlipped(index: number, squares: SquareStates[], targetPlayer: PlayerElement) {
 	const getFlippedBySide = (squares: SquareStates[], targetPlayer: PlayerElement) => {
 		let resultSquares: SquareStates[] = [];
@@ -240,6 +241,7 @@ export function getFlipped(index: number, squares: SquareStates[], targetPlayer:
 	return resultSquares;
 }
 
+/** squares중에서 targetPlayer의 flippable한 squares를 반환하는 함수  */
 export function getFlippables(squares: SquareStates[], targetPlayer: PlayerElement) {
 	const opponentSquares = squares.filter(
 		(square) => square.owner === getOppositeElement(targetPlayer)

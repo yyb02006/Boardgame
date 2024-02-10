@@ -415,6 +415,16 @@ const Othello = () => {
 		if (seconds <= 0) {
 			setSeconds(30);
 			setCurrentPlayer((p) => getOppositeElement(p));
+			// 수정 필요
+			setSquareStates((p) =>
+				p.map((square) =>
+					getFlippables(p, getOppositeElement(currentPlayer)).some(
+						(flippable) => square.index === flippable.index
+					)
+						? { ...square, flippable: true }
+						: { ...square, flippable: false }
+				)
+			);
 		}
 	}, [seconds]);
 	return (
