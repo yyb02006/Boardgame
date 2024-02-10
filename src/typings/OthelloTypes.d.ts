@@ -33,6 +33,7 @@ interface SquareStates {
 
 interface PlayerCardLayoutProps {
 	$player: PlayerElement;
+	$currentPlayer: PlayerElement;
 }
 
 interface SquareStyleProps {
@@ -47,12 +48,15 @@ interface SquareStyleProps {
 
 interface PlayerCardProps {
 	playerData: PlayerData;
+	currentPlayer: PlayerElement;
 }
 
 interface GameBoardProps {
 	squareStates: SquareStates[];
+	currentPlayer: PlayerElement;
 	setSquareStates: React.Dispatch<React.SetStateAction<SquareStates[]>>;
 	setPlayersData: SetPlayersData;
+	setCurrentPlayer: React.Dispatch<React.SetStateAction<PlayerElement>>;
 }
 
 interface SquareProps {

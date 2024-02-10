@@ -1,4 +1,10 @@
-import { getColumnAndRow, getColumnAndRowSquares, getOppositeElement } from '#libs/utils';
+import {
+	getColumnAndRow,
+	getColumnAndRowSquares,
+	getFlippables,
+	getFlipped,
+	getOppositeElement,
+} from '#libs/utils';
 import { colorBlink } from '#styles/animations';
 import { fullWidthHeight } from '#styles/theme';
 import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
@@ -23,7 +29,12 @@ const Layout = styled.section`
 const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 	max-width: 400px;
 	width: 100%;
-	background-color: ${(props) => OthelloColors[props.$player].activated};
+	background-color: ${(props) => {
+		const { $currentPlayer, $player } = props;
+		return $currentPlayer === $player
+			? OthelloColors[props.$player].activated
+			: OthelloColors.common;
+	}};
 	margin: ${(props) => (props.$player === 'player1' ? '0 4vw 0 0' : '0 0 0 4vw')};
 	font-size: 4vw;
 	position: relative;
@@ -191,53 +202,6 @@ const Square = ({
 			return;
 		}
 		const isCurrentSquare = (currentIndex: number) => currentIndex === index;
-		const getFlippedBySide = (squares: SquareStates[], targetPlayer: PlayerElement) => {
-			let resultSquares: SquareStates[] = [];
-			for (const square of squares) {
-				const { owner } = square;
-				switch (owner) {
-					case targetPlayer:
-						return resultSquares;
-					case 'unowned':
-						return [];
-					case getOppositeElement(targetPlayer):
-						resultSquares = [...resultSquares, square];
-						break;
-					default:
-						break;
-				}
-			}
-			return [];
-		};
-		const getFlipped = (index: number, squares: SquareStates[], targetPlayer: PlayerElement) => {
-			const targetSquares = getColumnAndRowSquares({ index, squareStates: squares });
-			let resultSquares: SquareStates[] = [];
-			for (const direction in targetSquares) {
-				for (const boundary in targetSquares[direction as SquaresDirection]) {
-					const assertedBoundary =
-						targetSquares[direction as SquaresDirection][boundary as Boundary];
-					resultSquares = [...resultSquares, ...getFlippedBySide(assertedBoundary, targetPlayer)];
-				}
-			}
-			return resultSquares;
-		};
-		const getFlippables = (squares: SquareStates[], targetPlayer: PlayerElement) => {
-			const opponentSquares = squares.filter(
-				(arr) => arr.owner === getOppositeElement(targetPlayer)
-			);
-			const enclosingSquares = squares.filter((square) => {
-				const { index, owner } = square;
-				return (
-					owner === 'unowned' &&
-					[index - 1, index + 1, index - 8, index + 8].some((index) =>
-						opponentSquares.some((square) => square.index === index)
-					)
-				);
-			});
-			return enclosingSquares.filter(
-				(square) => getFlipped(square.index, squares, targetPlayer).length
-			);
-		};
 		const flippeds = getFlipped(index, squareStates, currentPlayer);
 		const flippedSquares = squareStates.map((square) => {
 			const matchedSquare = flippeds.some((flipped) => square.index === flipped.index);
@@ -358,8 +322,13 @@ const Square = ({
 	);
 };
 
-const GameBoard = ({ squareStates, setSquareStates, setPlayersData }: GameBoardProps) => {
-	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>('player1');
+const GameBoard = ({
+	squareStates,
+	currentPlayer,
+	setSquareStates,
+	setPlayersData,
+	setCurrentPlayer,
+}: GameBoardProps) => {
 	const updateStates = useCallback(
 		(callback: (p: SquareStates[]) => SquareStates[], nextPlayer: PlayerElement) => {
 			setSquareStates(callback);
@@ -385,10 +354,10 @@ const GameBoard = ({ squareStates, setSquareStates, setPlayersData }: GameBoardP
 	);
 };
 
-const PlayerCard = ({ playerData }: PlayerCardProps) => {
+const PlayerCard = ({ playerData, currentPlayer }: PlayerCardProps) => {
 	const { index, name, score, takeOverChance, error } = playerData;
 	return (
-		<PlayerCardLayout $player={index}>
+		<PlayerCardLayout $player={index} $currentPlayer={currentPlayer}>
 			<span>{name}</span>
 			<div className="Wrapper">
 				<div>
@@ -402,6 +371,7 @@ const PlayerCard = ({ playerData }: PlayerCardProps) => {
 };
 
 const Othello = () => {
+	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>('player1');
 	const [squareStates, setSquareStates] = useState<SquareStates[]>(
 		Array.from({ length: 64 }, (_, id) => {
 			const player1Init = id === 27 || id === 36;
@@ -432,15 +402,32 @@ const Othello = () => {
 			error: '',
 		},
 	});
+	const [seconds, setSeconds] = useState<number>(30);
+	useEffect(() => {
+		const interval = setInterval(() => {
+			setSeconds((p) => p - 1);
+		}, 1000);
+		return () => {
+			interval && clearInterval(interval);
+		};
+	}, [squareStates]);
+	useEffect(() => {
+		if (seconds <= 0) {
+			setSeconds(30);
+			setCurrentPlayer((p) => getOppositeElement(p));
+		}
+	}, [seconds]);
 	return (
 		<Layout>
-			<PlayerCard playerData={playersData.player1} />
+			<PlayerCard playerData={playersData.player1} currentPlayer={currentPlayer} />
 			<GameBoard
 				squareStates={squareStates}
+				currentPlayer={currentPlayer}
 				setSquareStates={setSquareStates}
 				setPlayersData={setPlayersData}
+				setCurrentPlayer={setCurrentPlayer}
 			/>
-			<PlayerCard playerData={playersData.player2} />
+			<PlayerCard playerData={playersData.player2} currentPlayer={currentPlayer} />
 		</Layout>
 	);
 };

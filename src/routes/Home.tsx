@@ -589,7 +589,7 @@ const Board = () => {
 				<PlayerCard player="player1" />
 				<BoardItemsWrapper>
 					<BoardItemsContainer $currentPlayer={currentPlayer}>
-						{boxes.map((box, id) => (
+						{boxes.map((box) => (
 							<Boxes
 								key={box.id}
 								$isSurrounded={box.isSurrounded}

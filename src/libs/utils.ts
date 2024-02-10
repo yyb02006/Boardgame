@@ -209,3 +209,51 @@ export function getColumnAndRowSquares({
 		{ column: { lower: [], upper: [] }, row: { lower: [], upper: [] } }
 	);
 }
+
+export function getFlipped(index: number, squares: SquareStates[], targetPlayer: PlayerElement) {
+	const getFlippedBySide = (squares: SquareStates[], targetPlayer: PlayerElement) => {
+		let resultSquares: SquareStates[] = [];
+		for (const square of squares) {
+			const { owner } = square;
+			switch (owner) {
+				case targetPlayer:
+					return resultSquares;
+				case 'unowned':
+					return [];
+				case getOppositeElement(targetPlayer):
+					resultSquares = [...resultSquares, square];
+					break;
+				default:
+					break;
+			}
+		}
+		return [];
+	};
+	const targetSquares = getColumnAndRowSquares({ index, squareStates: squares });
+	let resultSquares: SquareStates[] = [];
+	for (const direction in targetSquares) {
+		for (const boundary in targetSquares[direction as SquaresDirection]) {
+			const assertedBoundary = targetSquares[direction as SquaresDirection][boundary as Boundary];
+			resultSquares = [...resultSquares, ...getFlippedBySide(assertedBoundary, targetPlayer)];
+		}
+	}
+	return resultSquares;
+}
+
+export function getFlippables(squares: SquareStates[], targetPlayer: PlayerElement) {
+	const opponentSquares = squares.filter(
+		(square) => square.owner === getOppositeElement(targetPlayer)
+	);
+	const enclosingSquares = squares.filter((square) => {
+		const { index, owner } = square;
+		return (
+			owner === 'unowned' &&
+			[index - 1, index + 1, index - 8, index + 8].some((index) =>
+				opponentSquares.some((square) => square.index === index)
+			)
+		);
+	});
+	return enclosingSquares.filter(
+		(square) => getFlipped(square.index, squares, targetPlayer).length
+	);
+}
