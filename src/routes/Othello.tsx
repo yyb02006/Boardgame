@@ -268,6 +268,7 @@ const Square = ({
 					currentPlayer === player && owner === getOppositeElement(player)
 						? takeOverChance - 1
 						: takeOverChance,
+				hasFlippable: !!getFlippables(resultSquares, player).length,
 			};
 		};
 		updateStates(() => resultSquares, nextPlayer);
@@ -328,11 +329,13 @@ const GameBoard = ({
 	setSquareStates,
 	setPlayersData,
 	setCurrentPlayer,
+	setSeconds,
 }: GameBoardProps) => {
 	const updateStates = useCallback(
 		(callback: (p: SquareStates[]) => SquareStates[], nextPlayer: PlayerElement) => {
 			setSquareStates(callback);
 			setCurrentPlayer(nextPlayer);
+			setSeconds(30);
 		},
 		[]
 	);
@@ -354,7 +357,7 @@ const GameBoard = ({
 	);
 };
 
-const PlayerCard = ({ playerData, currentPlayer }: PlayerCardProps) => {
+const PlayerCard = ({ playerData, currentPlayer, seconds }: PlayerCardProps) => {
 	const { index, name, score, takeOverChance, error } = playerData;
 	return (
 		<PlayerCardLayout $player={index} $currentPlayer={currentPlayer}>
@@ -364,6 +367,7 @@ const PlayerCard = ({ playerData, currentPlayer }: PlayerCardProps) => {
 					<h3>takeover : {takeOverChance}</h3>
 					<h3>score : {score}</h3>
 					<h3 className="Error">{error}</h3>
+					{playerData.index === currentPlayer ? <h3 className="Timer">{seconds}</h3> : null}
 				</div>
 			</div>
 		</PlayerCardLayout>
@@ -393,6 +397,7 @@ const Othello = () => {
 			score: squareStates.filter((square) => square.owner === 'player1').length,
 			takeOverChance: 5,
 			error: '',
+			hasFlippable: true,
 		},
 		player2: {
 			index: 'player2',
@@ -400,6 +405,7 @@ const Othello = () => {
 			score: squareStates.filter((square) => square.owner === 'player2').length,
 			takeOverChance: 5,
 			error: '',
+			hasFlippable: true,
 		},
 	});
 	const [seconds, setSeconds] = useState<number>(30);
@@ -429,15 +435,24 @@ const Othello = () => {
 	}, [seconds]);
 	return (
 		<Layout>
-			<PlayerCard playerData={playersData.player1} currentPlayer={currentPlayer} />
+			<PlayerCard
+				playerData={playersData.player1}
+				currentPlayer={currentPlayer}
+				seconds={seconds}
+			/>
 			<GameBoard
 				squareStates={squareStates}
 				currentPlayer={currentPlayer}
 				setSquareStates={setSquareStates}
 				setPlayersData={setPlayersData}
 				setCurrentPlayer={setCurrentPlayer}
+				setSeconds={setSeconds}
 			/>
-			<PlayerCard playerData={playersData.player2} currentPlayer={currentPlayer} />
+			<PlayerCard
+				playerData={playersData.player2}
+				currentPlayer={currentPlayer}
+				seconds={seconds}
+			/>
 		</Layout>
 	);
 };

@@ -12,6 +12,7 @@ interface PlayerData {
 	score: number;
 	takeOverChance: number;
 	error: string;
+	hasFlippable: boolean;
 }
 
 type SettingTyps = 'paid' | 'vanilla' | 'free' | 'modded' | 'list';
@@ -49,6 +50,7 @@ interface SquareStyleProps {
 interface PlayerCardProps {
 	playerData: PlayerData;
 	currentPlayer: PlayerElement;
+	seconds: number;
 }
 
 interface GameBoardProps {
@@ -57,6 +59,7 @@ interface GameBoardProps {
 	setSquareStates: React.Dispatch<React.SetStateAction<SquareStates[]>>;
 	setPlayersData: SetPlayersData;
 	setCurrentPlayer: React.Dispatch<React.SetStateAction<PlayerElement>>;
+	setSeconds: React.Dispatch<React.SetStateAction<number>>;
 }
 
 interface SquareProps {
