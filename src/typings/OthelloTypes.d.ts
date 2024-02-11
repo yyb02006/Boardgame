@@ -4,6 +4,8 @@ type SquaresDirection = 'column' | 'row';
 
 type Boundary = 'lower' | 'upper';
 
+type OthelloPlayState = 'ready' | 'playing' | 'decided';
+
 type SetPlayersData = React.Dispatch<React.SetStateAction<Record<PlayerElement, PlayerData>>>;
 
 interface PlayerData {
@@ -19,7 +21,12 @@ type SettingTyps = 'paid' | 'vanilla' | 'free' | 'modded' | 'list';
 
 /** Function Props Types */
 
-type UpdateStates = (p: SquareStates[]) => SquareStates[];
+type SetSquareStateCallback = (p: SquareStates[]) => SquareStates[];
+
+interface UpdateStatesProps {
+	setSquareStateCallback: SetSquareStateCallback;
+	nextPlayer: PlayerElement;
+}
 
 interface SquareStates {
 	index: number;
@@ -64,7 +71,7 @@ interface GameBoardProps {
 
 interface SquareProps {
 	squareStates: SquareStates[];
-	updateStates: (callback: UpdateStates, nextPlayer: PlayerElement) => void;
+	updateStates: ({ setSquareStateCallback, nextPlayer }: UpdateStatesProps) => void;
 	setPlayersData: SetPlayersData;
 	currentSquare: SquareStates;
 	currentPlayer: PlayerElement;

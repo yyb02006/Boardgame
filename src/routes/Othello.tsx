@@ -48,6 +48,22 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 		font-size: ${`clamp(0.5rem,1vw,1rem)`};
 		color: #ff481b;
 	}
+	& .Timer {
+		${fullWidthHeight}
+		position: absolute;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		top: 0;
+		left: 0;
+		font-weight: 800;
+		> .Seconds {
+			font-size: 8rem;
+		}
+		> .Passed {
+			font-size: 4rem;
+		}
+	}
 `;
 
 const GameBoardLayout = styled.section`
@@ -271,7 +287,7 @@ const Square = ({
 				hasFlippable: !!getFlippables(resultSquares, player).length,
 			};
 		};
-		updateStates(() => resultSquares, nextPlayer);
+		updateStates({ setSquareStateCallback: () => resultSquares, nextPlayer });
 		setIsHovered(false);
 		setPlayersData((p) => ({
 			player1: createPlayerData({
@@ -331,14 +347,11 @@ const GameBoard = ({
 	setCurrentPlayer,
 	setSeconds,
 }: GameBoardProps) => {
-	const updateStates = useCallback(
-		(callback: (p: SquareStates[]) => SquareStates[], nextPlayer: PlayerElement) => {
-			setSquareStates(callback);
-			setCurrentPlayer(nextPlayer);
-			setSeconds(30);
-		},
-		[]
-	);
+	const updateStates = useCallback(({ setSquareStateCallback, nextPlayer }: UpdateStatesProps) => {
+		setSquareStates(setSquareStateCallback);
+		setCurrentPlayer(nextPlayer);
+		setSeconds(30);
+	}, []);
 	return (
 		<GameBoardLayout>
 			{squareStates.map((arr) => {
@@ -367,7 +380,13 @@ const PlayerCard = ({ playerData, currentPlayer, seconds }: PlayerCardProps) => 
 					<h3>takeover : {takeOverChance}</h3>
 					<h3>score : {score}</h3>
 					<h3 className="Error">{error}</h3>
-					{playerData.index === currentPlayer ? <h3 className="Timer">{seconds}</h3> : null}
+					<div className="Timer">
+						{playerData.index === currentPlayer ? (
+							<span className="Seconds">{seconds}</span>
+						) : !playerData.hasFlippable ? (
+							<span className="Passed">PASSED</span>
+						) : null}
+					</div>
 				</div>
 			</div>
 		</PlayerCardLayout>
@@ -409,6 +428,7 @@ const Othello = () => {
 		},
 	});
 	const [seconds, setSeconds] = useState<number>(30);
+	const [playState, setPlayState] = useState<OthelloPlayState>('ready');
 	useEffect(() => {
 		const interval = setInterval(() => {
 			setSeconds((p) => p - 1);
@@ -419,20 +439,28 @@ const Othello = () => {
 	}, [squareStates]);
 	useEffect(() => {
 		if (seconds <= 0) {
+			const opponentPlayer = getOppositeElement(currentPlayer);
+			const nextPlayer = playersData[opponentPlayer].hasFlippable ? opponentPlayer : currentPlayer;
 			setSeconds(30);
-			setCurrentPlayer((p) => getOppositeElement(p));
-			// 수정 필요
-			setSquareStates((p) =>
-				p.map((square) =>
-					getFlippables(p, getOppositeElement(currentPlayer)).some(
-						(flippable) => square.index === flippable.index
+			if (nextPlayer !== currentPlayer) {
+				setCurrentPlayer(nextPlayer);
+				setSquareStates((p) =>
+					p.map((square) =>
+						getFlippables(p, nextPlayer).some((flippable) => square.index === flippable.index) ||
+						square.owner === nextPlayer
+							? { ...square, flippable: true }
+							: { ...square, flippable: false }
 					)
-						? { ...square, flippable: true }
-						: { ...square, flippable: false }
-				)
-			);
+				);
+			}
 		}
 	}, [seconds]);
+	useEffect(() => {
+		const { player1, player2 } = playersData;
+		if (!player1.hasFlippable && !player2.hasFlippable) {
+			setPlayState('decided');
+		}
+	}, [playersData.player1.hasFlippable, playersData.player2.hasFlippable]);
 	return (
 		<Layout>
 			<PlayerCard
