@@ -6,7 +6,14 @@ type Boundary = 'lower' | 'upper';
 
 type OthelloPlayState = 'ready' | 'playing' | 'decided';
 
+type Winner = 'player1' | 'player2' | 'draw' | 'undecided';
+
 type SetPlayersData = React.Dispatch<React.SetStateAction<Record<PlayerElement, PlayerData>>>;
+
+interface OthelloGameState {
+	playState: OthelloPlayState;
+	winner: Winner;
+}
 
 interface PlayerData {
 	index: PlayerElement;
@@ -53,21 +60,21 @@ interface SquareStyleProps {
 	$flippable: boolean;
 }
 
-interface GameBoardLobbyProps {
+interface LobbyLayoutProps {
 	$onSlideIn: boolean;
 }
 
 /** React Components Types */
 
 interface LobbyProps {
-	setPlayState: React.Dispatch<React.SetStateAction<OthelloPlayState>>;
+	setGameState: React.Dispatch<React.SetStateAction<OthelloGameState>>;
 	playState: OthelloPlayState;
 	lazyPlayState: OthelloPlayState;
 }
 
 interface PlayerCardProps {
 	playerData: PlayerData;
-	playState: OthelloPlayState;
+	gameState: OthelloGameState;
 	currentPlayer: PlayerElement;
 	seconds: number;
 }

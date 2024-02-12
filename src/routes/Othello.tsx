@@ -71,7 +71,7 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 	}
 `;
 
-const LobbyLayout = styled.div<GameBoardLobbyProps>`
+const BoardCover = styled.div`
 	${fullWidthHeight}
 	position: absolute;
 	display: flex;
@@ -80,6 +80,9 @@ const LobbyLayout = styled.div<GameBoardLobbyProps>`
 	padding-bottom: 80px;
 	top: 0;
 	left: 0;
+`;
+
+const LobbyLayout = styled(BoardCover)<LobbyLayoutProps>`
 	& .Start {
 		${(props) =>
 			props.$onSlideIn
@@ -99,6 +102,8 @@ const LobbyLayout = styled.div<GameBoardLobbyProps>`
 				  })}
 	}
 `;
+
+const ResultLayout = styled(BoardCover)``;
 
 const GameBoardWrapper = styled.section`
 	position: relative;
@@ -409,10 +414,14 @@ const GameBoard = ({
 	);
 };
 
-const PlayerCard = ({ playerData, playState, currentPlayer, seconds }: PlayerCardProps) => {
+const PlayerCard = ({ playerData, gameState, currentPlayer, seconds }: PlayerCardProps) => {
 	const { index, name, score, takeOverChance, error } = playerData;
 	return (
-		<PlayerCardLayout $player={index} $currentPlayer={currentPlayer} $playState={playState}>
+		<PlayerCardLayout
+			$player={index}
+			$currentPlayer={currentPlayer}
+			$playState={gameState.playState}
+		>
 			<span>{name}</span>
 			<div className="Wrapper">
 				<div>
@@ -420,7 +429,7 @@ const PlayerCard = ({ playerData, playState, currentPlayer, seconds }: PlayerCar
 					<h3>score : {score}</h3>
 					<h3 className="Error">{error}</h3>
 					<div className="Timer">
-						{playerData.index === currentPlayer && playState === 'playing' ? (
+						{playerData.index === currentPlayer && gameState.playState === 'playing' ? (
 							<span className="Seconds">{seconds}</span>
 						) : !playerData.hasFlippable ? (
 							<span className="Passed">PASSED</span>
@@ -432,17 +441,21 @@ const PlayerCard = ({ playerData, playState, currentPlayer, seconds }: PlayerCar
 	);
 };
 
-const Lobby = ({ lazyPlayState, playState, setPlayState }: LobbyProps) => {
+const Lobby = ({ lazyPlayState, playState, setGameState }: LobbyProps) => {
 	return (
 		<LobbyLayout
 			onClick={() => {
-				setPlayState('playing');
+				setGameState((p) => ({ ...p, playState: 'playing' }));
 			}}
 			$onSlideIn={playState === 'playing' && lazyPlayState !== 'playing'}
 		>
 			<button className="Start">Start</button>
 		</LobbyLayout>
 	);
+};
+
+const Result = () => {
+	return <ResultLayout></ResultLayout>;
 };
 
 const Othello = () => {
@@ -480,15 +493,18 @@ const Othello = () => {
 		},
 	});
 	const [seconds, setSeconds] = useState<number>(30);
-	const [playState, setPlayState] = useState<OthelloPlayState>('ready');
+	const [gameState, setGameState] = useState<OthelloGameState>({
+		playState: 'ready',
+		winner: 'undecided',
+	});
 	useEffect(() => {
 		const interval = setInterval(() => {
-			playState === 'playing' && setSeconds((p) => p - 1);
+			gameState.playState === 'playing' && setSeconds((p) => p - 1);
 		}, 1000);
 		return () => {
 			interval && clearInterval(interval);
 		};
-	}, [playState]);
+	}, [gameState.playState]);
 	useEffect(() => {
 		if (seconds <= 0) {
 			const opponentPlayer = getOppositeElement(currentPlayer);
@@ -509,21 +525,32 @@ const Othello = () => {
 	}, [seconds]);
 	useEffect(() => {
 		const { player1, player2 } = playersData;
+		const getWinner = () => {
+			switch (true) {
+				case player1.score > player2.score:
+					return 'player1';
+				case player1.score < player2.score:
+					return 'player2';
+				default:
+					return 'draw';
+			}
+		};
 		if (!player1.hasFlippable && !player2.hasFlippable) {
-			setPlayState('decided');
+			setGameState({ playState: 'decided', winner: getWinner() });
 		}
 	}, [playersData.player1.hasFlippable, playersData.player2.hasFlippable]);
-	const lazyPlayState = useLazyState<OthelloPlayState>(500, playState, 'ready');
+	const lazyPlayState = useLazyState<OthelloPlayState>(500, gameState.playState, 'ready');
+	console.log(gameState);
 	return (
 		<Layout>
 			<PlayerCard
 				playerData={playersData.player1}
-				playState={playState}
+				gameState={gameState}
 				currentPlayer={currentPlayer}
 				seconds={seconds}
 			/>
 			<GameBoardWrapper>
-				{playState === 'playing' || lazyPlayState === 'playing' ? (
+				{gameState.playState === 'playing' || lazyPlayState === 'playing' ? (
 					<GameBoard
 						squareStates={squareStates}
 						currentPlayer={currentPlayer}
@@ -533,13 +560,17 @@ const Othello = () => {
 						setSeconds={setSeconds}
 					/>
 				) : null}
-				{playState === 'ready' || lazyPlayState === 'ready' ? (
-					<Lobby lazyPlayState={lazyPlayState} playState={playState} setPlayState={setPlayState} />
+				{gameState.playState === 'ready' || lazyPlayState === 'ready' ? (
+					<Lobby
+						lazyPlayState={lazyPlayState}
+						playState={gameState.playState}
+						setGameState={setGameState}
+					/>
 				) : null}
 			</GameBoardWrapper>
 			<PlayerCard
 				playerData={playersData.player2}
-				playState={playState}
+				gameState={gameState}
 				currentPlayer={currentPlayer}
 				seconds={seconds}
 			/>
