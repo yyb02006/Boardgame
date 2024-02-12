@@ -71,7 +71,7 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 	}
 `;
 
-const GameBoardLobby = styled.div<GameBoardLobbyProps>`
+const LobbyLayout = styled.div<GameBoardLobbyProps>`
 	${fullWidthHeight}
 	position: absolute;
 	display: flex;
@@ -432,6 +432,19 @@ const PlayerCard = ({ playerData, playState, currentPlayer, seconds }: PlayerCar
 	);
 };
 
+const Lobby = ({ lazyPlayState, playState, setPlayState }: LobbyProps) => {
+	return (
+		<LobbyLayout
+			onClick={() => {
+				setPlayState('playing');
+			}}
+			$onSlideIn={playState === 'playing' && lazyPlayState !== 'playing'}
+		>
+			<button className="Start">Start</button>
+		</LobbyLayout>
+	);
+};
+
 const Othello = () => {
 	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>('player1');
 	const [squareStates, setSquareStates] = useState<SquareStates[]>(
@@ -521,14 +534,7 @@ const Othello = () => {
 					/>
 				) : null}
 				{playState === 'ready' || lazyPlayState === 'ready' ? (
-					<GameBoardLobby
-						onClick={() => {
-							setPlayState('playing');
-						}}
-						$onSlideIn={playState === 'playing' && lazyPlayState !== 'playing'}
-					>
-						<button className="Start">Start</button>
-					</GameBoardLobby>
+					<Lobby lazyPlayState={lazyPlayState} playState={playState} setPlayState={setPlayState} />
 				) : null}
 			</GameBoardWrapper>
 			<PlayerCard

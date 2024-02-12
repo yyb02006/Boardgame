@@ -59,6 +59,12 @@ interface GameBoardLobbyProps {
 
 /** React Components Types */
 
+interface LobbyProps {
+	setPlayState: React.Dispatch<React.SetStateAction<OthelloPlayState>>;
+	playState: OthelloPlayState;
+	lazyPlayState: OthelloPlayState;
+}
+
 interface PlayerCardProps {
 	playerData: PlayerData;
 	playState: OthelloPlayState;
