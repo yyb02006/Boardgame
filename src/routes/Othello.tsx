@@ -1,3 +1,4 @@
+import useLazyState from '#hooks/useLazyState';
 import {
 	getColumnAndRow,
 	getColumnAndRowSquares,
@@ -5,9 +6,9 @@ import {
 	getFlipped,
 	getOppositeElement,
 } from '#libs/utils';
-import { colorBlink } from '#styles/animations';
+import { colorBlink, slideIn } from '#styles/animations';
 import { fullWidthHeight } from '#styles/theme';
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import React, { ReactNode, lazy, useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import styled, { css } from 'styled-components';
 
 const OthelloColors = {
@@ -30,10 +31,14 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 	max-width: 400px;
 	width: 100%;
 	background-color: ${(props) => {
-		const { $currentPlayer, $player } = props;
-		return $currentPlayer === $player
-			? OthelloColors[props.$player].activated
-			: OthelloColors.common;
+		const { $currentPlayer, $player, $playState } = props;
+		if ($playState === 'playing') {
+			return $currentPlayer === $player
+				? OthelloColors[props.$player].activated
+				: OthelloColors.common;
+		} else {
+			return OthelloColors[props.$player].activated;
+		}
 	}};
 	margin: ${(props) => (props.$player === 'player1' ? '0 4vw 0 0' : '0 0 0 4vw')};
 	font-size: 4vw;
@@ -66,7 +71,41 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 	}
 `;
 
-const GameBoardLayout = styled.section`
+const GameBoardLobby = styled.div<GameBoardLobbyProps>`
+	${fullWidthHeight}
+	position: absolute;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding-bottom: 80px;
+	top: 0;
+	left: 0;
+	& .Start {
+		${(props) =>
+			props.$onSlideIn
+				? slideIn({
+						name: 'lobby',
+						seqDirection: 'reverse',
+						distance: -200,
+						direction: 'vertical',
+						duration: 500,
+				  })
+				: slideIn({
+						name: 'lobby',
+						seqDirection: 'normal',
+						distance: -200,
+						direction: 'vertical',
+						duration: 500,
+				  })}
+	}
+`;
+
+const GameBoardWrapper = styled.section`
+	position: relative;
+	width: 100%;
+`;
+
+const GameBoardLayout = styled.div`
 	aspect-ratio: 1;
 	display: grid;
 	gap: 8px;
@@ -370,10 +409,10 @@ const GameBoard = ({
 	);
 };
 
-const PlayerCard = ({ playerData, currentPlayer, seconds }: PlayerCardProps) => {
+const PlayerCard = ({ playerData, playState, currentPlayer, seconds }: PlayerCardProps) => {
 	const { index, name, score, takeOverChance, error } = playerData;
 	return (
-		<PlayerCardLayout $player={index} $currentPlayer={currentPlayer}>
+		<PlayerCardLayout $player={index} $currentPlayer={currentPlayer} $playState={playState}>
 			<span>{name}</span>
 			<div className="Wrapper">
 				<div>
@@ -381,7 +420,7 @@ const PlayerCard = ({ playerData, currentPlayer, seconds }: PlayerCardProps) => 
 					<h3>score : {score}</h3>
 					<h3 className="Error">{error}</h3>
 					<div className="Timer">
-						{playerData.index === currentPlayer ? (
+						{playerData.index === currentPlayer && playState === 'playing' ? (
 							<span className="Seconds">{seconds}</span>
 						) : !playerData.hasFlippable ? (
 							<span className="Passed">PASSED</span>
@@ -431,12 +470,12 @@ const Othello = () => {
 	const [playState, setPlayState] = useState<OthelloPlayState>('ready');
 	useEffect(() => {
 		const interval = setInterval(() => {
-			setSeconds((p) => p - 1);
+			playState === 'playing' && setSeconds((p) => p - 1);
 		}, 1000);
 		return () => {
 			interval && clearInterval(interval);
 		};
-	}, [squareStates]);
+	}, [playState]);
 	useEffect(() => {
 		if (seconds <= 0) {
 			const opponentPlayer = getOppositeElement(currentPlayer);
@@ -461,23 +500,40 @@ const Othello = () => {
 			setPlayState('decided');
 		}
 	}, [playersData.player1.hasFlippable, playersData.player2.hasFlippable]);
+	const lazyPlayState = useLazyState<OthelloPlayState>(500, playState, 'ready');
 	return (
 		<Layout>
 			<PlayerCard
 				playerData={playersData.player1}
+				playState={playState}
 				currentPlayer={currentPlayer}
 				seconds={seconds}
 			/>
-			<GameBoard
-				squareStates={squareStates}
-				currentPlayer={currentPlayer}
-				setSquareStates={setSquareStates}
-				setPlayersData={setPlayersData}
-				setCurrentPlayer={setCurrentPlayer}
-				setSeconds={setSeconds}
-			/>
+			<GameBoardWrapper>
+				{playState === 'playing' || lazyPlayState === 'playing' ? (
+					<GameBoard
+						squareStates={squareStates}
+						currentPlayer={currentPlayer}
+						setSquareStates={setSquareStates}
+						setPlayersData={setPlayersData}
+						setCurrentPlayer={setCurrentPlayer}
+						setSeconds={setSeconds}
+					/>
+				) : null}
+				{playState === 'ready' || lazyPlayState === 'ready' ? (
+					<GameBoardLobby
+						onClick={() => {
+							setPlayState('playing');
+						}}
+						$onSlideIn={playState === 'playing' && lazyPlayState !== 'playing'}
+					>
+						<button className="Start">Start</button>
+					</GameBoardLobby>
+				) : null}
+			</GameBoardWrapper>
 			<PlayerCard
 				playerData={playersData.player2}
+				playState={playState}
 				currentPlayer={currentPlayer}
 				seconds={seconds}
 			/>

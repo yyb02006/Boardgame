@@ -42,6 +42,7 @@ interface SquareStates {
 interface PlayerCardLayoutProps {
 	$player: PlayerElement;
 	$currentPlayer: PlayerElement;
+	$playState: OthelloPlayState;
 }
 
 interface SquareStyleProps {
@@ -52,10 +53,15 @@ interface SquareStyleProps {
 	$flippable: boolean;
 }
 
+interface GameBoardLobbyProps {
+	$onSlideIn: boolean;
+}
+
 /** React Components Types */
 
 interface PlayerCardProps {
 	playerData: PlayerData;
+	playState: OthelloPlayState;
 	currentPlayer: PlayerElement;
 	seconds: number;
 }
