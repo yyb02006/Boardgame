@@ -9,7 +9,7 @@ import { fadeInZ, slideIn } from '#styles/animations';
 const { colors } = theme;
 
 /* this 사용 배제 */
-const resultTransition = {
+export const resultTransition = {
 	spinAndZoom: ({
 		name,
 		seqDirection,

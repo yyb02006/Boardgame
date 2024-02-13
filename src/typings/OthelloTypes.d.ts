@@ -64,6 +64,11 @@ interface LobbyLayoutProps {
 	$onSlideIn: boolean;
 }
 
+interface LobbyCoverProps {
+	$index: number;
+	$direction: HorizontalPos | VerticalPos;
+}
+
 /** React Components Types */
 
 interface LobbyProps {

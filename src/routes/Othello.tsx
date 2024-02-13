@@ -1,5 +1,6 @@
 import useLazyState from '#hooks/useLazyState';
 import {
+	capitalizeFirstLetter,
 	getColumnAndRow,
 	getColumnAndRowSquares,
 	getFlippables,
@@ -8,8 +9,17 @@ import {
 } from '#libs/utils';
 import { colorBlink, slideIn } from '#styles/animations';
 import { fullWidthHeight } from '#styles/theme';
-import React, { ReactNode, lazy, useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import React, {
+	ReactNode,
+	lazy,
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useRef,
+	useState,
+} from 'react';
 import styled, { css } from 'styled-components';
+import { resultTransition } from './Home';
 
 const OthelloColors = {
 	player1: { activated: '#e9a71a', flippable: '#9c937f' },
@@ -71,7 +81,7 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 	}
 `;
 
-const BoardCover = styled.div`
+const LobbyAndResult = styled.div`
 	${fullWidthHeight}
 	position: absolute;
 	display: flex;
@@ -82,7 +92,29 @@ const BoardCover = styled.div`
 	left: 0;
 `;
 
-const LobbyLayout = styled(BoardCover)<LobbyLayoutProps>`
+const LobbyCover = styled.div<LobbyCoverProps>`
+	position: absolute;
+	${(props) => {
+		const { $index } = props;
+		return css`
+			${$index === 0 || $index === 3
+				? `left:0; background-color:${OthelloColors.player1.activated};`
+				: `right:0; background-color:${OthelloColors.player2.activated};`};
+			${$index === 0 || $index === 1 ? 'top:0;' : 'bottom:0;'};
+			${$index === 0 || $index === 2 ? 'height:60%; width:50%;' : 'height:50%; width:60%;'}
+		`;
+	}}
+	&.Playing {
+		${(props) =>
+			resultTransition.spinAndZoom({
+				name: 'lobby',
+				seqDirection: 'reverse',
+				aniDirection: props.$direction,
+			})}
+	}
+`;
+
+const LobbyLayout = styled(LobbyAndResult)<LobbyLayoutProps>`
 	& .Start {
 		${(props) =>
 			props.$onSlideIn
@@ -103,7 +135,7 @@ const LobbyLayout = styled(BoardCover)<LobbyLayoutProps>`
 	}
 `;
 
-const ResultLayout = styled(BoardCover)``;
+const ResultLayout = styled(LobbyAndResult)``;
 
 const GameBoardWrapper = styled.section`
 	position: relative;
@@ -442,6 +474,12 @@ const PlayerCard = ({ playerData, gameState, currentPlayer, seconds }: PlayerCar
 };
 
 const Lobby = ({ lazyPlayState, playState, setGameState }: LobbyProps) => {
+	const coverDirections = useRef<Array<HorizontalPos | VerticalPos>>([
+		'left',
+		'up',
+		'right',
+		'down',
+	]);
 	return (
 		<LobbyLayout
 			onClick={() => {
@@ -449,6 +487,14 @@ const Lobby = ({ lazyPlayState, playState, setGameState }: LobbyProps) => {
 			}}
 			$onSlideIn={playState === 'playing' && lazyPlayState !== 'playing'}
 		>
+			{coverDirections.current.map((cover, id) => (
+				<LobbyCover
+					key={id}
+					className={capitalizeFirstLetter(playState)}
+					$index={id}
+					$direction={cover}
+				/>
+			))}
 			<button className="Start">Start</button>
 		</LobbyLayout>
 	);
@@ -567,6 +613,7 @@ const Othello = () => {
 						setGameState={setGameState}
 					/>
 				) : null}
+				{gameState.playState === 'decided' || lazyPlayState === 'decided' ? <Result /> : null}
 			</GameBoardWrapper>
 			<PlayerCard
 				playerData={playersData.player2}
