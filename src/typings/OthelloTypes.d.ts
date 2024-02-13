@@ -22,9 +22,8 @@ interface PlayerData {
 	takeOverChance: number;
 	error: string;
 	hasFlippable: boolean;
+	isPassed: boolean;
 }
-
-type SettingTyps = 'paid' | 'vanilla' | 'free' | 'modded' | 'list';
 
 /** Function Props Types */
 
@@ -67,13 +66,15 @@ interface LobbyLayoutProps {
 interface LobbyCoverProps {
 	$index: number;
 	$direction: HorizontalPos | VerticalPos;
+	$winner: Winner;
+	$playState: OthelloPlayState;
 }
 
 /** React Components Types */
 
 interface LobbyProps {
 	setGameState: React.Dispatch<React.SetStateAction<OthelloGameState>>;
-	playState: OthelloPlayState;
+	gameState: OthelloGameState;
 	lazyPlayState: OthelloPlayState;
 }
 

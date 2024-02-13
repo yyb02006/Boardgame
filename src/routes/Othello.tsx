@@ -104,18 +104,43 @@ const LobbyCover = styled.div<LobbyCoverProps>`
 			${$index === 0 || $index === 2 ? 'height:60%; width:50%;' : 'height:50%; width:60%;'}
 		`;
 	}}
-	&.Playing {
-		${(props) =>
-			resultTransition.spinAndZoom({
+	${(props) => {
+		const { $winner, $direction, $playState } = props;
+		if ($playState === 'playing') {
+			return resultTransition.spinAndZoom({
 				name: 'lobby',
 				seqDirection: 'reverse',
 				aniDirection: props.$direction,
-			})}
-	}
+			});
+		} else if ($playState === 'decided') {
+			switch ($winner) {
+				case 'player1':
+				case 'player2':
+					return css`
+						background-color: ${OthelloColors[$winner].activated};
+						${resultTransition.slideInFromSide({
+							winner: $winner,
+							seqDirection: 'normal',
+							aniDirection: $winner === 'player1' ? 'left' : 'right',
+						})}
+					`;
+				case 'draw':
+					return resultTransition.spinAndZoom({
+						name: 'draw',
+						seqDirection: 'normal',
+						aniDirection: $direction,
+					});
+				default:
+					return null;
+			}
+		}
+	}}
 `;
 
 const LobbyLayout = styled(LobbyAndResult)<LobbyLayoutProps>`
-	& .Start {
+	position: absolute;
+	overflow: hidden;
+	& .Button {
 		${(props) =>
 			props.$onSlideIn
 				? slideIn({
@@ -269,6 +294,7 @@ const Square = ({
 	const [isHovered, setIsHovered] = useState<boolean>(false);
 	const { index, initPlayer, isFlipped, owner, flippable, isPrev } = currentSquare;
 	const onSquareClickHandler = () => {
+		const oppnentPlayer = getOppositeElement(currentPlayer);
 		const updateError = (error: string) => {
 			setPlayersData((p) => ({
 				...p,
@@ -352,6 +378,7 @@ const Square = ({
 			player: PlayerElement;
 		}): PlayerData => {
 			const { takeOverChance } = restData;
+			const hasFlippable = !!getFlippables(resultSquares, player).length;
 			return {
 				...restData,
 				error: '',
@@ -360,7 +387,8 @@ const Square = ({
 					currentPlayer === player && owner === getOppositeElement(player)
 						? takeOverChance - 1
 						: takeOverChance,
-				hasFlippable: !!getFlippables(resultSquares, player).length,
+				hasFlippable,
+				isPassed: oppnentPlayer === player && !hasFlippable,
 			};
 		};
 		updateStates({ setSquareStateCallback: () => resultSquares, nextPlayer });
@@ -447,13 +475,10 @@ const GameBoard = ({
 };
 
 const PlayerCard = ({ playerData, gameState, currentPlayer, seconds }: PlayerCardProps) => {
-	const { index, name, score, takeOverChance, error } = playerData;
+	const { index, name, score, takeOverChance, error, isPassed } = playerData;
+	const { playState } = gameState;
 	return (
-		<PlayerCardLayout
-			$player={index}
-			$currentPlayer={currentPlayer}
-			$playState={gameState.playState}
-		>
+		<PlayerCardLayout $player={index} $currentPlayer={currentPlayer} $playState={playState}>
 			<span>{name}</span>
 			<div className="Wrapper">
 				<div>
@@ -461,9 +486,9 @@ const PlayerCard = ({ playerData, gameState, currentPlayer, seconds }: PlayerCar
 					<h3>score : {score}</h3>
 					<h3 className="Error">{error}</h3>
 					<div className="Timer">
-						{playerData.index === currentPlayer && gameState.playState === 'playing' ? (
+						{index === currentPlayer && playState === 'playing' ? (
 							<span className="Seconds">{seconds}</span>
-						) : !playerData.hasFlippable ? (
+						) : isPassed && playState === 'playing' ? (
 							<span className="Passed">PASSED</span>
 						) : null}
 					</div>
@@ -473,13 +498,32 @@ const PlayerCard = ({ playerData, gameState, currentPlayer, seconds }: PlayerCar
 	);
 };
 
-const Lobby = ({ lazyPlayState, playState, setGameState }: LobbyProps) => {
+const Lobby = ({ lazyPlayState, gameState, setGameState }: LobbyProps) => {
 	const coverDirections = useRef<Array<HorizontalPos | VerticalPos>>([
 		'left',
 		'up',
 		'right',
 		'down',
 	]);
+	const { playState, winner } = gameState;
+	const createButtonElement = () => {
+		switch (true) {
+			case playState === 'ready':
+				return <span>Start</span>;
+			case winner === 'draw':
+				return <span>Draw</span>;
+			case winner === 'player1':
+			case winner === 'player2':
+				return (
+					<span>
+						{`${capitalizeFirstLetter(winner)} Win`} <br />
+						Restart{' '}
+					</span>
+				);
+			default:
+				return null;
+		}
+	};
 	return (
 		<LobbyLayout
 			onClick={() => {
@@ -493,15 +537,13 @@ const Lobby = ({ lazyPlayState, playState, setGameState }: LobbyProps) => {
 					className={capitalizeFirstLetter(playState)}
 					$index={id}
 					$direction={cover}
+					$winner={winner}
+					$playState={playState}
 				/>
 			))}
-			<button className="Start">Start</button>
+			<button className="Button">{createButtonElement()}</button>
 		</LobbyLayout>
 	);
-};
-
-const Result = () => {
-	return <ResultLayout></ResultLayout>;
 };
 
 const Othello = () => {
@@ -528,6 +570,7 @@ const Othello = () => {
 			takeOverChance: 5,
 			error: '',
 			hasFlippable: true,
+			isPassed: false,
 		},
 		player2: {
 			index: 'player2',
@@ -536,6 +579,7 @@ const Othello = () => {
 			takeOverChance: 5,
 			error: '',
 			hasFlippable: true,
+			isPassed: false,
 		},
 	});
 	const [seconds, setSeconds] = useState<number>(30);
@@ -586,7 +630,6 @@ const Othello = () => {
 		}
 	}, [playersData.player1.hasFlippable, playersData.player2.hasFlippable]);
 	const lazyPlayState = useLazyState<OthelloPlayState>(500, gameState.playState, 'ready');
-	console.log(gameState);
 	return (
 		<Layout>
 			<PlayerCard
@@ -606,14 +649,12 @@ const Othello = () => {
 						setSeconds={setSeconds}
 					/>
 				) : null}
-				{gameState.playState === 'ready' || lazyPlayState === 'ready' ? (
-					<Lobby
-						lazyPlayState={lazyPlayState}
-						playState={gameState.playState}
-						setGameState={setGameState}
-					/>
+				{gameState.playState === 'ready' ||
+				lazyPlayState === 'ready' ||
+				gameState.playState === 'decided' ||
+				lazyPlayState === 'decided' ? (
+					<Lobby lazyPlayState={lazyPlayState} gameState={gameState} setGameState={setGameState} />
 				) : null}
-				{gameState.playState === 'decided' || lazyPlayState === 'decided' ? <Result /> : null}
 			</GameBoardWrapper>
 			<PlayerCard
 				playerData={playersData.player2}
