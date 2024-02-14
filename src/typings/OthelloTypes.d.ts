@@ -88,6 +88,7 @@ interface PlayerCardProps {
 interface GameBoardProps {
 	squareStates: SquareStates[];
 	currentPlayer: PlayerElement;
+	playerData: Record<PlayerElement, PlayerData>;
 	setSquareStates: React.Dispatch<React.SetStateAction<SquareStates[]>>;
 	setPlayersData: SetPlayersData;
 	setCurrentPlayer: React.Dispatch<React.SetStateAction<PlayerElement>>;
@@ -100,4 +101,5 @@ interface SquareProps {
 	setPlayersData: SetPlayersData;
 	currentSquare: SquareStates;
 	currentPlayer: PlayerElement;
+	playerData: Record<PlayerElement, PlayerData>;
 }

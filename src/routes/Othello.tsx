@@ -1,23 +1,8 @@
 import useLazyState from '#hooks/useLazyState';
-import {
-	capitalizeFirstLetter,
-	getColumnAndRow,
-	getColumnAndRowSquares,
-	getFlippables,
-	getFlipped,
-	getOppositeElement,
-} from '#libs/utils';
+import { capitalizeFirstLetter, getFlippables, getFlippeds, getOppositeElement } from '#libs/utils';
 import { colorBlink, slideIn } from '#styles/animations';
 import { fullWidthHeight } from '#styles/theme';
-import React, {
-	ReactNode,
-	lazy,
-	useCallback,
-	useEffect,
-	useLayoutEffect,
-	useRef,
-	useState,
-} from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
 import { resultTransition } from './Home';
 
@@ -160,8 +145,6 @@ const LobbyLayout = styled(LobbyAndResult)<LobbyLayoutProps>`
 	}
 `;
 
-const ResultLayout = styled(LobbyAndResult)``;
-
 const GameBoardWrapper = styled.section`
 	position: relative;
 	width: 100%;
@@ -288,13 +271,14 @@ const Square = ({
 	currentSquare,
 	currentPlayer,
 	squareStates,
+	playerData,
 	updateStates,
 	setPlayersData,
 }: SquareProps) => {
 	const [isHovered, setIsHovered] = useState<boolean>(false);
 	const { index, initPlayer, isFlipped, owner, flippable, isPrev } = currentSquare;
 	const onSquareClickHandler = () => {
-		const oppnentPlayer = getOppositeElement(currentPlayer);
+		const opponentPlayer = getOppositeElement(currentPlayer);
 		const updateError = (error: string) => {
 			setPlayersData((p) => ({
 				...p,
@@ -305,12 +289,14 @@ const Square = ({
 			}));
 		};
 		const shouldAbort = () => {
-			return !flippable || owner === currentPlayer;
+			const abortTakeOver =
+				owner === opponentPlayer && playerData[currentPlayer].takeOverChance === 0;
+			return !flippable || owner === currentPlayer || abortTakeOver;
 		};
 		if (shouldAbort()) {
 			return;
 		} else if (
-			owner === getOppositeElement(currentPlayer) &&
+			owner === opponentPlayer &&
 			squareStates.filter((square) => square.owner === currentPlayer).length < 8
 		) {
 			updateError('cannot takeover until the own squares reaches 8.');
@@ -320,10 +306,10 @@ const Square = ({
 			return;
 		}
 		const isCurrentSquare = (currentIndex: number) => currentIndex === index;
-		const flippeds = getFlipped(index, squareStates, currentPlayer);
+		const flippeds = getFlippeds(index, squareStates, currentPlayer);
 		const flippedSquares = squareStates.map((square) => {
 			const matchedSquare = flippeds.some((flipped) => square.index === flipped.index);
-			if (owner === getOppositeElement(currentPlayer)) {
+			if (owner === opponentPlayer) {
 				return matchedSquare || isCurrentSquare(square.index)
 					? { ...square, owner: currentPlayer, isFlipped: !square.isFlipped }
 					: { ...square, flippable: false };
@@ -344,8 +330,11 @@ const Square = ({
 				}
 			}
 		});
-		const flippables = getFlippables(flippedSquares, getOppositeElement(currentPlayer));
-		const nextPlayer = flippables.length > 0 ? getOppositeElement(currentPlayer) : currentPlayer;
+		const opponentFlippables = getFlippables(flippedSquares, opponentPlayer);
+		const nextPlayer =
+			opponentFlippables.length === 0 && playerData[opponentPlayer].takeOverChance === 0
+				? currentPlayer
+				: opponentPlayer;
 		const resultSquares = flippedSquares.map((square) => {
 			const flippablesByNextPlayer = getFlippables(flippedSquares, nextPlayer);
 			const matchedFlippable = flippablesByNextPlayer.some(
@@ -388,7 +377,7 @@ const Square = ({
 						? takeOverChance - 1
 						: takeOverChance,
 				hasFlippable,
-				isPassed: oppnentPlayer === player && !hasFlippable,
+				isPassed: opponentPlayer === player && !hasFlippable && takeOverChance === 0,
 			};
 		};
 		updateStates({ setSquareStateCallback: () => resultSquares, nextPlayer });
@@ -446,6 +435,7 @@ const Square = ({
 const GameBoard = ({
 	squareStates,
 	currentPlayer,
+	playerData,
 	setSquareStates,
 	setPlayersData,
 	setCurrentPlayer,
@@ -465,6 +455,7 @@ const GameBoard = ({
 						currentSquare={arr}
 						currentPlayer={currentPlayer}
 						squareStates={squareStates}
+						playerData={playerData}
 						updateStates={updateStates}
 						setPlayersData={setPlayersData}
 					/>
@@ -625,10 +616,20 @@ const Othello = () => {
 					return 'draw';
 			}
 		};
-		if (!player1.hasFlippable && !player2.hasFlippable) {
+		if (
+			!player1.hasFlippable &&
+			player1.takeOverChance === 0 &&
+			!player2.hasFlippable &&
+			player2.takeOverChance === 0
+		) {
 			setGameState({ playState: 'decided', winner: getWinner() });
 		}
-	}, [playersData.player1.hasFlippable, playersData.player2.hasFlippable]);
+	}, [
+		playersData.player1.hasFlippable,
+		playersData.player1.takeOverChance,
+		playersData.player2.hasFlippable,
+		playersData.player2.takeOverChance,
+	]);
 	const lazyPlayState = useLazyState<OthelloPlayState>(500, gameState.playState, 'ready');
 	return (
 		<Layout>
@@ -643,6 +644,7 @@ const Othello = () => {
 					<GameBoard
 						squareStates={squareStates}
 						currentPlayer={currentPlayer}
+						playerData={playersData}
 						setSquareStates={setSquareStates}
 						setPlayersData={setPlayersData}
 						setCurrentPlayer={setCurrentPlayer}
