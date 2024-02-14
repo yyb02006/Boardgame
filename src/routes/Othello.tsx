@@ -2,7 +2,7 @@ import useLazyState from '#hooks/useLazyState';
 import { capitalizeFirstLetter, getFlippables, getFlippeds, getOppositeElement } from '#libs/utils';
 import { colorBlink, slideIn } from '#styles/animations';
 import { fullWidthHeight } from '#styles/theme';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
 import { resultTransition } from './Home';
 
@@ -297,7 +297,8 @@ const Square = ({
 			return;
 		} else if (
 			owner === opponentPlayer &&
-			squareStates.filter((square) => square.owner === currentPlayer).length < 8
+			squareStates.filter((square) => square.owner === currentPlayer).length < 8 &&
+			playerData[currentPlayer].hasFlippable
 		) {
 			updateError('cannot takeover until the own squares reaches 8.');
 			return;
@@ -363,7 +364,7 @@ const Square = ({
 			resultSquares,
 		}: {
 			restData: PlayerData;
-			resultSquares: SquareStates[];
+			resultSquares: SquareState[];
 			player: PlayerElement;
 		}): PlayerData => {
 			const { takeOverChance } = restData;
@@ -465,7 +466,13 @@ const GameBoard = ({
 	);
 };
 
-const PlayerCard = ({ playerData, gameState, currentPlayer, seconds }: PlayerCardProps) => {
+const PlayerCard = ({
+	playerData,
+	gameState,
+	currentPlayer,
+	seconds,
+	setPlayersData,
+}: PlayerCardProps) => {
 	const { index, name, score, takeOverChance, error, isPassed } = playerData;
 	const { playState } = gameState;
 	return (
@@ -489,7 +496,7 @@ const PlayerCard = ({ playerData, gameState, currentPlayer, seconds }: PlayerCar
 	);
 };
 
-const Lobby = ({ lazyPlayState, gameState, setGameState }: LobbyProps) => {
+const Lobby = ({ lazyPlayState, gameState, setGameState, initializeStates }: LobbyProps) => {
 	const coverDirections = useRef<Array<HorizontalPos | VerticalPos>>([
 		'left',
 		'up',
@@ -502,13 +509,20 @@ const Lobby = ({ lazyPlayState, gameState, setGameState }: LobbyProps) => {
 			case playState === 'ready':
 				return <span>Start</span>;
 			case winner === 'draw':
-				return <span>Draw</span>;
+				return (
+					<span>
+						Draw
+						<br />
+						Restart
+					</span>
+				);
 			case winner === 'player1':
 			case winner === 'player2':
 				return (
 					<span>
-						{`${capitalizeFirstLetter(winner)} Win`} <br />
-						Restart{' '}
+						{`${capitalizeFirstLetter(winner)} Win`}
+						<br />
+						Restart
 					</span>
 				);
 			default:
@@ -519,6 +533,7 @@ const Lobby = ({ lazyPlayState, gameState, setGameState }: LobbyProps) => {
 		<LobbyLayout
 			onClick={() => {
 				setGameState((p) => ({ ...p, playState: 'playing' }));
+				playState !== 'ready' && initializeStates();
 			}}
 			$onSlideIn={playState === 'playing' && lazyPlayState !== 'playing'}
 		>
@@ -538,46 +553,52 @@ const Lobby = ({ lazyPlayState, gameState, setGameState }: LobbyProps) => {
 };
 
 const Othello = () => {
-	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>('player1');
-	const [squareStates, setSquareStates] = useState<SquareStates[]>(
-		Array.from({ length: 64 }, (_, id) => {
-			const player1Init = id === 27 || id === 36;
-			const player2Init = id === 28 || id === 35;
-			return {
-				index: id,
-				initPlayer: player1Init ? 'player1' : player2Init ? 'player2' : 'unowned',
-				owner: player1Init ? 'player1' : player2Init ? 'player2' : 'unowned',
-				isFlipped: false,
-				flippable: [20, 29, 34, 43].includes(id) || player2Init,
-				isPrev: false,
-			};
-		})
+	const createPlayerData = (player: PlayerElement) => ({
+		index: player,
+		name: player,
+		score: 2,
+		takeOverChance: 5,
+		error: '',
+		hasFlippable: true,
+		isPassed: false,
+		isTakeoverEnabled: false,
+	});
+	const initialStates: initialStates = useMemo(
+		() => ({
+			currentPlayer: 'player1',
+			squareStates: Array.from({ length: 64 }, (_, id) => {
+				const player1Init = id === 27 || id === 36;
+				const player2Init = id === 28 || id === 35;
+				return {
+					index: id,
+					initPlayer: player1Init ? 'player1' : player2Init ? 'player2' : 'unowned',
+					owner: player1Init ? 'player1' : player2Init ? 'player2' : 'unowned',
+					isFlipped: false,
+					flippable: [20, 29, 34, 43].includes(id) || player2Init,
+					isPrev: false,
+				};
+			}),
+			gameState: { playState: 'ready', winner: 'undecided' },
+			playerData: { player1: createPlayerData('player1'), player2: createPlayerData('player2') },
+			seconds: 30,
+		}),
+		[]
 	);
-	const [playersData, setPlayersData] = useState<Record<PlayerElement, PlayerData>>({
-		player1: {
-			index: 'player1',
-			name: 'player1',
-			score: squareStates.filter((square) => square.owner === 'player1').length,
-			takeOverChance: 5,
-			error: '',
-			hasFlippable: true,
-			isPassed: false,
-		},
-		player2: {
-			index: 'player2',
-			name: 'player2',
-			score: squareStates.filter((square) => square.owner === 'player2').length,
-			takeOverChance: 5,
-			error: '',
-			hasFlippable: true,
-			isPassed: false,
-		},
-	});
+	const [currentPlayer, setCurrentPlayer] = useState<PlayerElement>(initialStates.currentPlayer);
+	const [squareStates, setSquareStates] = useState<SquareState[]>(initialStates.squareStates);
+	const [playersData, setPlayersData] = useState<Record<PlayerElement, PlayerData>>(
+		initialStates.playerData
+	);
 	const [seconds, setSeconds] = useState<number>(30);
-	const [gameState, setGameState] = useState<OthelloGameState>({
-		playState: 'ready',
-		winner: 'undecided',
-	});
+	const [gameState, setGameState] = useState<OthelloGameState>(initialStates.gameState);
+	const initializeStates = () => {
+		const { currentPlayer, playerData, seconds, squareStates } = initialStates;
+		setCurrentPlayer(currentPlayer);
+		setGameState({ playState: 'playing', winner: 'undecided' });
+		setPlayersData(playerData);
+		setSeconds(seconds);
+		setSquareStates(squareStates);
+	};
 	useEffect(() => {
 		const interval = setInterval(() => {
 			gameState.playState === 'playing' && setSeconds((p) => p - 1);
@@ -638,6 +659,7 @@ const Othello = () => {
 				gameState={gameState}
 				currentPlayer={currentPlayer}
 				seconds={seconds}
+				setPlayersData={setPlayersData}
 			/>
 			<GameBoardWrapper>
 				{gameState.playState === 'playing' || lazyPlayState === 'playing' ? (
@@ -655,7 +677,12 @@ const Othello = () => {
 				lazyPlayState === 'ready' ||
 				gameState.playState === 'decided' ||
 				lazyPlayState === 'decided' ? (
-					<Lobby lazyPlayState={lazyPlayState} gameState={gameState} setGameState={setGameState} />
+					<Lobby
+						lazyPlayState={lazyPlayState}
+						gameState={gameState}
+						setGameState={setGameState}
+						initializeStates={initializeStates}
+					/>
 				) : null}
 			</GameBoardWrapper>
 			<PlayerCard
@@ -663,6 +690,7 @@ const Othello = () => {
 				gameState={gameState}
 				currentPlayer={currentPlayer}
 				seconds={seconds}
+				setPlayersData={setPlayersData}
 			/>
 		</Layout>
 	);

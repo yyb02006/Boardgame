@@ -23,18 +23,27 @@ interface PlayerData {
 	error: string;
 	hasFlippable: boolean;
 	isPassed: boolean;
+	isTakeoverEnabled: boolean;
+}
+
+interface initialStates {
+	currentPlayer: PlayerElement;
+	squareStates: SquareState[];
+	playerData: Record<PlayerElement, PlayerData>;
+	seconds: number;
+	gameState: OthelloGameState;
 }
 
 /** Function Props Types */
 
-type SetSquareStateCallback = (p: SquareStates[]) => SquareStates[];
+type SetSquareStateCallback = (p: SquareState[]) => SquareState[];
 
 interface UpdateStatesProps {
 	setSquareStateCallback: SetSquareStateCallback;
 	nextPlayer: PlayerElement;
 }
 
-interface SquareStates {
+interface SquareState {
 	index: number;
 	initPlayer: Owner;
 	owner: Owner;
@@ -73,9 +82,10 @@ interface LobbyCoverProps {
 /** React Components Types */
 
 interface LobbyProps {
-	setGameState: React.Dispatch<React.SetStateAction<OthelloGameState>>;
 	gameState: OthelloGameState;
 	lazyPlayState: OthelloPlayState;
+	setGameState: React.Dispatch<React.SetStateAction<OthelloGameState>>;
+	initializeStates: () => void;
 }
 
 interface PlayerCardProps {
@@ -83,23 +93,24 @@ interface PlayerCardProps {
 	gameState: OthelloGameState;
 	currentPlayer: PlayerElement;
 	seconds: number;
+	setPlayersData: SetPlayersData;
 }
 
 interface GameBoardProps {
-	squareStates: SquareStates[];
+	squareStates: SquareState[];
 	currentPlayer: PlayerElement;
 	playerData: Record<PlayerElement, PlayerData>;
-	setSquareStates: React.Dispatch<React.SetStateAction<SquareStates[]>>;
+	setSquareStates: React.Dispatch<React.SetStateAction<SquareState[]>>;
 	setPlayersData: SetPlayersData;
 	setCurrentPlayer: React.Dispatch<React.SetStateAction<PlayerElement>>;
 	setSeconds: React.Dispatch<React.SetStateAction<number>>;
 }
 
 interface SquareProps {
-	squareStates: SquareStates[];
+	squareStates: SquareState[];
 	updateStates: ({ setSquareStateCallback, nextPlayer }: UpdateStatesProps) => void;
 	setPlayersData: SetPlayersData;
-	currentSquare: SquareStates;
+	currentSquare: SquareState;
 	currentPlayer: PlayerElement;
 	playerData: Record<PlayerElement, PlayerData>;
 }

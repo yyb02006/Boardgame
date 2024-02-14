@@ -174,12 +174,12 @@ export function getColumnAndRowSquares({
 	squareStates,
 }: {
 	index: number;
-	squareStates: SquareStates[];
+	squareStates: SquareState[];
 }) {
 	const { column, row } = getColumnAndRow(index, 8, 8);
 	return squareStates.reduce<{
-		column: { lower: SquareStates[]; upper: SquareStates[] };
-		row: { lower: SquareStates[]; upper: SquareStates[] };
+		column: { lower: SquareState[]; upper: SquareState[] };
+		row: { lower: SquareState[]; upper: SquareState[] };
 	}>(
 		(accumulator, currentSquare) => {
 			const squarePosition = getColumnAndRow(currentSquare.index, 8, 8);
@@ -211,9 +211,9 @@ export function getColumnAndRowSquares({
 }
 
 /** 특정 index의 square가 flip됐을 때 가질 수 있는 flippedSquares를 반환하는 함수 */
-export function getFlippeds(index: number, squares: SquareStates[], targetPlayer: PlayerElement) {
-	const getFlippedBySide = (squares: SquareStates[], targetPlayer: PlayerElement) => {
-		let resultSquares: SquareStates[] = [];
+export function getFlippeds(index: number, squares: SquareState[], targetPlayer: PlayerElement) {
+	const getFlippedBySide = (squares: SquareState[], targetPlayer: PlayerElement) => {
+		let resultSquares: SquareState[] = [];
 		for (const square of squares) {
 			const { owner } = square;
 			switch (owner) {
@@ -231,7 +231,7 @@ export function getFlippeds(index: number, squares: SquareStates[], targetPlayer
 		return [];
 	};
 	const targetSquares = getColumnAndRowSquares({ index, squareStates: squares });
-	let resultSquares: SquareStates[] = [];
+	let resultSquares: SquareState[] = [];
 	for (const direction in targetSquares) {
 		for (const boundary in targetSquares[direction as SquaresDirection]) {
 			const assertedBoundary = targetSquares[direction as SquaresDirection][boundary as Boundary];
@@ -242,7 +242,7 @@ export function getFlippeds(index: number, squares: SquareStates[], targetPlayer
 }
 
 /** squares중에서 targetPlayer의 flippable한 squares를 반환하는 함수  */
-export function getFlippables(squares: SquareStates[], targetPlayer: PlayerElement) {
+export function getFlippables(squares: SquareState[], targetPlayer: PlayerElement) {
 	const opponentSquares = squares.filter(
 		(square) => square.owner === getOppositeElement(targetPlayer)
 	);
