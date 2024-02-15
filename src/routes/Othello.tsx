@@ -21,9 +21,16 @@ const Layout = styled.section`
 	font-weight: 800;
 	justify-content: space-between;
 	position: relative;
+	@media screen and (max-width: 1024px) {
+		height: 100vh;
+		flex-direction: column;
+		align-items: center;
+		padding: 80px 0 40px 0;
+	}
 `;
 
 const GameBoardWrapper = styled.section`
+	height: 100%;
 	position: relative;
 	aspect-ratio: 1;
 `;
@@ -68,6 +75,28 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 		}
 		> .Passed {
 			font-size: 4rem;
+		}
+	}
+	@media screen and (max-width: 1024px) {
+		margin: ${(props) => (props.$player === 'player1' ? '0 0 20px 0' : '20px 0 0 0 ')};
+		max-width: 100%;
+		overflow: visible;
+		h3 {
+			font-size: 4vw;
+		}
+		> .Wrapper {
+			display: flex;
+			justify-content: space-between;
+		}
+		& .Error {
+			position: absolute;
+			&::after {
+				content: 'fake';
+				background-color: red;
+			}
+		}
+		& .FakeLetter {
+			background-color: blue;
 		}
 	}
 `;
@@ -478,19 +507,18 @@ const PlayerCard = ({
 	const { playState } = gameState;
 	return (
 		<PlayerCardLayout $player={index} $currentPlayer={currentPlayer} $playState={playState}>
-			<span>{name}</span>
 			<div className="Wrapper">
-				<div>
-					<h3>takeover : {takeOverChance}</h3>
-					<h3>score : {score}</h3>
-					<h3 className="Error">{error}</h3>
-					<div className="Timer">
-						{index === currentPlayer && playState === 'playing' ? (
-							<span className="Seconds">{seconds}</span>
-						) : isPassed && playState === 'playing' ? (
-							<span className="Passed">PASSED</span>
-						) : null}
-					</div>
+				<span>{name}</span>
+				<h3>takeover : {takeOverChance}</h3>
+				<h3>score : {score}</h3>
+				<h3 className="Error">{error}</h3>
+				<div className="Timer">
+					<span className="FakeLetter">PASSED</span>
+					{index === currentPlayer && playState === 'playing' ? (
+						<span className="Seconds">{seconds}</span>
+					) : isPassed && playState === 'playing' ? (
+						<span className="Passed">PASSED</span>
+					) : null}
 				</div>
 			</div>
 		</PlayerCardLayout>
