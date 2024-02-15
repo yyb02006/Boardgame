@@ -19,7 +19,13 @@ const Layout = styled.section`
 	display: flex;
 	font-size: 5rem;
 	font-weight: 800;
-	justify-content: center;
+	justify-content: space-between;
+	position: relative;
+`;
+
+const GameBoardWrapper = styled.section`
+	position: relative;
+	aspect-ratio: 1;
 `;
 
 const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
@@ -143,11 +149,6 @@ const LobbyLayout = styled(LobbyAndResult)<LobbyLayoutProps>`
 						duration: 500,
 				  })}
 	}
-`;
-
-const GameBoardWrapper = styled.section`
-	position: relative;
-	width: 100%;
 `;
 
 const GameBoardLayout = styled.div`
