@@ -95,8 +95,24 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 				background-color: red;
 			}
 		}
+		& .Timer {
+			width: auto;
+			height: auto;
+			position: relative;
+			> .Seconds {
+				position: absolute;
+				font-size: 2rem;
+				right: 0;
+			}
+			> .Passed {
+				position: absolute;
+				font-size: 2rem;
+				right: 0;
+			}
+		}
 		& .FakeLetter {
-			background-color: blue;
+			color: transparent;
+			user-select: none;
 		}
 	}
 `;
