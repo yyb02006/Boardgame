@@ -129,3 +129,25 @@ export function colorBlink({
 			${duration}ms infinite alternate;
 	`;
 }
+
+export function alert({
+	name,
+	startColor,
+	alternateColor,
+	duration,
+	targetProperty,
+}: ColorBlinkProps) {
+	return css`
+		@keyframes alert_${name}_${startColor.slice(1)}_${alternateColor.slice(1)} {
+			from {
+				${categorizeByProperty(targetProperty, startColor)}
+			}
+			to {
+				${categorizeByProperty(targetProperty, alternateColor)}
+			}
+		}
+		animation: ${`alert_${name}_${startColor.slice(1)}_${alternateColor.slice(1)}`} linear
+			${duration}ms alternate;
+		animation-iteration-count: 4;
+	`;
+}

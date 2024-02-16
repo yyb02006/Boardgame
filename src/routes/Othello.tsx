@@ -1,6 +1,6 @@
 import useLazyState from '#hooks/useLazyState';
 import { capitalizeFirstLetter, getFlippables, getFlippeds, getOppositeElement } from '#libs/utils';
-import { colorBlink, slideIn } from '#styles/animations';
+import { alert, colorBlink, slideIn } from '#styles/animations';
 import { fullWidthHeight } from '#styles/theme';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
@@ -8,7 +8,7 @@ import { resultTransition } from './Home';
 
 const OthelloColors = {
 	player1: { activated: '#e9a71a', flippable: '#9c937f' },
-	player2: { activated: 'var(--color-royalBlue)', flippable: '#9b9bbb' },
+	player2: { activated: '#4444dd', flippable: '#9b9bbb' },
 	common: '#505050',
 };
 
@@ -77,6 +77,20 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 			font-size: 4rem;
 		}
 	}
+	& .FakeLetter {
+		position: absolute;
+		color: transparent;
+		user-select: none;
+	}
+	${(props) =>
+		props.$hasError &&
+		alert({
+			name: `${props.$player}error`,
+			duration: 50,
+			alternateColor: 'red',
+			startColor: OthelloColors[props.$player].activated,
+			targetProperty: 'backgroundColor',
+		})}
 	@media screen and (max-width: 1024px) {
 		margin: ${(props) => (props.$player === 'player1' ? '0 0 20px 0' : '20px 0 0 0 ')};
 		max-width: 100%;
@@ -111,6 +125,7 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 			}
 		}
 		& .FakeLetter {
+			position: relative;
 			color: transparent;
 			user-select: none;
 		}
@@ -340,6 +355,7 @@ const Square = ({
 			return !flippable || owner === currentPlayer || abortTakeOver;
 		};
 		if (shouldAbort()) {
+			updateError('occured some error.');
 			return;
 		} else if (
 			owner === opponentPlayer &&
@@ -521,8 +537,21 @@ const PlayerCard = ({
 }: PlayerCardProps) => {
 	const { index, name, score, takeOverChance, error, isPassed } = playerData;
 	const { playState } = gameState;
+	const hasError = !!playerData.error;
+	useEffect(() => {
+		if (playerData.error) {
+			setTimeout(() => {
+				setPlayersData((p) => ({ ...p, [currentPlayer]: { ...p[currentPlayer], error: '' } }));
+			}, 200);
+		}
+	}, [playerData.error]);
 	return (
-		<PlayerCardLayout $player={index} $currentPlayer={currentPlayer} $playState={playState}>
+		<PlayerCardLayout
+			$player={index}
+			$currentPlayer={currentPlayer}
+			$playState={playState}
+			$hasError={hasError}
+		>
 			<div className="Wrapper">
 				<span>{name}</span>
 				<h3>takeover : {takeOverChance}</h3>

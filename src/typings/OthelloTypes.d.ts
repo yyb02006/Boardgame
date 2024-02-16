@@ -58,6 +58,7 @@ interface PlayerCardLayoutProps {
 	$player: PlayerElement;
 	$currentPlayer: PlayerElement;
 	$playState: OthelloPlayState;
+	$hasError: boolean;
 }
 
 interface SquareStyleProps {
