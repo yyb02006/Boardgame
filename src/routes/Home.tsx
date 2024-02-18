@@ -67,22 +67,12 @@ export const resultTransition = {
 };
 
 const Layout = styled.section`
-	background-color: var(--bgColor-dark);
-	color: #eaeaea;
 	height: 100vh;
-	width: 100%;
+	width: 100vw;
 	font-size: 5rem;
 	font-weight: 800;
 	position: relative;
-	padding: 80px 120px 40px 120px;
 	perspective: 1000px;
-	overflow-y: visible;
-	overflow-x: hidden;
-	@media screen and (max-width: 1024px) {
-		display: flex;
-		flex-direction: column;
-		padding: 80px 0 40px 0;
-	}
 `;
 
 const Player = styled.div<PlayerProps>`
@@ -112,14 +102,19 @@ const TitleContainerLayout = styled.div`
 `;
 
 const BoardLayout = styled.div`
-	position: relative;
+	height: 45vw;
+	width: 100%;
+	padding: 80px 120px 40px 120px;
 	display: flex;
+	font-size: 5rem;
+	font-weight: 800;
 	justify-content: space-between;
-	height: auto;
+	position: relative;
 	@media screen and (max-width: 1024px) {
-		${fullWidthHeight}
+		height: 100vh;
 		flex-direction: column;
 		align-items: center;
+		padding: 80px 0 40px 0;
 	}
 `;
 
@@ -128,7 +123,7 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 	width: 100%;
 	background-color: ${(props) =>
 		props.$player === 'player1' ? colors.player1.noneActiveBox : colors.player2.noneActiveBox};
-	margin: ${(props) => (props.$player === 'player1' ? '0 40px 0 0' : '0 0 0 40px')};
+	margin: ${(props) => (props.$player === 'player1' ? '0 4vw 0 0' : '0 0 0 4vw')};
 	font-size: 4vw;
 	position: relative;
 	padding: 12px 24px;
@@ -184,7 +179,6 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 	@media screen and (max-width: 1024px) {
 		margin: ${(props) => (props.$player === 'player1' ? '0 0 20px 0' : '20px 0 0 0 ')};
 		max-width: 100%;
-		overflow: visible;
 		h3 {
 			font-size: 4vw;
 		}
@@ -198,30 +192,22 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 `;
 
 const BoardItemsWrapper = styled.div`
-	height: 100%;
+	height: min(100vw, 100%);
 	aspect-ratio: 1;
+	position: relative;
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	opacity: 0;
 	${fadeInZ({ name: 'board', distance: 200, duration: 300, seqDirection: 'normal', delay: 200 })}
-	@media screen and (max-width: 1024px) {
-		padding: 24px 0;
-	}
 `;
 
 const BoardItemsContainer = styled.div<BoardItemsContainerProps>`
+	${fullWidthHeight}
 	position: relative;
 	grid-template-columns: repeat(5, 1fr);
 	background-color: ${(props) => colors[props.$currentPlayer].noneActiveBox};
 	display: grid;
-	width: 35vw;
-	height: 35vw;
-	aspect-ratio: 1;
-	@media screen and (max-width: 1024px) {
-		height: 100%;
-		width: auto;
-	}
 `;
 
 const Boxes = styled.div<BoxesProps>`
@@ -581,10 +567,10 @@ const Board = () => {
 		}
 	}, [seconds]);
 	return (
+		// <TitleContainerLayout>
+		// 		<TitleContainer />
+		// 	</TitleContainerLayout>
 		<>
-			<TitleContainerLayout>
-				<TitleContainer />
-			</TitleContainerLayout>
 			<BoardLayout>
 				<PlayerCard player="player1" />
 				<BoardItemsWrapper>

@@ -30,7 +30,7 @@ const Layout = styled.section`
 `;
 
 const GameBoardWrapper = styled.section`
-	height: 100%;
+	height: min(100vw, 100%);
 	position: relative;
 	aspect-ratio: 1;
 `;
@@ -556,7 +556,6 @@ const PlayerCard = ({
 				<span>{name}</span>
 				<h3>takeover : {takeOverChance}</h3>
 				<h3>score : {score}</h3>
-				<h3 className="Error">{error}</h3>
 				<div className="Timer">
 					<span className="FakeLetter">PASSED</span>
 					{index === currentPlayer && playState === 'playing' ? (
