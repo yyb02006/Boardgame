@@ -57,10 +57,6 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 		font-weight: 600;
 		margin: 0;
 	}
-	& .Error {
-		font-size: ${`clamp(0.5rem,1vw,1rem)`};
-		color: #ff481b;
-	}
 	& .Timer {
 		${fullWidthHeight}
 		position: absolute;
@@ -101,13 +97,6 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 		> .Wrapper {
 			display: flex;
 			justify-content: space-between;
-		}
-		& .Error {
-			position: absolute;
-			&::after {
-				content: 'fake';
-				background-color: red;
-			}
 		}
 		& .Timer {
 			width: auto;

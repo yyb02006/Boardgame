@@ -10,6 +10,7 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 		name,
 		ownableSelecteds: { horizontal: [], vertical: [] },
 		isWin: false,
+		hasError: false,
 	});
 	const [
 		initialCurrentPlayer,

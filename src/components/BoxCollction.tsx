@@ -423,8 +423,10 @@ export default function BoxCollection({ direction, borderId, isLast = false }: B
 				originalSelecteds: formattedSelected,
 				playState,
 			})
-		)
+		) {
+			setPlayers((p) => ({ ...p, [currentPlayer]: { ...p[currentPlayer], hasError: true } }));
 			return;
+		}
 
 		const playerSelecteds = (player: PlayerElement, originalSelecteds: Selected) => ({
 			horizontal: originalSelecteds.horizontal.filter((item) => item.owner === player),
@@ -843,6 +845,7 @@ export default function BoxCollection({ direction, borderId, isLast = false }: B
 			playerInfos,
 			boxesResult,
 			originalSelecteds,
+			hasError,
 			opt,
 		}: CreateNewPlayerInfoProps): PlayerInfo => {
 			const ownableSelecteds = {
@@ -868,6 +871,7 @@ export default function BoxCollection({ direction, borderId, isLast = false }: B
 					isPlayerWin(ownableSelecteds, originalSelecteds) === player,
 				ownableBoxCount: ownableAndOwnedBoxes[player].length - ownedBoxCount,
 				ownableSelecteds: formatOwnableSelecteds(originalSelecteds)[player],
+				hasError,
 			};
 		};
 
@@ -979,11 +983,11 @@ export default function BoxCollection({ direction, borderId, isLast = false }: B
 		/* 상태업데이트함수는 어차피 불순함수인데 굳이 순수함수로 만들어야하나? */
 		const updateState = (
 			selecteds: Selected,
-			player: Players,
+			playersData: Players,
 			gameState: 'player1' | 'player2' | 'draw' | undefined
 		) => {
 			setSelected(selecteds);
-			setPlayers(player);
+			setPlayers(playersData);
 			setGameStateByResult(gameState);
 			setCurrentPlayer(opponentPlayer);
 			setSeconds(30);
@@ -1183,6 +1187,7 @@ export default function BoxCollection({ direction, borderId, isLast = false }: B
 				originalSelecteds: selectedsResult,
 				playerInfos: players,
 				opt: { withBoxCount: true },
+				hasError: false,
 			};
 
 			const playersResult = {
@@ -1229,6 +1234,7 @@ export default function BoxCollection({ direction, borderId, isLast = false }: B
 				originalSelecteds: formattedSelected,
 				playerInfos: players,
 				opt: { withBoxCount: false },
+				hasError: false,
 			};
 
 			const playersResult = {

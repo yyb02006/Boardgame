@@ -67,6 +67,7 @@ interface PlayerInfo {
 	name: string;
 	ownableSelecteds: Selected;
 	isWin: boolean;
+	hasError: boolean;
 }
 
 interface GameState {

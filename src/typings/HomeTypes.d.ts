@@ -62,6 +62,7 @@ interface CreateNewPlayerInfoProps {
 	playerInfos: Players;
 	boxesResult: Boxes;
 	originalSelecteds: Selected;
+	hasError: boolean;
 	opt: { withBoxCount: boolean };
 }
 
@@ -149,6 +150,8 @@ interface PlayerProps {
 interface PlayerCardStyleProps {
 	$player: PlayerElement;
 	$playState: PlayState;
+	$hasError: boolean;
+	$currentPlayer: PlayerElement;
 }
 
 interface BoardItemsContainerProps {

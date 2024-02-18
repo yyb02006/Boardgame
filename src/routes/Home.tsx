@@ -4,7 +4,7 @@ import { capitalizeFirstLetter, getOppositeElement } from '#libs/utils';
 import { HomeProvider, useHomeContext } from '#routes/HomeContext';
 import theme, { fullWidthHeight } from '#styles/theme';
 import BoxCollection from '#components/BoxCollction';
-import { fadeInZ, slideIn } from '#styles/animations';
+import { alert, fadeInZ, slideIn } from '#styles/animations';
 
 const { colors } = theme;
 
@@ -121,8 +121,15 @@ const BoardLayout = styled.div`
 const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 	max-width: 400px;
 	width: 100%;
-	background-color: ${(props) =>
-		props.$player === 'player1' ? colors.player1.noneActiveBox : colors.player2.noneActiveBox};
+	background-color: ${(props) => {
+		if (props.$player === props.$currentPlayer || props.$playState !== 'playing') {
+			return props.$player === 'player1'
+				? colors.player1.noneActiveBox
+				: colors.player2.noneActiveBox;
+		} else {
+			return colors.common.noneActiveBorder;
+		}
+	}};
 	margin: ${(props) => (props.$player === 'player1' ? '0 4vw 0 0' : '0 0 0 4vw')};
 	font-size: 4vw;
 	position: relative;
@@ -150,11 +157,40 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 		position: absolute;
 		top: 0;
 		left: 0;
-		padding: 12px 24px;
 		overflow: hidden;
 		> div {
-			width: 100%;
+			${fullWidthHeight}
+			padding: 12px 24px;
 		}
+	}
+	& .Timer {
+		position: absolute;
+		top: 0;
+		left: 0;
+		${fullWidthHeight};
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		> h3 {
+			position: relative;
+			font-size: 7.5vw;
+			font-weight: 700;
+		}
+		> .FakeLetter {
+			position: absolute;
+		}
+	}
+	& .Error {
+		${(props) =>
+			props.$hasError &&
+			alert({
+				name: `${props.$player}error`,
+				duration: 50,
+				alternateColor: 'red',
+				startColor:
+					props.$player === 'player1' ? colors.player1.noneActiveBox : colors.player2.noneActiveBox,
+				targetProperty: 'backgroundColor',
+			})};
 	}
 	& .SlideIn {
 		${(props) =>
@@ -186,6 +222,21 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 			> div {
 				display: flex;
 				justify-content: space-between;
+			}
+		}
+		& .Timer {
+			position: relative;
+			width: auto;
+			height: auto;
+			> h3 {
+				position: absolute;
+				top: 0;
+				right: 0;
+				font-size: 4vw;
+			}
+			> .FakeLetter {
+				position: relative;
+				font-size: 4vw;
 			}
 		}
 	}
@@ -369,6 +420,9 @@ const PlayerCard = ({ player }: { player: PlayerElement }) => {
 		boxes,
 		gameState: { isPlayerWin, playState },
 		lazyPlayState,
+		seconds,
+		currentPlayer,
+		setPlayers,
 	} = useHomeContext();
 	const getConditions = (
 		playState: PlayState,
@@ -388,11 +442,23 @@ const PlayerCard = ({ player }: { player: PlayerElement }) => {
 				break;
 		}
 	};
+	useEffect(() => {
+		if (players[currentPlayer].hasError) {
+			setTimeout(() => {
+				setPlayers((p) => ({ ...p, [currentPlayer]: { ...p[currentPlayer], hasError: false } }));
+			}, 200);
+		}
+	}, [players[currentPlayer].hasError]);
 	return (
-		<PlayerCardStyle $player={player} $playState={playState}>
+		<PlayerCardStyle
+			$player={player}
+			$playState={playState}
+			$hasError={players[player].hasError}
+			$currentPlayer={currentPlayer}
+		>
 			<span className="FakeLetter">player2</span>
 			{getConditions(playState, lazyPlayState, 'winRender') ? (
-				<div className="Wrapper">
+				<div className={`Wrapper ${players[player].hasError ? 'Error' : ''}`}>
 					<div
 						className={getConditions(playState, lazyPlayState, 'winExit') ? 'SlideOut' : 'SlideIn'}
 					>
@@ -401,7 +467,7 @@ const PlayerCard = ({ player }: { player: PlayerElement }) => {
 				</div>
 			) : null}
 			{getConditions(playState, lazyPlayState, 'notWinRender') ? (
-				<div className="Wrapper">
+				<div className={`Wrapper ${players[player].hasError ? 'Error' : ''}`}>
 					<div
 						className={
 							getConditions(playState, lazyPlayState, 'notWinExit') ? 'SlideOut' : 'SlideIn'
@@ -412,6 +478,10 @@ const PlayerCard = ({ player }: { player: PlayerElement }) => {
 						<h3>
 							score : {boxes.filter((box) => box.isSurrounded && box.owner === player).length}
 						</h3>
+						<div className="Timer">
+							<span className="FakeLetter">&nbsp;00</span>
+							{currentPlayer === player ? <h3 className="Seconds">{seconds}</h3> : null}
+						</div>
 					</div>
 				</div>
 			) : null}
