@@ -151,6 +151,23 @@ const CardWrapper = styled.div`
 	}
 `;
 
+const CardTable = styled.section<CardTableProps>`
+	position: relative;
+	display: grid;
+	${(props) => createGridAutoTemplate(props.$cardLayout.lg)}
+	place-content: center center;
+	place-items: center center;
+	gap: min(2.2vw, 24px);
+	@media screen and (max-width: 1024px) {
+		${(props) => createGridAutoTemplate(props.$cardLayout.md)}
+		gap: 18px;
+	}
+	@media screen and (max-width: 640px) {
+		${(props) => createGridAutoTemplate(props.$cardLayout.sm)}
+		gap: 16px;
+	}
+`;
+
 const ScoreBoard = styled.section`
 	background-color: #181818;
 	font-size: 2rem;
@@ -179,23 +196,6 @@ const ScoreBoard = styled.section`
 		padding: 0 48px;
 		box-shadow: inset 0 0 1.5vw 2px #000000;
 		border-radius: 0;
-	}
-`;
-
-const CardTable = styled.section<CardTableProps>`
-	position: relative;
-	display: grid;
-	${(props) => createGridAutoTemplate(props.$cardLayout.lg)}
-	place-content: center center;
-	place-items: center center;
-	gap: min(2.2vw, 24px);
-	@media screen and (max-width: 1024px) {
-		${(props) => createGridAutoTemplate(props.$cardLayout.md)}
-		gap: 18px;
-	}
-	@media screen and (max-width: 640px) {
-		${(props) => createGridAutoTemplate(props.$cardLayout.sm)}
-		gap: 16px;
 	}
 `;
 

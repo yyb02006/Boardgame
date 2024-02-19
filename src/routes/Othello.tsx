@@ -4,7 +4,7 @@ import { alert, colorBlink, fadeInZ, slideIn } from '#styles/animations';
 import { fullWidthHeight } from '#styles/theme';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
-import { resultTransition } from './Home';
+import { resultTransition } from './BorderGame';
 
 const OthelloColors = {
 	player1: { activated: '#e9a71a', flippable: '#9c937f' },

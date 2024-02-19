@@ -9,7 +9,7 @@ import {
 } from '#libs/utils';
 import styled, { css } from 'styled-components';
 import theme from '#styles/theme';
-import { useHomeContext } from '#routes/HomeContext';
+import { useBorderGameContext } from '#routes/BorderGameContext';
 import { colorBlink } from '#styles/animations';
 
 const { colors } = theme;
@@ -131,7 +131,7 @@ export default function BoxCollection({ direction, borderId, isLast = false }: B
 		gameState: { playState },
 		setGameState,
 		setSeconds,
-	} = useHomeContext();
+	} = useBorderGameContext();
 	const opponentPlayer = getOppositeElement(currentPlayer);
 	const onBoxClick = (sideId: number) => {
 		const formattedSelected: Selected = !selected[direction].some(

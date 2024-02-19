@@ -1,9 +1,9 @@
 import useLazyState from '#hooks/useLazyState';
 import React, { createContext, useContext, useState } from 'react';
 
-const HomeContext = createContext<HomeContext | undefined>(undefined);
+const BorderGameContext = createContext<HomeContext | undefined>(undefined);
 
-function HomeProvider({ children }: { children: React.ReactNode }) {
+function BorderGameProvider({ children }: { children: React.ReactNode }) {
 	const initialPlayer = (name: PlayerElement) => ({
 		boxCount: 0,
 		ownableBoxCount: 0,
@@ -82,16 +82,16 @@ function HomeProvider({ children }: { children: React.ReactNode }) {
 		lazyPlayState,
 	};
 
-	return <HomeContext.Provider value={contextValue}>{children}</HomeContext.Provider>;
+	return <BorderGameContext.Provider value={contextValue}>{children}</BorderGameContext.Provider>;
 }
 
-function useHomeContext() {
-	const contextValue = useContext(HomeContext);
+function useBorderGameContext() {
+	const contextValue = useContext(BorderGameContext);
 	/** undefined예외처리 */
 	if (contextValue === undefined) {
-		throw new Error('useHomeContext must be used within an HomeProvider');
+		throw new Error('useBorderGameContext must be used within an BorderGameProvider');
 	}
 	return contextValue;
 }
 
-export { HomeProvider, useHomeContext };
+export { BorderGameProvider, useBorderGameContext };

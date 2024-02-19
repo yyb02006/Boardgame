@@ -186,7 +186,7 @@ const Header = ({ title }: HeaderProps) => {
 						/>
 						<span className="Title">Games</span>
 						<div className="Links">
-							<LinkWrapper to="/" label="BorderGame" page="borderGame" />
+							<LinkWrapper to="/Border-Game" label="BorderGame" page="borderGame" />
 							<LinkWrapper to="/card-flipper" label="CardFlipper" page="cardFlipper" />
 							<LinkWrapper to="/othello" label="Othello" page="othello" />
 						</div>
