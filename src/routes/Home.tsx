@@ -480,45 +480,15 @@ const PlayerCard = ({ player }: { player: PlayerElement }) => {
 						</h3>
 						<div className="Timer">
 							<span className="FakeLetter">&nbsp;00</span>
-							{currentPlayer === player ? <h3 className="Seconds">{seconds}</h3> : null}
+							{currentPlayer === player && playState === 'playing' ? (
+								<h3 className="Seconds">{seconds}</h3>
+							) : null}
 						</div>
 					</div>
 				</div>
 			) : null}
 		</PlayerCardStyle>
 	);
-};
-
-const TitleContainer = () => {
-	const {
-		currentPlayer,
-		seconds,
-		gameState: { isPlayerWin, playState },
-	} = useHomeContext();
-	const winner = (Object.entries(isPlayerWin) as Array<[PlayerElement, boolean]>).find(
-		(entry) => entry[1]
-	)?.[0];
-	const player = playState === 'win' && winner ? winner : currentPlayer;
-	switch (playState) {
-		case 'draw':
-			return <span className="Yellow Draw">Draw</span>;
-		case 'ready':
-			return <span className="Yellow Ready">Ready</span>;
-		case 'playing':
-		case 'win':
-			return (
-				<>
-					<div key={playState} className={`GameIndicator ${capitalizeFirstLetter(playState)}`}>
-						<Player $currentPlayer={player}>{player}</Player>
-						{playState === 'win' ? <span>&nbsp;</span> : <span>{`'s`}&nbsp;</span>}
-						<div className="Yellow">{playState === 'win' ? `win` : `turn`}</div>
-					</div>
-					{playState === 'playing' && <div className="Yellow">{seconds}</div>}
-				</>
-			);
-		default:
-			return null;
-	}
 };
 
 const BoardCover = ({ playState, isPlayerWin }: BoardCoverProps) => {

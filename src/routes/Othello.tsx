@@ -1,6 +1,6 @@
 import useLazyState from '#hooks/useLazyState';
 import { capitalizeFirstLetter, getFlippables, getFlippeds, getOppositeElement } from '#libs/utils';
-import { alert, colorBlink, slideIn } from '#styles/animations';
+import { alert, colorBlink, fadeInZ, slideIn } from '#styles/animations';
 import { fullWidthHeight } from '#styles/theme';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
@@ -33,6 +33,8 @@ const GameBoardWrapper = styled.section`
 	height: min(100vw, 100%);
 	position: relative;
 	aspect-ratio: 1;
+	opacity: 0;
+	${fadeInZ({ name: 'board', distance: 200, duration: 300, seqDirection: 'normal', delay: 200 })}
 `;
 
 const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
@@ -52,6 +54,15 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 	font-size: 4vw;
 	position: relative;
 	padding: 12px 24px;
+	opacity: 0;
+	${(props) =>
+		fadeInZ({
+			name: 'playerCard',
+			distance: 200,
+			duration: 300,
+			seqDirection: 'normal',
+			delay: props.$player === 'player1' ? 100 : 300,
+		})}
 	h3 {
 		font-size: ${`clamp(1rem,2vw,2rem)`};
 		font-weight: 600;
