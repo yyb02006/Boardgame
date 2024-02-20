@@ -141,6 +141,16 @@ interface HeaderProps {
 	title: string;
 }
 
+const Rules = styled.div`
+	font-weight: 300;
+	cursor: pointer;
+`;
+
+const LogoSection = styled.section`
+	display: flex;
+	gap: 48px;
+`;
+
 const LinkWrapper = ({ to, label, page }: { to: string; label: string; page: PageState }) => {
 	const { setPageState } = useAppContext();
 	return (
@@ -175,7 +185,10 @@ const Header = ({ title }: HeaderProps) => {
 	}, [pageState]);
 	return (
 		<Layout>
-			<HeaderNav to={'/'}>{title}</HeaderNav>
+			<LogoSection>
+				<HeaderNav to={'/'}>{title}</HeaderNav>
+				<Rules>Rules</Rules>
+			</LogoSection>
 			<HambergerMenu>
 				{isOpen ? (
 					<Spread className={isVisible ? 'Open' : 'Closed'}>
