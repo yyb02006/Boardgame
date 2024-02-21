@@ -34,7 +34,7 @@ const GameBoardWrapper = styled.section`
 	position: relative;
 	aspect-ratio: 1;
 	opacity: 0;
-	${fadeInZ({ name: 'board', distance: 200, duration: 300, seqDirection: 'normal', delay: 200 })}
+	${fadeInZ({ name: 'board', distance: 200, duration: 300, seqDirection: 'reverse', delay: 200 })}
 `;
 
 const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
@@ -52,13 +52,14 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 	font-size: 4vw;
 	position: relative;
 	padding: 12px 24px;
-	opacity: 0;
+	opacity: ${(props) => (props.$playState === 'ready' ? 0 : 1)};
 	${(props) =>
+		props.$playState === 'ready' &&
 		fadeInZ({
 			name: 'playerCard',
 			distance: 200,
 			duration: 300,
-			seqDirection: 'normal',
+			seqDirection: 'reverse',
 			delay: props.$player === 'player1' ? 100 : 300,
 		})}
 	h3 {

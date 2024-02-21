@@ -45,17 +45,17 @@ export function fadeInZ({
 	return css`
 		@keyframes fadeIn_${name}_${seqDirection}_${distance} {
 			from {
-				transform: perspective(1000px) translateZ(${`${distance}px`});
-				${isFaded &&
-				css`
-					opacity: 0;
-				`}
-			}
-			to {
 				transform: perspective(1000px) translateZ(0px);
 				${isFaded &&
 				css`
 					opacity: 1;
+				`}
+			}
+			to {
+				transform: perspective(1000px) translateZ(${`${distance}px`});
+				${isFaded &&
+				css`
+					opacity: 0;
 				`}
 			}
 		}

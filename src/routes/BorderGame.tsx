@@ -114,7 +114,7 @@ const PlayerCardStyle = styled.div<PlayerCardStyleProps>`
 			name: 'playerCard',
 			distance: 200,
 			duration: 300,
-			seqDirection: 'normal',
+			seqDirection: 'reverse',
 			delay: props.$player === 'player1' ? 100 : 300,
 		})}
 	& .FakeLetter {
@@ -224,7 +224,7 @@ const BoardItemsWrapper = styled.div`
 	justify-content: center;
 	align-items: center;
 	opacity: 0;
-	${fadeInZ({ name: 'board', distance: 200, duration: 300, seqDirection: 'normal', delay: 200 })}
+	${fadeInZ({ name: 'board', distance: 200, duration: 300, seqDirection: 'reverse', delay: 200 })}
 `;
 
 const BoardItemsContainer = styled.div<BoardItemsContainerProps>`

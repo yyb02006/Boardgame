@@ -82,7 +82,7 @@ const CardStyle = styled.div<CardStyleProps>`
 				name: `card${props.$index}`,
 				distance: 200,
 				duration: 300,
-				seqDirection: 'normal',
+				seqDirection: 'reverse',
 				delay: props.$index * 100,
 			});
 		}}
@@ -250,7 +250,7 @@ const LobbyLayout = styled.section`
 			name: 'quantity',
 			distance: 400,
 			duration: 300,
-			seqDirection: 'normal',
+			seqDirection: 'reverse',
 		})}
 	}
 `;
@@ -265,7 +265,7 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 			name: 'quantity',
 			distance: 400,
 			duration: 300,
-			seqDirection: 'normal',
+			seqDirection: 'reverse',
 			delay: (props.$index + 1) * 200,
 		})}
 	`}

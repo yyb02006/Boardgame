@@ -78,7 +78,7 @@ const Spread = styled.div`
 			name: 'openMenu',
 			distance: 200,
 			duration: 300,
-			seqDirection: 'normal',
+			seqDirection: 'reverse',
 		})}
 	}
 	&.Closed {
@@ -86,7 +86,7 @@ const Spread = styled.div`
 			name: 'closeMenu',
 			distance: 200,
 			duration: 300,
-			seqDirection: 'reverse',
+			seqDirection: 'normal',
 		})}
 	}
 	& .Title {
@@ -186,7 +186,7 @@ const RuleModalLayout = styled.div`
 			name: 'openMenu',
 			distance: 200,
 			duration: 300,
-			seqDirection: 'normal',
+			seqDirection: 'reverse',
 		})}
 	}
 	&.Closed {
@@ -194,7 +194,7 @@ const RuleModalLayout = styled.div`
 			name: 'closeMenu',
 			distance: 200,
 			duration: 300,
-			seqDirection: 'reverse',
+			seqDirection: 'normal',
 		})}
 	}
 	@media screen and (max-width: 1024px) {

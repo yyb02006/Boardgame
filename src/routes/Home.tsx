@@ -36,7 +36,7 @@ const MenuStyle = styled.div<MenuStyleProps>`
 			name: `card`,
 			distance: 200,
 			duration: 300,
-			seqDirection: 'normal',
+			seqDirection: 'reverse',
 			delay: props.$index * 100,
 		});
 	}}
