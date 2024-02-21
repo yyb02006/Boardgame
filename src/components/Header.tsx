@@ -198,7 +198,8 @@ const RuleModalLayout = styled.div`
 		})}
 	}
 	@media screen and (max-width: 1024px) {
-		left: 0;
+		left: 48px;
+		width: calc(100% - 96px);
 	}
 `;
 
