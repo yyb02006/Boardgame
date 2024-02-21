@@ -1,15 +1,7 @@
 import { capitalizeFirstLetter, deepCopy, getPaddingFromOption, shuffleArray } from '#libs/utils';
 import { fullWidthHeight } from '#styles/theme';
 import { setWith, throttle } from 'lodash';
-import React, {
-	type ReactNode,
-	useRef,
-	useState,
-	useContext,
-	useEffect,
-	useCallback,
-	useLayoutEffect,
-} from 'react';
+import React, { useRef, useState, useEffect, useCallback, useLayoutEffect } from 'react';
 import styled, { css } from 'styled-components';
 import { CardFlipperProvider, useCardFlipperContext } from './CardFlipperContext';
 import { fadeInZ, rotate, slideIn } from '#styles/animations';
@@ -31,6 +23,12 @@ const cardOptions: CardOption = {
 		standard: { amount: 18, lg: [6, 3], md: [6, 3], sm: [3, 6] },
 		scant: { amount: 12, lg: [4, 3], md: [4, 3], sm: [3, 4] },
 	},
+};
+
+const CardFlipperColors = {
+	orange: '#e9a71a',
+	royalNavy: '#4444dd',
+	unactivated: '#505050',
 };
 
 const createGridAutoTemplate = (props: [number, number]) => css`
@@ -73,7 +71,6 @@ const CardStyle = styled.div<CardStyleProps>`
 	${fullWidthHeight}
 	transform-origin: 0% 0%;
 	font-size: 2vw;
-	color: red;
 	transform-style: preserve-3d;
 	position: relative;
 	border-radius: ${cardOptions.borderRadius};
@@ -103,7 +100,7 @@ const CardStyle = styled.div<CardStyleProps>`
 		user-select: none;
 	}
 	& .Forward {
-		background-color: yellow;
+		background-color: ${CardFlipperColors.orange};
 	}
 	& .Reverse {
 		font-size: 1.5em;
@@ -137,7 +134,7 @@ const CardWrapper = styled.div`
 			box-shadow: 0px 0px 2px #000000;
 		}
 		& .Forward {
-			filter: drop-shadow(0px 0px 12px yellow);
+			filter: drop-shadow(0px 0px 12px #e9a71a);
 		}
 		& .Reverse {
 			filter: drop-shadow(0px 0px 12px #4444dd);
@@ -187,7 +184,7 @@ const ScoreBoard = styled.section`
 	}
 	& > div:nth-child(3) {
 		justify-content: right;
-		color: yellow;
+		color: ${CardFlipperColors.orange};
 		font-weight: 800;
 	}
 	@media screen and (max-width: 1024px) {
@@ -291,8 +288,7 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 		border-radius: 12px;
 		padding: 8px 0;
 		font-size: 0.7em;
-		background-color: yellow;
-		color: red;
+		background-color: ${CardFlipperColors.orange};
 		${(props) =>
 			props.$isRun &&
 			rotate({
@@ -307,7 +303,7 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 		color 200ms ease;
 		&:hover {
 			background-color: var(--color-royalBlue);
-			color: violet;
+			color: pink;
 		}
 	}
 `;
@@ -315,9 +311,9 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 const ResultText = styled.div<ResultTextProps>`
 	& > button {
 		cursor: pointer;
-		color: var(--color-royalBlue);
+		color: ${CardFlipperColors.royalNavy};
 		&:hover {
-			color: red;
+			color: ${CardFlipperColors.orange};
 		}
 	}
 	&.Enter {
@@ -346,7 +342,7 @@ const ResultText = styled.div<ResultTextProps>`
 `;
 
 const ResultScreenLayout = styled.section`
-	color: yellow;
+	color: ${CardFlipperColors.orange};
 	display: flex;
 	flex-direction: column;
 	justify-content: center;

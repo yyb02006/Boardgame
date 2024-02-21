@@ -6,7 +6,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import styled, { css } from 'styled-components';
 import { resultTransition } from './BorderGame';
 
-const OthelloColors = {
+const colors = {
 	player1: { activated: '#e9a71a', flippable: '#9c937f' },
 	player2: { activated: '#4444dd', flippable: '#9b9bbb' },
 	common: '#505050',
@@ -43,11 +43,9 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 	background-color: ${(props) => {
 		const { $currentPlayer, $player, $playState } = props;
 		if ($playState === 'playing') {
-			return $currentPlayer === $player
-				? OthelloColors[props.$player].activated
-				: OthelloColors.common;
+			return $currentPlayer === $player ? colors[props.$player].activated : colors.common;
 		} else {
-			return OthelloColors[props.$player].activated;
+			return colors[props.$player].activated;
 		}
 	}};
 	margin: ${(props) => (props.$player === 'player1' ? '0 4vw 0 0' : '0 0 0 4vw')};
@@ -95,7 +93,7 @@ const PlayerCardLayout = styled.section<PlayerCardLayoutProps>`
 			name: `${props.$player}error`,
 			duration: 50,
 			alternateColor: 'red',
-			startColor: OthelloColors[props.$player].activated,
+			startColor: colors[props.$player].activated,
 			targetProperty: 'backgroundColor',
 		})}
 	@media screen and (max-width: 1024px) {
@@ -149,8 +147,8 @@ const LobbyCover = styled.div<LobbyCoverProps>`
 		const { $index } = props;
 		return css`
 			${$index === 0 || $index === 3
-				? `left:0; background-color:${OthelloColors.player1.activated};`
-				: `right:0; background-color:${OthelloColors.player2.activated};`};
+				? `left:0; background-color:${colors.player1.activated};`
+				: `right:0; background-color:${colors.player2.activated};`};
 			${$index === 0 || $index === 1 ? 'top:0;' : 'bottom:0;'};
 			${$index === 0 || $index === 2 ? 'height:60%; width:50%;' : 'height:50%; width:60%;'}
 		`;
@@ -168,7 +166,7 @@ const LobbyCover = styled.div<LobbyCoverProps>`
 				case 'player1':
 				case 'player2':
 					return css`
-						background-color: ${OthelloColors[$winner].activated};
+						background-color: ${colors[$winner].activated};
 						${resultTransition.slideInFromSide({
 							winner: $winner,
 							seqDirection: 'normal',
@@ -243,16 +241,12 @@ const SquareStyle = styled.div<SquareStyleProps>`
 	}
 	& .Forward {
 		background-color: ${(props) =>
-			props.$initPlayer === 'player1'
-				? OthelloColors.player1.activated
-				: OthelloColors.player2.activated};
+			props.$initPlayer === 'player1' ? colors.player1.activated : colors.player2.activated};
 	}
 	& .Reverse {
 		transform: rotateY(180deg);
 		background-color: ${(props) =>
-			props.$initPlayer === 'player1'
-				? OthelloColors.player2.activated
-				: OthelloColors.player1.activated};
+			props.$initPlayer === 'player1' ? colors.player2.activated : colors.player1.activated};
 	}
 `;
 
@@ -267,14 +261,14 @@ const SquareLayout = styled.div<Omit<SquareStyleProps, '$isHovered'>>`
 				case true:
 					return colorBlink({
 						name: 'square',
-						startColor: OthelloColors.common,
-						alternateColor: OthelloColors[$currentPlayer].flippable,
+						startColor: colors.common,
+						alternateColor: colors[$currentPlayer].flippable,
 						duration: 700,
 						targetProperty: 'backgroundColor',
 					});
 				default:
 					return css`
-						background-color: ${OthelloColors.common};
+						background-color: ${colors.common};
 					`;
 			}
 		} else {
@@ -290,9 +284,9 @@ const SquareLayout = styled.div<Omit<SquareStyleProps, '$isHovered'>>`
 				const { $owner, $currentPlayer } = props;
 				switch ($owner) {
 					case 'unowned':
-						return OthelloColors[$currentPlayer].activated;
+						return colors[$currentPlayer].activated;
 					default:
-						return OthelloColors.common;
+						return colors.common;
 				}
 			}};
 			transform: perspective(1000px) translateZ(200px)

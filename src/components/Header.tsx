@@ -2,8 +2,8 @@ import { useAppContext } from '#AppContext';
 import useToggle from '#hooks/useToggle';
 import { fadeInZ } from '#styles/animations';
 import { fullWidthHeight } from '#styles/theme';
-import React, { useEffect, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 
 const Layout = styled.section`
@@ -157,7 +157,7 @@ const Rules = styled.div`
 
 const RuleModalLayout = styled.div`
 	position: absolute;
-	width: 400px;
+	width: 600px;
 	top: 80px;
 	left: 48px;
 	background-color: #202020;
@@ -210,6 +210,7 @@ const LogoSectionLayout = styled.section`
 
 const LinkWrapper = ({ to, label, page }: { to: string; label: string; page: PageState }) => {
 	const { setPageState } = useAppContext();
+	console.log(page);
 	return (
 		<NavLink
 			to={to}
@@ -224,8 +225,9 @@ const LinkWrapper = ({ to, label, page }: { to: string; label: string; page: Pag
 
 const RuleModal = ({ isModalVisible }: { isModalVisible: boolean }) => {
 	const { pageState } = useAppContext();
-	const rules = {
-		borderGame: {
+	const rules = [
+		{
+			path: '/border-game',
 			name: 'BorderGame',
 			descriptions: [
 				'상대보다 많은 땅을 소유하면 이기는 게임입니닷',
@@ -234,7 +236,8 @@ const RuleModal = ({ isModalVisible }: { isModalVisible: boolean }) => {
 				'더 이상 승부가 변경될 가능성이 없다면 게임은 자동으로 종료됩니닷',
 			],
 		},
-		cardFlipper: {
+		{
+			path: '/card-flipper',
 			name: 'CardFlipper',
 			descriptions: [
 				'모든 카드를 뒤집고 더 좋은 기록을 내는 게임입니닷',
@@ -242,7 +245,8 @@ const RuleModal = ({ isModalVisible }: { isModalVisible: boolean }) => {
 				'카드가 모두 뒤집혔다면 게임은 종료되고, 그때까지의 시간과 시도횟수를 확인할 수 있습니닷',
 			],
 		},
-		othello: {
+		{
+			path: '/othello',
 			name: 'Othello',
 			descriptions: [
 				'보드위의 돌을 더 많이 소유하면 이기는 게임입니닷',
@@ -253,15 +257,13 @@ const RuleModal = ({ isModalVisible }: { isModalVisible: boolean }) => {
 				'더 이상 돌을 놓거나 상대방의 돌을 뒤집을 수 없다면 턴이 넘어가고, 양 플레이어 모두 그렇다면 게임이 종료됩니닷',
 			],
 		},
-	};
+	];
+	const location = useLocation();
+	const matchedRule = rules.find((rule) => rule.path === location.pathname);
 	return (
 		<RuleModalLayout className={isModalVisible ? 'Open' : 'Closed'}>
-			<div className="Title">{pageState !== 'home' ? `${rules[pageState].name} Rule` : ''}</div>
-			<ul>
-				{pageState !== 'home'
-					? rules[pageState].descriptions.map((desc, id) => <li key={id}>{`${id}. ${desc}`}</li>)
-					: null}
-			</ul>
+			<div className="Title">{`${matchedRule?.name} Rule`}</div>
+			<ul>{matchedRule?.descriptions.map((desc, id) => <li key={id}>{`${id}. ${desc}`}</li>)}</ul>
 		</RuleModalLayout>
 	);
 };
@@ -319,7 +321,7 @@ const Header = ({ title }: HeaderProps) => {
 						/>
 						<span className="Title">Games</span>
 						<div className="Links">
-							<LinkWrapper to="/Border-Game" label="BorderGame" page="borderGame" />
+							<LinkWrapper to="/border-game" label="BorderGame" page="borderGame" />
 							<LinkWrapper to="/card-flipper" label="CardFlipper" page="cardFlipper" />
 							<LinkWrapper to="/othello" label="Othello" page="othello" />
 						</div>

@@ -8,11 +8,11 @@ import {
 	isNumArrayEqual,
 } from '#libs/utils';
 import styled, { css } from 'styled-components';
-import theme from '#styles/theme';
 import { useBorderGameContext } from '#routes/BorderGameContext';
 import { colorBlink } from '#styles/animations';
+import theme from '#styles/theme';
 
-const { colors } = theme;
+const { BorderGameColors: colors } = theme;
 
 const BoxWrapper = styled.div<BoxWrapperProps>`
 	font-size: 1rem;
@@ -51,17 +51,11 @@ const BoxHover = styled.div<BoxHoverProps>`
 	justify-content: ${(props) => (props.direction === 'horizontal' ? 'center' : 'center')};
 	border-color: ${(props) => {
 		if (props.$isSelected && !props.$isMergeable) {
-			return props.$owner === 'player1'
-				? props.$currentPlayer === 'player1'
-					? colors.common.activeBorder
-					: colors.player1.noneActiveBox
-				: props.$currentPlayer === 'player2'
-				? colors.common.activeBorder
-				: colors.player2.noneActiveBox;
+			return colors[props.$owner].activeBorder;
 		} else if (props.$isMergeable) {
 			return colors[props.$owner].noneActiveBorder;
 		} else if (props.$isOwnable) {
-			return colors.common.ownableBorder;
+			return colors[props.$currentPlayer].ownableBorder;
 		} else {
 			return colors[props.$currentPlayer].noneActiveBorder;
 		}
@@ -72,7 +66,7 @@ const BoxHover = styled.div<BoxHoverProps>`
 		colorBlink({
 			name: props.$currentPlayer,
 			startColor: colors[props.$currentPlayer].noneActiveBorder,
-			alternateColor: colors.common.ownableBorder,
+			alternateColor: colors[props.$currentPlayer].ownableBorder,
 			duration: 700,
 			targetProperty: 'borderColor',
 		})}
@@ -81,7 +75,9 @@ const BoxHover = styled.div<BoxHoverProps>`
 		${(props) =>
 			props.$playState === 'playing' &&
 			css`
-				background-color: ${props.$isMergeable ? 'auto' : colors.common.activeBorder};
+				background-color: ${props.$isMergeable
+					? 'auto'
+					: colors[props.$currentPlayer].activeBorder};
 				border-color: ${props.$isMergeable ? 'auto' : colors[props.$currentPlayer].noneActiveBox};
 				z-index: 3;
 			`}

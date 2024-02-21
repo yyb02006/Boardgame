@@ -6,7 +6,7 @@ import theme, { fullWidthHeight } from '#styles/theme';
 import BoxCollection from '#components/BoxCollction';
 import { alert, fadeInZ, slideIn } from '#styles/animations';
 
-const { colors } = theme;
+const { BorderGameColors: colors } = theme;
 
 /* this 사용 배제 */
 export const resultTransition = {
@@ -268,8 +268,14 @@ const BoxStyle = styled.div<DirectionInterface>`
 `;
 
 const PartialCover = styled.div<PartialCoverProps>`
-	width: 50%;
-	height: 50%;
+	${(props) => {
+		const { $aniDirection } = props;
+		return css`
+			${$aniDirection === 'left' || $aniDirection === 'right'
+				? 'height:60%; width:50%;'
+				: 'height:50%; width:60%;'}
+		`;
+	}}
 	position: absolute;
 	opacity: 1;
 	background-color: ${(props) =>
