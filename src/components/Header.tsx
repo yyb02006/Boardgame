@@ -3,6 +3,7 @@ import useToggle from '#hooks/useToggle';
 import { fadeInZ } from '#styles/animations';
 import { fullWidthHeight } from '#styles/theme';
 import React, { useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { NavLink, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -310,6 +311,9 @@ const Header = ({ title }: HeaderProps) => {
 	}, [pageState]);
 	return (
 		<Layout>
+			<Helmet>
+				<title>{title}</title>
+			</Helmet>
 			<LogoSection title={title}></LogoSection>
 			<HambergerMenu>
 				{isMenuOpen ? (

@@ -8,11 +8,12 @@ import { AppProvider } from '#AppContext';
 import Othello from '#routes/Othello';
 import BorderGame from '#routes/BorderGame';
 import Home from '#routes/Home';
+import { HelmetProvider } from 'react-helmet-async';
 
-const withHeader = (component: React.ReactNode) => {
+const withHeader = (component: React.ReactNode, title: string) => {
 	return (
 		<>
-			<Header title={'BorderGame'} />
+			<Header title={title} />
 			{component}
 		</>
 	);
@@ -22,17 +23,19 @@ export default function App() {
 	return (
 		<BrowserRouter>
 			<GlobalStyle />
-			<AppProvider>
-				<div className="App" style={{ position: 'relative' }}>
-					<Routes>
-						<Route path="/" element={<Home />} />
-						<Route path="/border-game" element={withHeader(<BorderGame />)} />
-						<Route path="/card-flipper" element={withHeader(<CardFlipper />)} />
-						<Route path="/othello" element={withHeader(<Othello />)} />
-						<Route path="/test" element={<Test />} />
-					</Routes>
-				</div>
-			</AppProvider>
+			<HelmetProvider>
+				<AppProvider>
+					<div className="App" style={{ position: 'relative' }}>
+						<Routes>
+							<Route path="/" element={<Home />} />
+							<Route path="/border-game" element={withHeader(<BorderGame />, 'BorderGame')} />
+							<Route path="/card-flipper" element={withHeader(<CardFlipper />, 'CardFlipper')} />
+							<Route path="/othello" element={withHeader(<Othello />, 'Othello')} />
+							<Route path="/test" element={<Test />} />
+						</Routes>
+					</div>
+				</AppProvider>
+			</HelmetProvider>
 		</BrowserRouter>
 	);
 }
