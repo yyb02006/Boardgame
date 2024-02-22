@@ -162,3 +162,100 @@ export function getPaddingFromOption(padding: {
 	const { top, right, bottom, left } = padding;
 	return `${top}px ${right}px ${bottom}px ${left}px`;
 }
+
+/** index가 columns와 rows에서 어느 위치에 있는지 반환하는 함수 */
+export function getColumnAndRow(number: number, columns: number, rows: number) {
+	return { column: number % columns, row: Math.floor(number / rows) };
+}
+
+/** square와 같은 column이나 row에 있는 다른 square를 반환하는 함수 */
+export function getColumnAndRowSquares({
+	index,
+	squareStates,
+}: {
+	index: number;
+	squareStates: SquareState[];
+}) {
+	const { column, row } = getColumnAndRow(index, 8, 8);
+	return squareStates.reduce<{
+		column: { lower: SquareState[]; upper: SquareState[] };
+		row: { lower: SquareState[]; upper: SquareState[] };
+	}>(
+		(accumulator, currentSquare) => {
+			const squarePosition = getColumnAndRow(currentSquare.index, 8, 8);
+			const currentIndex = currentSquare.index;
+			switch (true) {
+				case currentIndex === index:
+					return accumulator;
+				case squarePosition.column === column || squarePosition.row === row: {
+					const range: 'lower' | 'upper' = currentSquare.index < index ? 'lower' : 'upper';
+					const targetDirection: 'column' | 'row' =
+						squarePosition.column === column ? 'column' : 'row';
+					return {
+						...accumulator,
+						[targetDirection]: {
+							...accumulator[targetDirection],
+							[range]:
+								range === 'lower'
+									? [currentSquare, ...accumulator[targetDirection][range]]
+									: [...accumulator[targetDirection][range], currentSquare],
+						},
+					};
+				}
+				default:
+					return accumulator;
+			}
+		},
+		{ column: { lower: [], upper: [] }, row: { lower: [], upper: [] } }
+	);
+}
+
+/** 특정 index의 square가 flip됐을 때 가질 수 있는 flippedSquares를 반환하는 함수 */
+export function getFlippeds(index: number, squares: SquareState[], targetPlayer: PlayerElement) {
+	const getFlippedBySide = (squares: SquareState[], targetPlayer: PlayerElement) => {
+		let resultSquares: SquareState[] = [];
+		for (const square of squares) {
+			const { owner } = square;
+			switch (owner) {
+				case targetPlayer:
+					return resultSquares;
+				case 'unowned':
+					return [];
+				case getOppositeElement(targetPlayer):
+					resultSquares = [...resultSquares, square];
+					break;
+				default:
+					break;
+			}
+		}
+		return [];
+	};
+	const targetSquares = getColumnAndRowSquares({ index, squareStates: squares });
+	let resultSquares: SquareState[] = [];
+	for (const direction in targetSquares) {
+		for (const boundary in targetSquares[direction as SquaresDirection]) {
+			const assertedBoundary = targetSquares[direction as SquaresDirection][boundary as Boundary];
+			resultSquares = [...resultSquares, ...getFlippedBySide(assertedBoundary, targetPlayer)];
+		}
+	}
+	return resultSquares;
+}
+
+/** squares중에서 targetPlayer의 flippable한 squares를 반환하는 함수  */
+export function getFlippables(squares: SquareState[], targetPlayer: PlayerElement) {
+	const opponentSquares = squares.filter(
+		(square) => square.owner === getOppositeElement(targetPlayer)
+	);
+	const enclosingSquares = squares.filter((square) => {
+		const { index, owner } = square;
+		return (
+			owner === 'unowned' &&
+			[index - 1, index + 1, index - 8, index + 8].some((index) =>
+				opponentSquares.some((square) => square.index === index)
+			)
+		);
+	});
+	return enclosingSquares.filter(
+		(square) => getFlippeds(square.index, squares, targetPlayer).length
+	);
+}

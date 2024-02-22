@@ -1,15 +1,7 @@
 import { capitalizeFirstLetter, deepCopy, getPaddingFromOption, shuffleArray } from '#libs/utils';
 import { fullWidthHeight } from '#styles/theme';
 import { setWith, throttle } from 'lodash';
-import React, {
-	type ReactNode,
-	useRef,
-	useState,
-	useContext,
-	useEffect,
-	useCallback,
-	useLayoutEffect,
-} from 'react';
+import React, { useRef, useState, useEffect, useCallback, useLayoutEffect } from 'react';
 import styled, { css } from 'styled-components';
 import { CardFlipperProvider, useCardFlipperContext } from './CardFlipperContext';
 import { fadeInZ, rotate, slideIn } from '#styles/animations';
@@ -33,6 +25,12 @@ const cardOptions: CardOption = {
 	},
 };
 
+const CardFlipperColors = {
+	orange: '#e9a71a',
+	royalNavy: '#4444dd',
+	unactivated: '#505050',
+};
+
 const createGridAutoTemplate = (props: [number, number]) => css`
 	grid-template-columns: ${`repeat(${props[0]}, auto)`};
 	grid-template-rows: ${`repeat(${props[1]}, auto)`};
@@ -45,7 +43,6 @@ const Layout = styled.section`
 	font-weight: 800;
 	position: relative;
 	padding: ${() => getPaddingFromOption(layoutOption.padding.lg)};
-	perspective: 2000px;
 	@media screen and (max-width: 1024px) {
 		display: flex;
 		flex-direction: column;
@@ -74,7 +71,6 @@ const CardStyle = styled.div<CardStyleProps>`
 	${fullWidthHeight}
 	transform-origin: 0% 0%;
 	font-size: 2vw;
-	color: red;
 	transform-style: preserve-3d;
 	position: relative;
 	border-radius: ${cardOptions.borderRadius};
@@ -86,7 +82,7 @@ const CardStyle = styled.div<CardStyleProps>`
 				name: `card${props.$index}`,
 				distance: 200,
 				duration: 300,
-				seqDirection: 'normal',
+				seqDirection: 'reverse',
 				delay: props.$index * 100,
 			});
 		}}
@@ -104,7 +100,7 @@ const CardStyle = styled.div<CardStyleProps>`
 		user-select: none;
 	}
 	& .Forward {
-		background-color: yellow;
+		background-color: ${CardFlipperColors.orange};
 	}
 	& .Reverse {
 		font-size: 1.5em;
@@ -138,7 +134,7 @@ const CardWrapper = styled.div`
 			box-shadow: 0px 0px 2px #000000;
 		}
 		& .Forward {
-			filter: drop-shadow(0px 0px 12px yellow);
+			filter: drop-shadow(0px 0px 12px #e9a71a);
 		}
 		& .Reverse {
 			filter: drop-shadow(0px 0px 12px #4444dd);
@@ -149,6 +145,23 @@ const CardWrapper = styled.div`
 	}
 	@media screen and (max-width: 640px) {
 		width: 16vw;
+	}
+`;
+
+const CardTable = styled.section<CardTableProps>`
+	position: relative;
+	display: grid;
+	${(props) => createGridAutoTemplate(props.$cardLayout.lg)}
+	place-content: center center;
+	place-items: center center;
+	gap: min(2.2vw, 24px);
+	@media screen and (max-width: 1024px) {
+		${(props) => createGridAutoTemplate(props.$cardLayout.md)}
+		gap: 18px;
+	}
+	@media screen and (max-width: 640px) {
+		${(props) => createGridAutoTemplate(props.$cardLayout.sm)}
+		gap: 16px;
 	}
 `;
 
@@ -171,7 +184,7 @@ const ScoreBoard = styled.section`
 	}
 	& > div:nth-child(3) {
 		justify-content: right;
-		color: yellow;
+		color: ${CardFlipperColors.orange};
 		font-weight: 800;
 	}
 	@media screen and (max-width: 1024px) {
@@ -180,23 +193,6 @@ const ScoreBoard = styled.section`
 		padding: 0 48px;
 		box-shadow: inset 0 0 1.5vw 2px #000000;
 		border-radius: 0;
-	}
-`;
-
-const CardTable = styled.section<CardTableProps>`
-	position: relative;
-	display: grid;
-	${(props) => createGridAutoTemplate(props.$cardLayout.lg)}
-	place-content: center center;
-	place-items: center center;
-	gap: min(2.2vw, 24px);
-	@media screen and (max-width: 1024px) {
-		${(props) => createGridAutoTemplate(props.$cardLayout.md)}
-		gap: 18px;
-	}
-	@media screen and (max-width: 640px) {
-		${(props) => createGridAutoTemplate(props.$cardLayout.sm)}
-		gap: 16px;
 	}
 `;
 
@@ -248,13 +244,13 @@ const LobbyLayout = styled.section`
 	font-size: 3rem;
 	padding-bottom: 120px;
 	text-align: center;
-	overflow-y: hidden;
+	overflow: hidden;
 	> .Title {
 		${fadeInZ({
 			name: 'quantity',
 			distance: 400,
 			duration: 300,
-			seqDirection: 'normal',
+			seqDirection: 'reverse',
 		})}
 	}
 `;
@@ -269,7 +265,7 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 			name: 'quantity',
 			distance: 400,
 			duration: 300,
-			seqDirection: 'normal',
+			seqDirection: 'reverse',
 			delay: (props.$index + 1) * 200,
 		})}
 	`}
@@ -292,8 +288,7 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 		border-radius: 12px;
 		padding: 8px 0;
 		font-size: 0.7em;
-		background-color: yellow;
-		color: red;
+		background-color: ${CardFlipperColors.orange};
 		${(props) =>
 			props.$isRun &&
 			rotate({
@@ -308,7 +303,7 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 		color 200ms ease;
 		&:hover {
 			background-color: var(--color-royalBlue);
-			color: violet;
+			color: pink;
 		}
 	}
 `;
@@ -316,9 +311,9 @@ const SetQuantityButton = styled.button<SetQuantityButton>`
 const ResultText = styled.div<ResultTextProps>`
 	& > button {
 		cursor: pointer;
-		color: var(--color-royalBlue);
+		color: ${CardFlipperColors.royalNavy};
 		&:hover {
-			color: red;
+			color: ${CardFlipperColors.orange};
 		}
 	}
 	&.Enter {
@@ -347,7 +342,7 @@ const ResultText = styled.div<ResultTextProps>`
 `;
 
 const ResultScreenLayout = styled.section`
-	color: yellow;
+	color: ${CardFlipperColors.orange};
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
@@ -491,8 +486,6 @@ const Card = ({ index, cardId, order, isFlipped }: CardProps) => {
 	}, [isFlipped]);
 
 	useThrottleClear(handleThrottledMouseMove, [onCardMove]);
-
-	console.log(cardState);
 
 	return (
 		<CardWrapper

@@ -2,7 +2,7 @@ type PlayState = 'win' | 'draw' | 'playing' | 'ready';
 
 type Seconds = number;
 
-type PageState = 'home' | 'borderGame' | 'cardFlipper' | 'test';
+type PageState = 'home' | 'borderGame' | 'cardFlipper' | 'othello';
 
 /* App's Context Types */
 
@@ -67,6 +67,7 @@ interface PlayerInfo {
 	name: string;
 	ownableSelecteds: Selected;
 	isWin: boolean;
+	hasError: boolean;
 }
 
 interface GameState {

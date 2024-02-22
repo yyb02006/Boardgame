@@ -8,11 +8,11 @@ import {
 	isNumArrayEqual,
 } from '#libs/utils';
 import styled, { css } from 'styled-components';
-import theme from '#styles/theme';
-import { useHomeContext } from '#routes/HomeContext';
+import { useBorderGameContext } from '#routes/BorderGameContext';
 import { colorBlink } from '#styles/animations';
+import theme from '#styles/theme';
 
-const { colors } = theme;
+const { BorderGameColors: colors } = theme;
 
 const BoxWrapper = styled.div<BoxWrapperProps>`
 	font-size: 1rem;
@@ -51,17 +51,11 @@ const BoxHover = styled.div<BoxHoverProps>`
 	justify-content: ${(props) => (props.direction === 'horizontal' ? 'center' : 'center')};
 	border-color: ${(props) => {
 		if (props.$isSelected && !props.$isMergeable) {
-			return props.$owner === 'player1'
-				? props.$currentPlayer === 'player1'
-					? colors.common.activeBorder
-					: colors.player1.noneActiveBox
-				: props.$currentPlayer === 'player2'
-				? colors.common.activeBorder
-				: colors.player2.noneActiveBox;
+			return colors[props.$owner].activeBorder;
 		} else if (props.$isMergeable) {
 			return colors[props.$owner].noneActiveBorder;
 		} else if (props.$isOwnable) {
-			return colors.common.ownableBorder;
+			return colors[props.$currentPlayer].ownableBorder;
 		} else {
 			return colors[props.$currentPlayer].noneActiveBorder;
 		}
@@ -72,15 +66,18 @@ const BoxHover = styled.div<BoxHoverProps>`
 		colorBlink({
 			name: props.$currentPlayer,
 			startColor: colors[props.$currentPlayer].noneActiveBorder,
-			alternateColor: colors.common.ownableBorder,
-			duration: 0.7,
+			alternateColor: colors[props.$currentPlayer].ownableBorder,
+			duration: 700,
+			targetProperty: 'borderColor',
 		})}
 	z-index: ${(props) => (props.$isSelected ? 2 : 1)};
 	&:hover {
 		${(props) =>
 			props.$playState === 'playing' &&
 			css`
-				background-color: ${props.$isMergeable ? 'auto' : colors.common.activeBorder};
+				background-color: ${props.$isMergeable
+					? 'auto'
+					: colors[props.$currentPlayer].activeBorder};
 				border-color: ${props.$isMergeable ? 'auto' : colors[props.$currentPlayer].noneActiveBox};
 				z-index: 3;
 			`}
@@ -130,7 +127,7 @@ export default function BoxCollection({ direction, borderId, isLast = false }: B
 		gameState: { playState },
 		setGameState,
 		setSeconds,
-	} = useHomeContext();
+	} = useBorderGameContext();
 	const opponentPlayer = getOppositeElement(currentPlayer);
 	const onBoxClick = (sideId: number) => {
 		const formattedSelected: Selected = !selected[direction].some(
@@ -422,8 +419,10 @@ export default function BoxCollection({ direction, borderId, isLast = false }: B
 				originalSelecteds: formattedSelected,
 				playState,
 			})
-		)
+		) {
+			setPlayers((p) => ({ ...p, [currentPlayer]: { ...p[currentPlayer], hasError: true } }));
 			return;
+		}
 
 		const playerSelecteds = (player: PlayerElement, originalSelecteds: Selected) => ({
 			horizontal: originalSelecteds.horizontal.filter((item) => item.owner === player),
@@ -842,6 +841,7 @@ export default function BoxCollection({ direction, borderId, isLast = false }: B
 			playerInfos,
 			boxesResult,
 			originalSelecteds,
+			hasError,
 			opt,
 		}: CreateNewPlayerInfoProps): PlayerInfo => {
 			const ownableSelecteds = {
@@ -867,6 +867,7 @@ export default function BoxCollection({ direction, borderId, isLast = false }: B
 					isPlayerWin(ownableSelecteds, originalSelecteds) === player,
 				ownableBoxCount: ownableAndOwnedBoxes[player].length - ownedBoxCount,
 				ownableSelecteds: formatOwnableSelecteds(originalSelecteds)[player],
+				hasError,
 			};
 		};
 
@@ -978,11 +979,11 @@ export default function BoxCollection({ direction, borderId, isLast = false }: B
 		/* 상태업데이트함수는 어차피 불순함수인데 굳이 순수함수로 만들어야하나? */
 		const updateState = (
 			selecteds: Selected,
-			player: Players,
+			playersData: Players,
 			gameState: 'player1' | 'player2' | 'draw' | undefined
 		) => {
 			setSelected(selecteds);
-			setPlayers(player);
+			setPlayers(playersData);
 			setGameStateByResult(gameState);
 			setCurrentPlayer(opponentPlayer);
 			setSeconds(30);
@@ -1182,6 +1183,7 @@ export default function BoxCollection({ direction, borderId, isLast = false }: B
 				originalSelecteds: selectedsResult,
 				playerInfos: players,
 				opt: { withBoxCount: true },
+				hasError: false,
 			};
 
 			const playersResult = {
@@ -1228,6 +1230,7 @@ export default function BoxCollection({ direction, borderId, isLast = false }: B
 				originalSelecteds: formattedSelected,
 				playerInfos: players,
 				opt: { withBoxCount: false },
+				hasError: false,
 			};
 
 			const playersResult = {

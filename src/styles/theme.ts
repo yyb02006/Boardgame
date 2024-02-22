@@ -1,23 +1,26 @@
 import { css } from 'styled-components';
 
-export const colors = {
+export const BorderGameColors = {
 	player1: {
-		noneActiveBorder: '#1696eb',
-		noneActiveBox: '#1a4de6',
-		activeBox: '#1696eb',
-		emphaticColor: '#00ffdd',
+		noneActiveBorder: '#face6f',
+		activeBorder: '#f07400',
+		noneActiveBox: '#e9a71a',
+		activeBox: '#face6f',
+		emphaticColor: '#face6f',
+		ownableBorder: '#e6740a',
 	},
 	player2: {
-		noneActiveBorder: '#73dd85',
-		noneActiveBox: '#1bc237',
-		activeBox: '#73dd85',
+		noneActiveBorder: '#9898f8',
+		activeBorder: '#00a2ff',
+		noneActiveBox: '#4444dd',
+		activeBox: '#9898f8',
 		emphaticColor: '#a1ff09',
+		ownableBorder: '#5cdeff',
 	},
 	common: {
 		noneActiveBorder: '#808080',
 		activeBorder: '#f07400',
 		emphaticYellow: '#ffe030',
-		ownableBorder: '#bda93c',
 	},
 };
 
@@ -26,6 +29,6 @@ export const fullWidthHeight = css`
 	height: 100%;
 `;
 
-const theme = { colors, fullWidthHeight };
+const theme = { BorderGameColors, fullWidthHeight };
 
 export default theme;
