@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Header from '#components/Header';
-import Test from '#routes/Test';
 import GlobalStyle from '#GlobalStyle';
 import CardFlipper from '#routes/CardFlipper';
 import { AppProvider } from '#AppContext';
@@ -31,7 +30,6 @@ export default function App() {
 							<Route path="/border-game" element={withHeader(<BorderGame />, 'BorderGame')} />
 							<Route path="/card-flipper" element={withHeader(<CardFlipper />, 'CardFlipper')} />
 							<Route path="/othello" element={withHeader(<Othello />, 'Othello')} />
-							<Route path="/test" element={<Test />} />
 						</Routes>
 					</div>
 				</AppProvider>

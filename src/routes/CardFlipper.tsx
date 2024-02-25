@@ -1,6 +1,6 @@
 import { capitalizeFirstLetter, deepCopy, getPaddingFromOption, shuffleArray } from '#libs/utils';
 import { fullWidthHeight } from '#styles/theme';
-import { setWith, throttle } from 'lodash';
+import { throttle } from 'lodash';
 import React, { useRef, useState, useEffect, useCallback, useLayoutEffect } from 'react';
 import styled, { css } from 'styled-components';
 import { CardFlipperProvider, useCardFlipperContext } from './CardFlipperContext';
@@ -582,7 +582,6 @@ const GameBoard = () => {
 				}
 			>
 				{cards?.map((card, id) => {
-					// console.log('executed');
 					const { cardId, order, isChecked, isFlipped } = card;
 					return (
 						<Card
@@ -632,7 +631,6 @@ const GameContainer = () => {
 		cards?.some((arr) => !arr.isChecked) === false &&
 			setGameState((p) => ({ ...p, playState: 'win' }));
 	}, [flipCount]);
-	// console.log('Container Rendered');
 	switch (lazyPlayState) {
 		case 'ready':
 			return <Lobby />;

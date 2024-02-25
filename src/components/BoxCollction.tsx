@@ -618,10 +618,6 @@ export default function BoxCollection({ direction, borderId, isLast = false }: B
 			};
 		};
 
-		/* console.log(createOwnableSelectedsWithPlayers(false, formattedSelected));
-
-		console.log(formatOwnableSelecteds(formattedSelected)); */
-
 		const borderToBox = (
 			direction: Direction,
 			isUpPos: boolean,
