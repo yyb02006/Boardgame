@@ -211,7 +211,6 @@ const LogoSectionLayout = styled.section`
 
 const LinkWrapper = ({ to, label, page }: { to: string; label: string; page: PageState }) => {
 	const { setPageState } = useAppContext();
-	console.log(page);
 	return (
 		<NavLink
 			to={to}
