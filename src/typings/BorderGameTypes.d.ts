@@ -15,23 +15,23 @@ type SeqPlayState = 'paused' | 'running';
 type PartialCoverClass = 'Draw' | 'Win' | 'Start' | '';
 
 interface DirectionInterface {
-	direction: Direction;
+  direction: Direction;
 }
 
 interface ClosedBoxes {
-	arr: NestedArray<number>;
-	label: 'horizontal' | 'vertical';
+  arr: NestedArray<number>;
+  label: 'horizontal' | 'vertical';
 }
 
 interface BorderAndSide {
-	borderId: number;
-	sideId: number;
+  borderId: number;
+  sideId: number;
 }
 
 type GetEnclosedBoxResult = Record<Direction, NestedArray<number>>;
 
 interface BorderStateWithDirection extends BorderState {
-	direction: Direction;
+  direction: Direction;
 }
 
 type OwnableSelecteds = Record<PlayerElement, Selected>;
@@ -39,99 +39,99 @@ type OwnableSelecteds = Record<PlayerElement, Selected>;
 /** Function Props Types */
 
 interface GetVulnerableBoxesProps {
-	ownableAndOwnedBoxes: number[];
-	opponentOwnableSelecteds: BorderStateWithDirection[];
+  ownableAndOwnedBoxes: number[];
+  opponentOwnableSelecteds: BorderStateWithDirection[];
 }
 
 interface ResultSelectedsProps {
-	direction: Direction;
-	border: BorderState | undefined;
-	boxes: number[];
-	boxIndex: number;
-	accumulator: Selected;
+  direction: Direction;
+  border: BorderState | undefined;
+  boxes: number[];
+  boxIndex: number;
+  accumulator: Selected;
 }
 
 interface CreateResultSelectedsProps {
-	direction: Direction;
-	originalSelecteds: Selected;
-	mergeableSelecteds: Selected;
+  direction: Direction;
+  originalSelecteds: Selected;
+  mergeableSelecteds: Selected;
 }
 
 interface CreateNewPlayerInfoProps {
-	player: PlayerElement;
-	playerInfos: Players;
-	boxesResult: Boxes;
-	originalSelecteds: Selected;
-	hasError: boolean;
-	opt: { withBoxCount: boolean };
+  player: PlayerElement;
+  playerInfos: Players;
+  boxesResult: Boxes;
+  originalSelecteds: Selected;
+  hasError: boolean;
+  opt: { withBoxCount: boolean };
 }
 
 interface IsMergeableSelected {
-	direction: Direction;
-	sourceSelecteds: Selected;
-	player: PlayerElement;
-	sourceBoxes: Boxes;
+  direction: Direction;
+  sourceSelecteds: Selected;
+  player: PlayerElement;
+  sourceBoxes: Boxes;
 }
 
 interface FormatOwnableSelecteds {
-	direction: Direction;
-	ownableSelecteds: BorderStateWithDirection[];
-	player: PlayerElement;
+  direction: Direction;
+  ownableSelecteds: BorderStateWithDirection[];
+  player: PlayerElement;
 }
 
 interface FindOwnableRecursive {
-	sourceSelecteds: BorderStateWithDirection[];
-	originalSelecteds: Selected;
-	player: PlayerElement;
-	recursive: boolean;
+  sourceSelecteds: BorderStateWithDirection[];
+  originalSelecteds: Selected;
+  player: PlayerElement;
+  recursive: boolean;
 }
 
 interface GetUnblockedSelectedsProp {
-	border: number;
-	side: number;
-	direction: Direction;
-	objectPos: HorizontalPos;
-	player: PlayerElement;
+  border: number;
+  side: number;
+  direction: Direction;
+  objectPos: HorizontalPos;
+  player: PlayerElement;
 }
 
 interface BoxToBorderProps {
-	boxIndex: number;
-	position: Position;
-	isSelected?: boolean;
-	isMergeable?: boolean;
-	owner?: PlayerElement;
-	originalSelecteds: Selected;
+  boxIndex: number;
+  position: Position;
+  isSelected?: boolean;
+  isMergeable?: boolean;
+  owner?: PlayerElement;
+  originalSelecteds: Selected;
 }
 
 interface FindExistSidesProps extends BorderAndSide {
-	sidePos: HorizontalPos;
-	owner: 'current' | 'other' | 'all';
-	selectedDirection: Direction;
-	originalSelecteds: Selected;
-	player: PlayerElement;
+  sidePos: HorizontalPos;
+  owner: 'current' | 'other' | 'all';
+  selectedDirection: Direction;
+  originalSelecteds: Selected;
+  player: PlayerElement;
 }
 
 interface ShouldAbortProps extends BorderAndSide {
-	selected: Selected;
-	direction: Direction;
-	originalSelecteds: Selected;
-	currentPlayer: PlayerElement;
-	playState: PlayState;
+  selected: Selected;
+  direction: Direction;
+  originalSelecteds: Selected;
+  currentPlayer: PlayerElement;
+  playState: PlayState;
 }
 
 interface CreateBorderOrSideProps extends BorderAndSide {
-	sidePos: HorizontalPos;
-	direction: Direction;
-	heightPos: 'middle' | 'top' | 'bottom';
+  sidePos: HorizontalPos;
+  direction: Direction;
+  heightPos: 'middle' | 'top' | 'bottom';
 }
 
 interface IsBlockedProps {
-	border: number;
-	side: number;
-	direction: Direction;
-	objectPos: HorizontalPos;
-	originalSelecteds: Selected;
-	player: PlayerElement;
+  border: number;
+  side: number;
+  direction: Direction;
+  objectPos: HorizontalPos;
+  originalSelecteds: Selected;
+  player: PlayerElement;
 }
 
 interface CanClickWhenBlockedProps extends IsBlockedProps {}
@@ -139,61 +139,61 @@ interface CanClickWhenBlockedProps extends IsBlockedProps {}
 /** Styled Components Types */
 
 interface PartialCoverProps {
-	$aniDirection: HorizontalPos | VerticalPos;
-	$winner: PlayerElement | undefined;
+  $aniDirection: HorizontalPos | VerticalPos;
+  $winner: PlayerElement | undefined;
 }
 
 interface PlayerProps {
-	$currentPlayer: PlayerElement;
+  $currentPlayer: PlayerElement;
 }
 
 interface PlayerCardStyleProps {
-	$player: PlayerElement;
-	$playState: PlayState;
-	$hasError: boolean;
-	$currentPlayer: PlayerElement;
+  $player: PlayerElement;
+  $playState: PlayState;
+  $hasError: boolean;
+  $currentPlayer: PlayerElement;
 }
 
 interface BoardItemsContainerProps {
-	$currentPlayer: PlayerElement;
+  $currentPlayer: PlayerElement;
 }
 
 interface BoxesProps {
-	$isSurrounded: boolean;
-	$currentPlayer: PlayerElement;
-	$owner: PlayerElement | undefined;
+  $isSurrounded: boolean;
+  $currentPlayer: PlayerElement;
+  $owner: PlayerElement | undefined;
 }
 
 interface BoardBordersContainerProps {
-	$borderDirection: string;
+  $borderDirection: string;
 }
 
 interface BoxWrapperProps extends DirectionInterface {
-	$isLast: boolean;
+  $isLast: boolean;
 }
 
 interface BoxHoverProps extends DirectionInterface {
-	$isSelected: boolean;
-	$currentPlayer: PlayerElement;
-	$owner: PlayerElement;
-	$isMergeable: boolean;
-	$isOwnable: boolean;
-	$playState: PlayState;
+  $isSelected: boolean;
+  $currentPlayer: PlayerElement;
+  $owner: PlayerElement;
+  $isMergeable: boolean;
+  $isOwnable: boolean;
+  $playState: PlayState;
 }
 
 /** React Components Types */
 
 interface BoxCollectionProps {
-	direction: Direction;
-	borderId: number;
-	isLast?: boolean;
+  direction: Direction;
+  borderId: number;
+  isLast?: boolean;
 }
 
 interface BorderBoxProps {
-	direction: Direction;
+  direction: Direction;
 }
 
 interface BoardCoverProps {
-	playState: Exclude<PlayState, 'playing'>;
-	isPlayerWin: Record<PlayerElement, boolean>;
+  playState: Exclude<PlayState, 'playing'>;
+  isPlayerWin: Record<PlayerElement, boolean>;
 }

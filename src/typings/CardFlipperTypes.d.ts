@@ -7,9 +7,9 @@ type CardState = 'init' | 'available';
 type LayoutRules = Record<CardQuantity, { amount: number } & Record<BreakPoints, [number, number]>>;
 
 interface CardOption {
-	gap: number;
-	borderRadius: string;
-	layoutRules: LayoutRules;
+  gap: number;
+  borderRadius: string;
+  layoutRules: LayoutRules;
 }
 
 /** Function Props Types */
@@ -17,24 +17,24 @@ interface CardOption {
 /** Styled Components Types */
 
 interface CardStyleProps {
-	$index: number;
+  $index: number;
 }
 
 interface ResultTextProps {
-	$delay: number;
+  $delay: number;
 }
 
 interface SetQuantityButton {
-	$index: number;
-	$isRun: boolean;
+  $index: number;
+  $isRun: boolean;
 }
 
 interface CardTableProps {
-	$cardLayout: Record<BreakPoints, [number, number]>;
+  $cardLayout: Record<BreakPoints, [number, number]>;
 }
 
 /** React Components Types */
 
 interface CardProps extends Card {
-	index: number;
+  index: number;
 }
